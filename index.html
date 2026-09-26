@@ -216,7 +216,11 @@ document.querySelectorAll('.tab').forEach(t=>{
   };
 });
 
-function textOf(html){ const d=document.createElement('div'); d.innerHTML=html; return d.textContent||''; }
+function textOf(html){
+  const d=document.createElement('div'); d.innerHTML=html;
+  d.querySelectorAll('p,div,li,h1,h2,br').forEach(el=>el.insertAdjacentText('afterend','\n'));
+  return d.textContent||'';
+}
 function wc(html){ const t=textOf(html).trim(); return t? t.split(/\s+/).length : 0; }
 function totalWords(){ return state.sections.reduce((a,s)=>a+wc(s.html),0); }
 
@@ -312,18 +316,20 @@ const STOPWORDS = new Set(['The','A','An','I','He','She','They','We','It','You',
   'But','And','Or','Nor','So','Yet','If','When','Then','Than','There','Here','This','That','These','Those','His','Her','Their',
   'Because','Although','Though','While','Since','Unless','Until','After','Before','Above','Below','Between','Among','Beyond','Within','Without','Through','Across','Around','Toward','Towards','During','Despite',
   'Perhaps','Suddenly','Meanwhile','However','Instead','Otherwise','Still','Also','Even','Just','Now','Soon','Later','Finally','Eventually','Indeed','Certainly','Probably','Maybe','Well','Oh','Ah','Yes','No','Okay','Alright','Sure','Right','Look','Listen','Wait','Stop','Come','Go','Let','Once','Again','Almost','Already','Always','Never','Every','Each','Both','Few','Many','Most','Some','All','Any',
+  'Can','Could','Would','Should','Will','Shall','Must','May','Might','Do','Does','Did','Am','Is','Are','Was','Were','Being','Been','Have','Has','Had',
+  'Sorry','Please','Thanks','Thank','Hello','Hi','Hey','Goodbye','Bye','Congratulations','Welcome',
   'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','January','February','March','April','May','June','July','August','September','October','November','December',
   'Chapter','Prologue','Epilogue','Part']);
 
 function detectCharacters(){
   const counts = {}; // name -> {count, sections:Set, midHits}
   state.sections.forEach(s=>{
-    const plain = textOf(s.html);
-    const tokens = plain.match(/[A-Za-z']+|[.!?]/g) || [];
+    let plain = textOf(s.html).replace(/\n+/g, '. ');
+    const tokens = plain.match(/[A-Za-z']+|[.!?]|["“”:]/g) || [];
     let atStart = true;
     const seen = new Set();
     tokens.forEach(tok=>{
-      if(tok==='.'||tok==='!'||tok==='?'){ atStart = true; return; }
+      if(tok==='.'||tok==='!'||tok==='?'||tok==='"'||tok==='“'||tok==='”'||tok===':'){ atStart = true; return; }
       if(/^[A-Z][a-z]{2,}$/.test(tok) && !STOPWORDS.has(tok)){
         if(!counts[tok]) counts[tok] = {count:0, sections:new Set(), midHits:0};
         counts[tok].count++;
@@ -334,7 +340,7 @@ function detectCharacters(){
     });
     seen.forEach(w=>counts[w].sections.add(s.title||'Untitled'));
   });
-  return Object.entries(counts).filter(([n,d])=>d.count>=2 && d.midHits>=1).sort((a,b)=>b[1].count-a[1].count);
+  return Object.entries(counts).filter(([n,d])=>d.count>=2 && d.midHits>=2).sort((a,b)=>b[1].count-a[1].count);
 }
 function renderCharacters(){
   const grid = document.getElementById('char-grid');
