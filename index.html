@@ -322,25 +322,42 @@ const STOPWORDS = new Set(['The','A','An','I','He','She','They','We','It','You',
   'Chapter','Prologue','Epilogue','Part']);
 
 function detectCharacters(){
-  const counts = {}; // name -> {count, sections:Set, midHits}
+  // Signal 1: case consistency — collect every word ever seen in plain lowercase
+  // anywhere in the manuscript. A real name never doubles as an ordinary word.
+  const lowerSeen = new Set();
+  state.sections.forEach(s=>{
+    const plain = textOf(s.html).replace(/\n+/g, '. ');
+    (plain.match(/[A-Za-z']+/g) || []).forEach(w=>{ if(/^[a-z][a-z']{2,}$/.test(w)) lowerSeen.add(w); });
+  });
+
+  const counts = {}; // name -> {count, sections:Set, midHits, afterDeterminer}
   state.sections.forEach(s=>{
     let plain = textOf(s.html).replace(/\n+/g, '. ');
     const tokens = plain.match(/[A-Za-z']+|[.!?]|["“”:]/g) || [];
-    let atStart = true;
+    let atStart = true, prevWord = '';
     const seen = new Set();
     tokens.forEach(tok=>{
       if(tok==='.'||tok==='!'||tok==='?'||tok==='"'||tok==='“'||tok==='”'||tok===':'){ atStart = true; return; }
       if(/^[A-Z][a-z]{2,}$/.test(tok) && !STOPWORDS.has(tok)){
-        if(!counts[tok]) counts[tok] = {count:0, sections:new Set(), midHits:0};
+        if(!counts[tok]) counts[tok] = {count:0, sections:new Set(), midHits:0, afterDeterminer:0};
         counts[tok].count++;
         if(!atStart) counts[tok].midHits++;
+        // Signal 2: determiner adjacency — "the/a/an X" reads as a common noun or
+        // title ("the King"), not a personal name ("the Marcus" doesn't happen).
+        if(prevWord==='the'||prevWord==='a'||prevWord==='an') counts[tok].afterDeterminer++;
         seen.add(tok);
       }
+      prevWord = tok.toLowerCase();
       atStart = false;
     });
     seen.forEach(w=>counts[w].sections.add(s.title||'Untitled'));
   });
-  return Object.entries(counts).filter(([n,d])=>d.count>=2 && d.midHits>=2).sort((a,b)=>b[1].count-a[1].count);
+  return Object.entries(counts).filter(([n,d])=>{
+    if(d.count<2 || d.midHits<1) return false;                 // must recur, and not only at sentence-start
+    if(lowerSeen.has(n.toLowerCase())) return false;            // also used as an ordinary word -> not a name
+    if(d.afterDeterminer/d.count > 0.4) return false;           // usually "the/a/an X" -> common noun or title
+    return true;
+  }).sort((a,b)=>b[1].count-a[1].count);
 }
 function renderCharacters(){
   const grid = document.getElementById('char-grid');
