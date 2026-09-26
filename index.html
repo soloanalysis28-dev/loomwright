@@ -86,7 +86,7 @@ main{padding:24px 28px 44px}
 .stat-icon svg{width:18px;height:18px}.stat-value{font:650 1rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}.stat-label{font:.72rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub);margin-top:2px}
 .section-heading{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:25px 0 12px}
 .section-heading h3{font-size:1.22rem;font-weight:400;margin:0}.section-heading p{font:.78rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub);margin:4px 0 0}
-.tile-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
 .home-tile{min-height:151px;text-align:left;position:relative;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:17px 17px 15px;cursor:pointer;transition:transform .2s var(--ease-out),box-shadow .2s,border-color .2s,background .2s;display:flex;flex-direction:column;align-items:flex-start}
 .home-tile:hover{transform:translateY(-3px);box-shadow:0 8px 22px #241a1010;border-color:color-mix(in srgb,var(--accent) 40%,var(--line));background:color-mix(in srgb,var(--panel) 80%,var(--card))}
 .tile-icon{width:39px;height:39px;border-radius:11px;background:var(--card);color:var(--accent);display:grid;place-items:center;margin-bottom:15px}
@@ -143,6 +143,54 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
 .summary-card{border:1px solid var(--line);border-radius:11px;padding:15px;background:var(--bg)}.summary-card h3{font:650 .88rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0 0 11px}
 .summary-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:.77rem}.summary-row:last-child{border:0;padding-bottom:0}.summary-row span:first-child{color:var(--sub)}.summary-row strong{font-weight:650;text-align:right}
 .export-note{font-size:.73rem;line-height:1.5;color:var(--sub);margin:0 0 10px}.export-buttons{display:grid;gap:8px}
+/* Offline projects and book design */
+.project-home-strip{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0 0 24px;padding:14px 17px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.project-home-copy strong{font:650 .84rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:block}.project-home-copy span{display:block;color:var(--sub);font:.74rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin-top:3px}
+.project-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.project-create{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:0 0 18px;padding:15px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.project-create input,.book-form input,.book-form select,.book-form textarea{font: .83rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 10px}
+.project-create input{flex:1;min-width:190px}
+.project-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:12px}
+.project-card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:16px;display:flex;flex-direction:column;gap:11px;min-width:0}
+.project-card.current{border-color:color-mix(in srgb,var(--accent2) 65%,var(--line));background:color-mix(in srgb,var(--panel) 88%,var(--card))}
+.project-card h3{font-size:1.08rem;font-weight:400;margin:0;overflow-wrap:anywhere}.project-card-meta{font:.73rem/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub)}
+.project-card .project-actions{margin-top:auto}.project-card .project-actions button{padding:7px 10px;font-size:.75rem}
+.project-empty{border:1px dashed var(--line);border-radius:12px;padding:24px;color:var(--sub);font:.84rem/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;text-align:center}
+.local-storage-note{font:.75rem/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub);padding:12px 14px;border-radius:10px;background:var(--card);margin:12px 0 0}
+.book-design-panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+.book-design-grid{display:grid;grid-template-columns:minmax(230px,.85fr) minmax(0,1.5fr);gap:18px;align-items:start}
+.book-form{display:grid;gap:10px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.book-form label{font-size:.75rem;color:var(--sub);font-weight:650;display:grid;gap:5px}
+.book-form input,.book-form select,.book-form textarea{width:100%;font-weight:400}.book-form textarea{min-height:67px;resize:vertical;line-height:1.45}
+.book-options{display:grid;grid-template-columns:1fr 1fr;gap:9px}.book-check{display:flex!important;grid-template-columns:16px 1fr;align-items:center;gap:8px!important;color:var(--ink)!important;font-weight:500!important}.book-check input{width:16px;height:16px;accent-color:var(--accent2)}
+.book-preview-heading{font:650 .78rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub);margin:0 0 9px}
+.book-preview-pages{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px}
+.book-page{position:relative;min-height:270px;max-height:360px;overflow:hidden;border:1px solid #dfe5df;border-radius:5px;background:#fff;color:#26362d;padding:22px 17px;box-shadow:0 5px 17px #1e35270c;font: .74rem/1.55 Georgia,'Iowan Old Style',serif}
+.book-page-label{display:block;margin:0 0 16px;font:650 .58rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.13em;text-transform:uppercase;color:#718278}
+.book-page h3{font:400 1.13rem/1.2 Georgia,serif;color:#26362d;margin:0 0 10px;overflow-wrap:anywhere}.book-page p{margin:0 0 .65em}
+.book-cover-page{min-height:300px;display:flex;flex-direction:column;justify-content:center;text-align:center;padding:25px 17px}
+.book-cover-page:before{content:"";position:absolute;inset:13px;border:1px solid #90a79450;pointer-events:none}
+.book-cover-page.has-cover-art{isolation:isolate;overflow:hidden;color:#203529}
+.book-cover-page.has-cover-art:before{z-index:1;background:linear-gradient(180deg,#ffffff20 0%,#ffffffc9 42%,#ffffffec 100%)}
+.book-cover-art-preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.book-cover-page.has-cover-art>*:not(.book-cover-art-preview){position:relative;z-index:2}
+.book-cover-page.cover-botanical{background:linear-gradient(155deg,#f7faf6,#e7efe8);color:#294433}
+.book-cover-page.cover-minimal{background:#fff;border-top:5px solid #91a997;color:#26362d}
+.book-cover-page.cover-classic{background:#f5f1e8;color:#423d31;border:4px double #aeb8a9}
+.book-cover-page.has-cover-art.cover-minimal:before{border:none;background:linear-gradient(180deg,#ffffff10 0%,#ffffffe0 42%,#fffffff0 100%)}
+.book-cover-page.cover-classic:before{inset:9px;border-color:#b7b59e}
+.book-cover-page h3{font-size:1.4rem;margin:auto 0 9px;letter-spacing:.01em}.book-cover-subtitle{font: .71rem/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#64766a;margin:0 0 30px!important}
+.book-cover-author{font: .7rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#596b5e;margin-top:auto;letter-spacing:.06em;text-transform:uppercase}
+.book-toc-list{display:grid;gap:9px;margin-top:22px}.book-toc-row{display:flex;align-items:baseline;gap:5px;font-size:.68rem}.book-toc-row .leader{flex:1;border-bottom:1px dotted #b7c1b8;min-width:8px;transform:translateY(-3px)}.book-toc-clean .leader{display:none}
+.book-sample-page h4{font:400 1rem Georgia,serif;margin:4px 0 13px}.book-sample-page .sample-copy{font: .68rem/1.7 Georgia,serif;color:#334037}
+.book-preview-note{font:.69rem/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub);margin:9px 0 0}
+#book-preview-pages[data-font="classic"] .book-page{font-family:"Palatino Linotype",Palatino,Georgia,serif}
+#book-preview-pages[data-font="sans"] .book-page{font-family:Arial,sans-serif}
+#book-preview-pages[data-trim="a5"] .book-page{min-height:285px;padding-left:15px;padding-right:15px}
+#book-preview-pages[data-trim="letter"] .book-page{min-height:320px;padding-left:20px;padding-right:20px}
+.book-field-heading{font:650 .84rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0 0 11px}
+.design-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;flex-wrap:wrap}
 /* Settings */
 .settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .setting-row{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 0;border-bottom:1px solid var(--line)}.setting-row:last-child{border-bottom:0;padding-bottom:0}
@@ -151,8 +199,8 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
 .setting-section h3{font:650 .9rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0 0 2px}.settings-footnote{font-size:.74rem;line-height:1.5;color:var(--sub);margin:13px 0 0}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:20px;font: .8rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;opacity:0;transition:opacity .25s;pointer-events:none;z-index:1100;max-width:calc(100vw - 24px);text-align:center}
 .toast.show{opacity:1}
-@media(max-width:800px){.app-header{padding:14px 17px}.app-nav{padding-left:10px;padding-right:10px}main{padding:19px 17px 36px}.tile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.welcome-panel{padding:24px;grid-template-columns:minmax(0,1fr) 190px}.welcome-art{height:145px}.finalise-layout{grid-template-columns:1fr}.finalise-side{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:560px){.app-header{align-items:flex-start;gap:8px}.brand-button{font-size:1.18rem}.header-right{gap:6px;flex-wrap:wrap;justify-content:flex-end}.status-pill{display:none}.stats{font-size:.7rem}.home-shortcut{padding:6px 8px}.tab{padding:10px 9px;font-size:.77rem}.tab svg{display:none}.welcome-panel{display:block;padding:22px 20px}.welcome-panel h2{font-size:2rem}.welcome-art{height:112px;margin-top:10px}.orbit{width:100px;height:100px}.art-book{width:66px;height:83px}.art-book svg{width:32px;height:32px}.dashboard-stats{gap:6px}.stat-card{padding:10px 8px;display:block;text-align:center}.stat-icon{margin:0 auto 7px;width:29px;height:29px}.stat-value{font-size:.9rem}.stat-label{font-size:.65rem}.tile-grid{gap:8px}.home-tile{min-height:136px;padding:13px}.tile-icon{width:34px;height:34px;margin-bottom:12px}.tile-desc{font-size:.7rem}.finalise-card{grid-template-columns:1fr;padding:14px}.finalise-card>.primary-button{justify-self:start;margin-left:52px}.settings-grid{grid-template-columns:1fr}.setting-row{align-items:flex-start;flex-direction:column;gap:9px}.setting-row select{max-width:none;width:100%}.finalise-side{grid-template-columns:1fr}#webcanvas{height:48vh;min-height:290px}main{padding-left:13px;padding-right:13px}}
+@media(max-width:800px){.app-header{padding:14px 17px}.app-nav{padding-left:10px;padding-right:10px}main{padding:19px 17px 36px}.tile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.welcome-panel{padding:24px;grid-template-columns:minmax(0,1fr) 190px}.welcome-art{height:145px}.finalise-layout{grid-template-columns:1fr}.finalise-side{grid-template-columns:repeat(2,minmax(0,1fr))}.book-design-grid{grid-template-columns:1fr}}
+@media(max-width:560px){.app-header{align-items:flex-start;gap:8px}.brand-button{font-size:1.18rem}.header-right{gap:6px;flex-wrap:wrap;justify-content:flex-end}.status-pill{display:none}.stats{font-size:.7rem}.home-shortcut{padding:6px 8px}.tab{padding:10px 9px;font-size:.77rem}.tab svg{display:none}.welcome-panel{display:block;padding:22px 20px}.welcome-panel h2{font-size:2rem}.welcome-art{height:112px;margin-top:10px}.orbit{width:100px;height:100px}.art-book{width:66px;height:83px}.art-book svg{width:32px;height:32px}.dashboard-stats{gap:6px}.stat-card{padding:10px 8px;display:block;text-align:center}.stat-icon{margin:0 auto 7px;width:29px;height:29px}.stat-value{font-size:.9rem}.stat-label{font-size:.65rem}.tile-grid{gap:8px}.home-tile{min-height:136px;padding:13px}.tile-icon{width:34px;height:34px;margin-bottom:12px}.tile-desc{font-size:.7rem}.finalise-card{grid-template-columns:1fr;padding:14px}.finalise-card>.primary-button{justify-self:start;margin-left:52px}.settings-grid{grid-template-columns:1fr}.setting-row{align-items:flex-start;flex-direction:column;gap:9px}.setting-row select{max-width:none;width:100%}.finalise-side{grid-template-columns:1fr}.project-home-strip{align-items:flex-start;flex-direction:column}.project-create input{width:100%}.book-options{grid-template-columns:1fr}.book-preview-pages{grid-template-columns:repeat(2,minmax(0,1fr))}.book-page{min-height:230px;padding:17px 12px}#webcanvas{height:48vh;min-height:290px}main{padding-left:13px;padding-right:13px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.thread-mark path{stroke-dashoffset:0}}
 </style>
 </head>
@@ -173,13 +221,14 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
       <span>Loom<span>wright</span></span>
     </button>
     <div class="header-right">
-      <div class="stats status-pill" id="sync-status" title="Where your work is saved">○ Local only</div>
+      <div class="stats status-pill" id="sync-status" title="Where your work is saved">○ Offline · this device</div>
       <div class="stats" id="totalstats">0 words</div>
       <button class="home-shortcut" type="button" data-open-view="home">Home</button>
     </div>
   </header>
   <nav class="app-nav" aria-label="Main navigation">
     <button class="tab active" data-view="home" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+    <button class="tab" data-view="projects" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7.5h7l2 2h9v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2"/></svg>Projects</button>
     <button class="tab" data-view="write" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m15 5 4 4M4 20l4-.8L19 8a2.8 2.8 0 0 0-4-4L4 15z"/></svg>Write</button>
     <button class="tab" data-view="characters" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5.5a3 3 0 0 1 0 5.8M18 14c2 .8 3 2.5 3 5"/></svg>Characters</button>
     <button class="tab" data-view="web" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="5" cy="5" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="19" r="2"/><path d="m7 6 10-1M6 7l5 10m7-9-5 10"/></svg>Story Web</button>
@@ -203,8 +252,10 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
         <div class="stat-card"><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5h16v15H4zM8 3v4m8-4v4M7 11h3m4 0h3M7 15h3"/></svg></span><div><div class="stat-value" id="home-section-count">1</div><div class="stat-label">Sections</div></div></div>
         <div class="stat-card"><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M17 8a2.5 2.5 0 1 1 0 5m1 2c2 .6 3 2 3 4"/></svg></span><div><div class="stat-value" id="home-character-count">0</div><div class="stat-label">Recurring characters</div></div></div>
       </div>
+      <div class="project-home-strip"><div class="project-home-copy"><strong>Current project: <span id="project-current-name">My First Project</span></strong><span id="project-home-count">1 project saved on this device</span></div><button class="secondary-button" type="button" data-open-view="projects">Open Projects →</button></div>
       <div class="section-heading"><div><h3>Your workspaces</h3><p>Choose a place to continue shaping your story.</p></div></div>
       <div class="tile-grid">
+        <button class="home-tile" type="button" data-open-view="projects"><span class="tile-arrow" aria-hidden="true">↗</span><span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7.5h7l2 2h9v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2"/></svg></span><span class="tile-title">Projects</span><span class="tile-desc">Create separate books and switch between your work.</span></button>
         <button class="home-tile" type="button" data-open-view="write"><span class="tile-arrow" aria-hidden="true">↗</span><span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m15 5 4 4M4 20l4-.8L19 8a2.8 2.8 0 0 0-4-4L4 15z"/></svg></span><span class="tile-title">Write</span><span class="tile-desc">Draft and organize your sections in one quiet space.</span></button>
         <button class="home-tile" type="button" data-open-view="characters"><span class="tile-arrow" aria-hidden="true">↗</span><span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5.5a3 3 0 0 1 0 5.8M18 14c2 .8 3 2.5 3 5"/></svg></span><span class="tile-title">Characters</span><span class="tile-desc">Keep recurring names, notes, and appearances close.</span></button>
         <button class="home-tile" type="button" data-open-view="web"><span class="tile-arrow" aria-hidden="true">↗</span><span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="5" cy="5" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="19" r="2"/><path d="m7 6 10-1M6 7l5 10m7-9-5 10"/></svg></span><span class="tile-title">Story Web</span><span class="tile-desc">See which characters appear together across sections.</span></button>
@@ -216,6 +267,13 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
       </div>
       <div class="section-heading"><div><h3>Need a second pair of eyes?</h3><p>Prepare a prompt to use with Claude or ChatGPT, then bring the response back into your draft.</p></div></div>
       <button class="home-tile" type="button" data-open-view="ai" style="min-height:112px;width:100%;flex-direction:row;align-items:center;gap:14px"><span class="tile-icon" style="margin:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg></span><span><span class="tile-title">AI Assist</span><span class="tile-desc" style="display:block">Copy a section prompt, get outside feedback, then decide what belongs in your story.</span></span><span class="tile-arrow" aria-hidden="true">↗</span></button>
+    </section>
+
+    <section class="view" id="view-projects" aria-labelledby="projects-title">
+      <div class="page-intro"><h2 id="projects-title">Projects</h2><p>Keep each book in its own workspace. Projects save automatically in this browser and are available offline on this device.</p></div>
+      <form class="project-create" id="project-create-form"><label class="sr-only" for="new-project-name">New project name</label><input id="new-project-name" maxlength="80" placeholder="Name your next book or writing project" required><button class="primary-button" type="submit">＋ New project</button></form>
+      <div id="project-grid" class="project-grid" aria-live="polite"></div>
+      <p class="local-storage-note">Offline storage is active. Online saving is reserved for a future option and is currently off; your projects are not uploaded or shared.</p>
     </section>
 
     <section class="view" id="view-write" aria-labelledby="write-title">
@@ -251,7 +309,26 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
     </section>
 
     <section class="view" id="view-finalise" aria-labelledby="finalise-title">
-      <div class="page-intro"><h2 id="finalise-title">Finalise</h2><p>A before-you-publish pass to review the manuscript, check your story details, and export a copy when you’re ready. Your checklist is saved with your project.</p></div>
+      <div class="page-intro"><h2 id="finalise-title">Finalise</h2><p>Design the front of your book, review your manuscript, and export a formatted copy when you’re ready. Your book settings and checklist are saved with this project.</p></div>
+      <section class="book-design-panel" aria-labelledby="book-design-title">
+        <div class="section-heading" style="margin:0 0 14px"><div><h3 id="book-design-title">Book design &amp; pages</h3><p>Set up a cover, front matter, table of contents, and a preview of your book’s opening pages.</p></div></div>
+        <div class="book-design-grid">
+          <div class="book-form" id="book-form">
+            <label>Book title<input id="book-title" maxlength="120" placeholder="Use your project name"></label>
+            <label>Subtitle<input id="book-subtitle" maxlength="180" placeholder="Optional subtitle"></label>
+            <label>Author name<input id="book-author" maxlength="100" placeholder="Your name or pen name"></label>
+            <label>Cover artwork<input id="cover-art-input" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="cover-art-note"></label>
+            <div class="project-actions"><button class="secondary-button" type="button" id="remove-cover-art" disabled>Remove cover art</button><span class="book-preview-note" id="cover-art-note">JPG, PNG, or WebP · resized and stored with this offline project.</span></div>
+            <label>Cover style<select id="book-cover-style"><option value="botanical">Quiet botanical</option><option value="minimal">Minimal sage</option><option value="classic">Classic paper</option></select></label>
+            <label>Book page size<select id="book-trim"><option value="trade">Trade paperback · 5 × 8 in</option><option value="a5">A5 · 5.8 × 8.3 in</option><option value="letter">US Letter · 8.5 × 11 in</option></select></label>
+            <label>Interior type style<select id="book-font"><option value="serif">Literary serif</option><option value="classic">Classic book serif</option><option value="sans">Clean sans serif</option></select></label>
+            <label>Dedication<textarea id="book-dedication" maxlength="500" placeholder="Optional dedication page"></textarea></label>
+            <div class="book-options"><label class="book-check"><input id="book-include-toc" type="checkbox"> Include contents page</label><label class="book-check"><input id="book-include-copyright" type="checkbox"> Include copyright page</label></div>
+            <div class="design-actions"><button class="secondary-button" type="button" id="book-reset">Reset book design</button></div>
+          </div>
+          <div><h4 class="book-preview-heading">Live preview · opening pages</h4><div class="book-preview-pages" id="book-preview-pages" aria-live="polite"></div><p class="book-preview-note">The contents list updates from your section titles. Exact page numbers and print-ready cover dimensions are added during final typesetting.</p></div>
+        </div>
+      </section>
       <div class="finalise-layout">
         <div class="finalise-panel">
           <div class="section-heading" style="margin:0"><div><h3>Before you share</h3><p>Check off each step when it feels complete—there’s no required order.</p></div><span class="progress-label" id="finalise-count">0 of 5 complete</span></div>
@@ -274,7 +351,8 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
         </div>
         <div class="settings-panel setting-section"><h3>Opening & storage</h3>
           <div class="setting-row"><div class="setting-copy"><strong>Opening animation</strong><small>A short, quiet Loomwright welcome before the home screen. You can also skip it as it plays.</small></div><button class="secondary-button" type="button" id="replay-intro">Replay intro</button></div>
-          <p class="settings-footnote" id="storage-note">Your project is stored in this browser unless the app is running in a Claude environment that supports project sync. Export a copy from Finalise for safekeeping.</p>
+          <p class="settings-footnote" id="storage-note">Projects are stored offline in this browser on this device. Online saving and cross-device sync are planned but inactive.</p>
+          <div class="setting-row"><div class="setting-copy"><strong>Online save &amp; sync</strong><small>Planned for a future update. Your writing remains on this device for now.</small></div><button class="secondary-button" type="button" disabled aria-disabled="true">Coming later</button></div>
         </div>
       </div>
     </section>
@@ -285,14 +363,30 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
 <script>
 if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,settings:{palette:'sage',theme:'light'},charNotes:{},finaliseChecklist:{}};
-let state;
-try{state=JSON.parse(localStorage.getItem('loomwright_state')||'null')||DEFAULT_STATE}catch(e){state=DEFAULT_STATE}
-if(!state||!Array.isArray(state.sections)||!state.sections.length)state=DEFAULT_STATE;
+const PROJECTS_STORAGE_KEY='loomwright_projects_v1',ACTIVE_PROJECT_KEY='loomwright_active_project_v1';
+const ONLINE_SYNC_ENABLED=false; // Reserved for a later, explicit online-save feature; offline mode is the only active storage.
+const DEFAULT_BOOK={title:'',subtitle:'',author:'',coverStyle:'botanical',trim:'trade',font:'serif',dedication:'',includeToc:true,includeCopyright:true};
+function newProjectId(){return 'project-'+(window.crypto?.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2,9))}
+function newProjectState(){return {...DEFAULT_STATE,sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],settings:{...DEFAULT_STATE.settings},charNotes:{},finaliseChecklist:{},book:{...DEFAULT_BOOK}}}
 function normalizeSettings(settings){const next={...DEFAULT_STATE.settings,...(settings||{})};if(next.palette==='parchment'&&next.theme==='auto'){next.palette='sage';next.theme='light'}return next}
-const storedSettings=JSON.stringify(state.settings||{});state.settings=normalizeSettings(state.settings);
-if(JSON.stringify(state.settings)!==storedSettings)localStorage.setItem('loomwright_state',JSON.stringify(state));
-if(!state.charNotes){try{state.charNotes=JSON.parse(localStorage.getItem('loomwright_notes')||'{}')}catch(e){state.charNotes={}}}
-if(!state.finaliseChecklist)state.finaliseChecklist={};
+function normalizeProjectState(value){const next=value&&typeof value==='object'?value:newProjectState();if(!Array.isArray(next.sections)||!next.sections.length)next.sections=newProjectState().sections;next.settings=normalizeSettings(next.settings);next.charNotes=next.charNotes||{};next.finaliseChecklist=next.finaliseChecklist||{};next.book={...DEFAULT_BOOK,...(next.book||{})};return next}
+let legacyState=null,projectStore=null;
+try{legacyState=JSON.parse(localStorage.getItem('loomwright_state')||'null')}catch(e){}
+try{projectStore=JSON.parse(localStorage.getItem(PROJECTS_STORAGE_KEY)||'null')}catch(e){}
+let projects=Array.isArray(projectStore?.projects)?projectStore.projects:[];
+let activeProjectId=projectStore?.activeProjectId||localStorage.getItem(ACTIVE_PROJECT_KEY)||'';
+if(!projects.length){activeProjectId=newProjectId();projects=[{id:activeProjectId,name:'My First Project',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),data:normalizeProjectState(legacyState)}]}
+projects=projects.filter(p=>p&&p.id).map(p=>({...p,name:String(p.name||'Untitled Project'),createdAt:p.createdAt||new Date().toISOString(),updatedAt:p.updatedAt||p.createdAt||new Date().toISOString(),data:normalizeProjectState(p.data)}));
+if(!projects.length){activeProjectId=newProjectId();projects=[{id:activeProjectId,name:'My First Project',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),data:newProjectState()}]}
+if(!projects.some(p=>p.id===activeProjectId))activeProjectId=projects[0].id;
+let state=projects.find(p=>p.id===activeProjectId).data;
+let offlineDb=null,offlineSaveTimer=null,offlineStorageReady=false;
+function openOfflineDatabase(){return new Promise((resolve,reject)=>{if(!window.indexedDB){reject(new Error('IndexedDB unavailable'));return}const request=indexedDB.open('loomwright-offline-library',1);request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains('library'))request.result.createObjectStore('library')};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error||new Error('Could not open offline storage'))})}
+function indexedRead(){return new Promise((resolve,reject)=>{const tx=offlineDb.transaction('library','readonly'),request=tx.objectStore('library').get('projects');request.onsuccess=()=>resolve(request.result||null);request.onerror=()=>reject(request.error)})}
+function indexedWrite(record){return new Promise((resolve,reject)=>{if(!offlineDb){resolve();return}const tx=offlineDb.transaction('library','readwrite');tx.objectStore('library').put(record,'projects');tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error||new Error('Offline save failed'))})}
+function currentProjectRecord(){return {version:1,activeProjectId,projects,savedAt:Date.now()}}
+function persistProjectStore(){const record=currentProjectRecord(),hasIndexedDB=!!offlineDb,localRecord=hasIndexedDB?{...record,projects:projects.map(({id,name,createdAt,updatedAt})=>({id,name,createdAt,updatedAt}))}:record;try{localStorage.setItem(PROJECTS_STORAGE_KEY,JSON.stringify(localRecord));localStorage.setItem(ACTIVE_PROJECT_KEY,activeProjectId);if(!hasIndexedDB)localStorage.setItem('loomwright_state',JSON.stringify(state))}catch(e){if(hasIndexedDB)toast('Saved in offline storage; browser backup limit reached.');else toast('Browser storage is full. Export a copy from Finalise.')}if(offlineDb){clearTimeout(offlineSaveTimer);offlineSaveTimer=setTimeout(()=>indexedWrite(record).catch(()=>toast('Offline save needs attention; export a copy from Finalise.')),180)}}
+async function initializeOfflineStorage(){try{offlineDb=await openOfflineDatabase();let localRecord=null;try{localRecord=JSON.parse(localStorage.getItem(PROJECTS_STORAGE_KEY)||'null')}catch(e){}const localHasContent=Array.isArray(localRecord?.projects)&&localRecord.projects.some(p=>p.data&&Array.isArray(p.data.sections)),stored=await indexedRead();let loadedIndexed=false;if(stored&&Array.isArray(stored.projects)&&(!localHasContent||(stored.savedAt||0)>(localRecord?.savedAt||0))){projects=stored.projects.filter(p=>p&&p.id).map(p=>({...p,data:normalizeProjectState(p.data)}));if(!projects.length)throw new Error('Offline library is empty');activeProjectId=stored.activeProjectId||projects[0].id;if(!projects.some(p=>p.id===activeProjectId))activeProjectId=projects[0].id;state=projects.find(p=>p.id===activeProjectId).data;loadedIndexed=true}offlineStorageReady=true;persistProjectStore();if(loadedIndexed)refreshProjectViews();setSyncStatus('Offline · this device',false)}catch(e){offlineDb=null;offlineStorageReady=true;persistProjectStore();setSyncStatus('Offline · this browser',false)}}
 state.sections.forEach(s=>{if(s.text!==undefined&&!s.html){s.html=s.text.split(/\n\n+/).map(p=>'<p>'+escapeHtml(p)+'</p>').join('');delete s.text}});
 function escapeHtml(value){return String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 
@@ -300,7 +394,7 @@ let dbRef=null,dbSaveTimer=null,introTimer=null;
 function setSyncStatus(msg,ok){const el=document.getElementById('sync-status');el.textContent=(ok?'● ':'○ ')+msg}
 async function initDB(){
   try{
-    if(!window.claude)return;
+    if(!ONLINE_SYNC_ENABLED||!window.claude)return;
     dbRef=await claude.use('db');if(!dbRef)return;
     const doc=await dbRef.doc('data/state').get();
     if(doc&&doc.exists&&doc.data&&Array.isArray(doc.data.sections)&&doc.data.sections.length){
@@ -313,8 +407,9 @@ async function initDB(){
   }catch(e){setSyncStatus('Local only',false)}
 }
 function save(){
-  localStorage.setItem('loomwright_state',JSON.stringify(state));
-  if(dbRef){clearTimeout(dbSaveTimer);dbSaveTimer=setTimeout(async()=>{try{await dbRef.doc('data/state').set(state);setSyncStatus('Synced',true)}catch(e){setSyncStatus('Sync failed',false)}},800)}
+  const project=projects.find(p=>p.id===activeProjectId);if(project){project.data=state;project.updatedAt=new Date().toISOString()}
+  persistProjectStore();
+  if(ONLINE_SYNC_ENABLED&&dbRef){clearTimeout(dbSaveTimer);dbSaveTimer=setTimeout(async()=>{try{await dbRef.doc('data/state').set(state);setSyncStatus('Synced',true)}catch(e){setSyncStatus('Sync failed',false)}},800)}
 }
 function applyTheme(){
   let resolved=state.settings.theme;
@@ -335,7 +430,7 @@ function totalCharacters(){return detectCharacters().length}
 function switchView(name){
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));
-  if(name==='home')renderHome();if(name==='characters')renderCharacters();if(name==='web')renderWeb();if(name==='ai')renderAI();if(name==='finalise')renderFinalise();if(name==='settings')applyTheme();
+  if(name==='home')renderHome();if(name==='projects')renderProjects();if(name==='characters')renderCharacters();if(name==='web')renderWeb();if(name==='ai')renderAI();if(name==='finalise')renderFinalise();if(name==='settings')applyTheme();
   window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
 }
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>switchView(t.dataset.view)));
@@ -347,7 +442,29 @@ function renderHome(){
   const done=Object.values(state.finaliseChecklist).filter(Boolean).length,total=FINALISE_ITEMS.length,pct=Math.round(done/total*100);
   document.getElementById('home-finalise-progress').style.width=pct+'%';document.getElementById('home-finalise-label').textContent=`${done} of ${total} ready`;
   document.getElementById('totalstats').textContent=words.toLocaleString()+' words';
+  const project=projects.find(p=>p.id===activeProjectId);document.getElementById('project-current-name').textContent=project?.name||'Untitled Project';document.getElementById('project-home-count').textContent=`${projects.length} project${projects.length===1?'':'s'} saved on this device`;
 }
+function formatProjectDate(value){const date=new Date(value||Date.now());return Number.isNaN(date.getTime())?'Recently edited':date.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'})}
+function renderProjects(){
+  const grid=document.getElementById('project-grid');grid.innerHTML='';
+  projects.forEach(project=>{
+    const card=document.createElement('article');card.className='project-card'+(project.id===activeProjectId?' current':'');
+    const title=document.createElement('h3');title.textContent=project.name;card.appendChild(title);
+    const meta=document.createElement('div');meta.className='project-card-meta';const projectData=project.data||newProjectState();meta.textContent=`${projectData.sections?.length||0} section${(projectData.sections?.length||0)===1?'':'s'} · ${(projectData.sections||[]).reduce((n,s)=>n+wc(s.html||''),0).toLocaleString()} words · Edited ${formatProjectDate(project.updatedAt)}`;card.appendChild(meta);
+    if(project.id===activeProjectId){const badge=document.createElement('span');badge.className='progress-label';badge.textContent='Current project';card.appendChild(badge)}
+    const actions=document.createElement('div');actions.className='project-actions';
+    const open=document.createElement('button');open.type='button';open.className=project.id===activeProjectId?'primary-button':'secondary-button';open.textContent=project.id===activeProjectId?'Open current':'Open project';open.onclick=()=>activateProject(project.id);actions.appendChild(open);
+    const rename=document.createElement('button');rename.type='button';rename.className='secondary-button';rename.textContent='Rename';rename.onclick=()=>renameProject(project.id);actions.appendChild(rename);
+    const remove=document.createElement('button');remove.type='button';remove.className='del';remove.textContent='Delete';remove.disabled=projects.length<2;remove.title=projects.length<2?'Keep at least one project':'Delete this project from this browser';remove.onclick=()=>deleteProject(project.id);actions.appendChild(remove);
+    card.appendChild(actions);grid.appendChild(card);
+  });
+  if(!projects.length)grid.innerHTML='<div class="project-empty">No projects yet. Create one above to start a book.</div>';
+}
+function refreshProjectViews(){renderSidebar();renderEditor();applyTheme();renderHome();renderProjects();renderFinalise()}
+function activateProject(id){if(id===activeProjectId){switchView('home');return}save();if(!projects.some(p=>p.id===id))return;activeProjectId=id;state=projects.find(p=>p.id===id).data;persistProjectStore();refreshProjectViews();switchView('home');toast('Opened '+projects.find(p=>p.id===id).name+'.')}
+function createProject(name){const clean=String(name||'').trim().slice(0,80);if(!clean){toast('Add a name for the project.');return}save();const now=new Date().toISOString(),project={id:newProjectId(),name:clean,createdAt:now,updatedAt:now,data:newProjectState()};projects.unshift(project);activeProjectId=project.id;state=project.data;persistProjectStore();refreshProjectViews();switchView('home');toast('Created '+clean+'.')}
+function renameProject(id){const project=projects.find(p=>p.id===id);if(!project)return;const value=window.prompt('Rename this project',project.name);if(value===null)return;const clean=value.trim().slice(0,80);if(!clean){toast('Project name cannot be empty.');return}project.name=clean;project.updatedAt=new Date().toISOString();persistProjectStore();renderProjects();renderHome();renderBookPreview();toast('Project renamed.')}
+function deleteProject(id){if(projects.length<2){toast('Keep at least one project in your library.');return}const project=projects.find(p=>p.id===id);if(!project||!window.confirm(`Delete “${project.name}” and its writing from this browser? This cannot be undone.`))return;projects=projects.filter(p=>p.id!==id);if(activeProjectId===id){activeProjectId=projects[0].id;state=projects[0].data}persistProjectStore();refreshProjectViews();switchView('projects');toast('Project deleted from this browser.')}
 function renderSidebar(){
   const sel=document.getElementById('section-select');sel.innerHTML='';
   state.sections.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=`${s.title||'Untitled'} (${wc(s.html||'')}w)`;sel.appendChild(o)});
@@ -423,13 +540,42 @@ const FINALISE_ITEMS=[
 ];
 function renderFinalise(){
   const list=document.getElementById('finalise-checklist');list.innerHTML='';FINALISE_ITEMS.forEach(item=>{const label=document.createElement('label');label.className='check-item';const input=document.createElement('input');input.type='checkbox';input.checked=!!state.finaliseChecklist[item.id];input.setAttribute('aria-label',item.title);const copy=document.createElement('span');copy.className='check-copy';copy.innerHTML=`<strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.hint)}</small>`;input.addEventListener('change',()=>{state.finaliseChecklist[item.id]=input.checked;save();updateFinaliseProgress();renderHome()});label.append(input,copy);list.appendChild(label)});
-  document.getElementById('final-word-count').textContent=totalWords().toLocaleString();document.getElementById('final-section-count').textContent=state.sections.length.toLocaleString();document.getElementById('final-character-count').textContent=totalCharacters().toLocaleString();updateFinaliseProgress();
+  document.getElementById('final-word-count').textContent=totalWords().toLocaleString();document.getElementById('final-section-count').textContent=state.sections.length.toLocaleString();document.getElementById('final-character-count').textContent=totalCharacters().toLocaleString();updateFinaliseProgress();renderBookDesigner();
 }
 function updateFinaliseProgress(){const done=FINALISE_ITEMS.filter(x=>state.finaliseChecklist[x.id]).length,pct=Math.round(done/FINALISE_ITEMS.length*100);document.getElementById('finalise-count').textContent=`${done} of ${FINALISE_ITEMS.length} complete`;document.getElementById('finalise-progress').style.width=pct+'%'}
+function validCoverArt(data){return typeof data==='string'&&/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(data)?data:''}
+async function encodeCoverArt(file){if(!file||!/^image\/(jpeg|png|webp)$/.test(file.type))throw new Error('Choose a JPG, PNG, or WebP image.');if(file.size>20*1024*1024)throw new Error('Choose an image under 20 MB.');const bitmap=await createImageBitmap(file),scale=Math.min(1,1600/bitmap.width,2200/bitmap.height,Math.sqrt(6000000/(bitmap.width*bitmap.height))),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));const ctx=canvas.getContext('2d');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close?.();const result=canvas.toDataURL('image/jpeg',.82);if(result.length>3*1024*1024)throw new Error('The compressed artwork is too large to store offline. Try a smaller image.');return result}
+async function handleCoverArtUpload(file){if(!file)return;const note=document.getElementById('cover-art-note');note.textContent='Preparing cover art…';try{state.book.coverArt=await encodeCoverArt(file);state.book.coverArtName=file.name.slice(0,120);save();renderBookPreview();document.getElementById('remove-cover-art').disabled=false;note.textContent=`${file.name.slice(0,65)} · resized for offline storage`;toast('Cover art added to this project.')}catch(error){note.textContent=error.message||'Could not read that image.';toast(error.message||'Could not add cover art.')}finally{document.getElementById('cover-art-input').value=''}}
+function removeCoverArt(){delete state.book.coverArt;delete state.book.coverArtName;save();renderBookDesigner();toast('Cover art removed.')}
+function renderBookDesigner(){
+  const book=state.book||(state.book={...DEFAULT_BOOK});
+  document.getElementById('book-title').value=book.title||'';document.getElementById('book-subtitle').value=book.subtitle||'';document.getElementById('book-author').value=book.author||'';document.getElementById('book-cover-style').value=book.coverStyle||'botanical';document.getElementById('book-trim').value=book.trim||'trade';document.getElementById('book-font').value=book.font||'serif';document.getElementById('book-dedication').value=book.dedication||'';document.getElementById('book-include-toc').checked=book.includeToc!==false;document.getElementById('book-include-copyright').checked=book.includeCopyright!==false;document.getElementById('remove-cover-art').disabled=!validCoverArt(book.coverArt);document.getElementById('cover-art-note').textContent=book.coverArtName?`${book.coverArtName} · resized for offline storage`:'JPG, PNG, or WebP · resized and stored with this offline project.';renderBookPreview();
+}
+function updateBookSetting(key,value){state.book[key]=value;save();renderBookPreview()}
+function renderBookPreview(){
+  const target=document.getElementById('book-preview-pages');if(!target)return;const book=state.book||DEFAULT_BOOK,project=projects.find(p=>p.id===activeProjectId),title=book.title?.trim()||project?.name||'Untitled Book',author=book.author?.trim()||'Author name',subtitle=book.subtitle?.trim(),cover=['botanical','minimal','classic'].includes(book.coverStyle)?book.coverStyle:'botanical';
+  const coverArt=validCoverArt(book.coverArt),pages=[`<article class="book-page book-cover-page cover-${cover}${coverArt?' has-cover-art':''}">${coverArt?`<img class="book-cover-art-preview" src="${coverArt}" alt="Uploaded cover artwork">`:''}<span class="book-page-label">${escapeHtml(cover==='botanical'?'A Loomwright edition':cover==='minimal'?'Title page':'Collected work')}</span><h3>${escapeHtml(title)}</h3>${subtitle?`<p class="book-cover-subtitle">${escapeHtml(subtitle)}</p>`:''}<span class="book-cover-author">${escapeHtml(author)}</span></article>`];
+  if(book.includeCopyright!==false)pages.push(`<article class="book-page"><span class="book-page-label">Copyright</span><h3>${escapeHtml(title)}</h3><p>Copyright © ${new Date().getFullYear()} ${escapeHtml(author)}</p><p>All rights reserved.</p><p class="book-preview-note">Publication details can be added when the final edition is prepared.</p></article>`);
+  if(book.dedication?.trim())pages.push(`<article class="book-page"><span class="book-page-label">Dedication</span><div style="min-height:190px;display:grid;place-items:center;text-align:center;font-style:italic">${escapeHtml(book.dedication).replace(/\n/g,'<br>')}</div></article>`);
+  if(book.includeToc!==false)pages.push(`<article class="book-page book-toc-page ${book.trim==='trade'?'book-toc-clean':''}"><span class="book-page-label">Contents</span><h3>Contents</h3><div class="book-toc-list">${state.sections.map(s=>`<div class="book-toc-row"><span>${escapeHtml(s.title||'Untitled')}</span><span class="leader"></span></div>`).join('')}</div></article>`);
+  const first=state.sections[0],excerpt=first?textOf(first.html||'').trim():'Your manuscript begins here.';const sample=excerpt.slice(0,380);
+  pages.push(`<article class="book-page book-sample-page"><span class="book-page-label">Opening pages</span><h3>${escapeHtml(first?.title||'Your manuscript')}</h3>${sample?`<div class="sample-copy">${escapeHtml(sample).replace(/\n/g,'<br>')}${excerpt.length>380?'…':''}</div>`:'<p>Your opening chapter will appear here.</p>'}</article>`);
+  target.innerHTML=pages.join('');target.dataset.trim=book.trim||'trade';target.dataset.font=book.font||'serif';
+}
+function bindBookDesigner(){
+  [['book-title','title'],['book-subtitle','subtitle'],['book-author','author'],['book-dedication','dedication']].forEach(([id,key])=>document.getElementById(id).addEventListener('input',e=>updateBookSetting(key,e.target.value)));
+  [['book-cover-style','coverStyle'],['book-trim','trim'],['book-font','font']].forEach(([id,key])=>document.getElementById(id).addEventListener('change',e=>updateBookSetting(key,e.target.value)));
+  [['book-include-toc','includeToc'],['book-include-copyright','includeCopyright']].forEach(([id,key])=>document.getElementById(id).addEventListener('change',e=>updateBookSetting(key,e.target.checked)));
+  document.getElementById('cover-art-input').addEventListener('change',e=>handleCoverArtUpload(e.target.files?.[0]));document.getElementById('remove-cover-art').addEventListener('click',removeCoverArt);
+  document.getElementById('book-reset').addEventListener('click',()=>{state.book={...DEFAULT_BOOK};save();renderBookDesigner();toast('Book design reset.')});
+}
+const buildHtmlExportWithoutCoverArt=buildHtmlExport;
+buildHtmlExport=function(){let doc=buildHtmlExportWithoutCoverArt();const book=state.book||DEFAULT_BOOK,subtitle=book.subtitle?.trim(),art=validCoverArt(book.coverArt);if(subtitle)doc=doc.replace(`<p>${subtitle}</p>`,`<p>${escapeHtml(subtitle)}</p>`);if(!art)return doc;return doc.replace('<style>','<style>.book-cover{position:relative;isolation:isolate;overflow:hidden}.book-cover-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1}.book-cover.has-cover-art{background:transparent!important}.book-cover.has-cover-art:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#ffffff20 0%,#ffffffe0 48%,#fffffff2 100%);z-index:-1}\n').replace(/(<section class="book-cover [^"]+">)/,`$1<img class="book-cover-art" src="${art}" alt="Uploaded cover artwork">`)};
 function downloadFile(filename,content,type){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-function fileBase(){return (state.sections[0]?.title||'loomwright-manuscript').replace(/[^a-z0-9-_]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()||'loomwright-manuscript'}
+function fileBase(){const project=projects.find(p=>p.id===activeProjectId);return (state.book?.title||project?.name||'loomwright-manuscript').replace(/[^a-z0-9-_]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()||'loomwright-manuscript'}
 function exportText(){const content=state.sections.map(s=>`${s.title||'Untitled'}\n${'='.repeat(Math.min(40,(s.title||'Untitled').length))}\n\n${textOf(s.html||'').trim()}`).join('\n\n\n');downloadFile(fileBase()+'.txt',content,'text/plain;charset=utf-8');toast('Plain-text copy downloaded.')}
-function exportHtml(){const sections=state.sections.map(s=>`<section><h1>${escapeHtml(s.title||'Untitled')}</h1>${s.html||'<p></p>'}</section>`).join('\n');const doc=`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escapeHtml(state.sections[0]?.title||'Loomwright manuscript')}</title><style>body{max-width:720px;margin:4rem auto;padding:0 1.25rem;font:18px/1.75 Georgia,serif;color:#24211d}section{margin:0 0 4rem}h1{font-size:1.5rem;font-weight:normal;margin:0 0 1.5rem}</style></head><body>${sections}</body></html>`;downloadFile(fileBase()+'.html',doc,'text/html;charset=utf-8');toast('Formatted copy downloaded.')}
+function buildHtmlExport(){const book=state.book||DEFAULT_BOOK,project=projects.find(p=>p.id===activeProjectId),title=book.title?.trim()||project?.name||'Loomwright manuscript',author=book.author?.trim()||'',sections=state.sections.map((s,i)=>`<section class="chapter" id="section-${i+1}"><h1>${escapeHtml(s.title||'Untitled')}</h1>${s.html||'<p></p>'}</section>`).join('\n'),copyright=book.includeCopyright!==false?`<section class="front-page copyright"><h1>${escapeHtml(title)}</h1><p>Copyright © ${new Date().getFullYear()} ${escapeHtml(author)}</p><p>All rights reserved.</p></section>`:'',dedication=book.dedication?.trim()?`<section class="front-page dedication"><p>${escapeHtml(book.dedication).replace(/\n/g,'<br>')}</p></section>`:'',toc=book.includeToc!==false?`<section class="front-page contents"><h1>Contents</h1><ol>${state.sections.map((s,i)=>`<li><a href="#section-${i+1}">${escapeHtml(s.title||'Untitled')}</a></li>`).join('')}</ol></section>`:'',font=book.font==='sans'?'Arial, sans-serif':book.font==='classic'?"'Palatino Linotype', Palatino, Georgia, serif":"Georgia, 'Iowan Old Style', serif",trim=book.trim==='a5'?'5.8in 8.3in':book.trim==='letter'?'8.5in 11in':'5in 8in',coverClass=['botanical','minimal','classic'].includes(book.coverStyle)?book.coverStyle:'botanical',cover=`<section class="book-cover ${coverClass}"><small>${coverClass==='classic'?'A collected work':'LOOMWRIGHT EDITION'}</small><h1>${escapeHtml(title)}</h1>${book.subtitle?`<p>${escapeHtml(book.subtitle)}</p>`:''}<footer>${escapeHtml(author)}</footer></section>`,doc=`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escapeHtml(title)}</title><style>@page{size:${trim};margin:.75in}*{box-sizing:border-box}body{max-width:6in;margin:3rem auto;padding:0 1rem;font:18px/1.75 ${font};color:#26362d}.book-cover{min-height:85vh;display:flex;flex-direction:column;justify-content:center;text-align:center;page-break-after:always;padding:2rem;border:1px solid #91a997}.book-cover small,.book-cover footer{font: .8rem Arial,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#596b5e}.book-cover h1{font:normal 2.3rem/1.2 ${font};margin:auto 0 1rem}.book-cover p{font:1rem/1.5 Arial,sans-serif;color:#64766a;margin:0 0 4rem}.book-cover footer{margin-top:auto}.book-cover.minimal{border-top:8px solid #91a997}.book-cover.classic{background:#f5f1e8;border:4px double #aeb8a9}.front-page{min-height:80vh;page-break-after:always;display:flex;flex-direction:column;justify-content:center}.copyright{font:14px/1.6 Arial,sans-serif;color:#596b5e}.dedication{text-align:center;font-style:italic}.contents h1,.chapter h1{font-size:1.5rem;font-weight:normal}.contents ol{padding-left:1.5rem}.contents li{margin:.5rem 0}.contents a{color:inherit;text-decoration:none}.chapter{page-break-before:always;margin:0 0 4rem}.chapter h1{margin:0 0 1.5rem}</style></head><body>${cover}${copyright}${dedication}${toc}${sections}</body></html>`;return doc}
+function exportHtml(){downloadFile(fileBase()+'.html',buildHtmlExport(),'text/html;charset=utf-8');toast('Formatted book copy downloaded.')}
 document.getElementById('export-txt').addEventListener('click',exportText);document.getElementById('export-html').addEventListener('click',exportHtml);
 
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('show'),2600)}
@@ -438,8 +584,10 @@ function playIntro(){const splash=document.getElementById('splash'),shell=docume
 document.getElementById('skip-intro').addEventListener('click',revealApp);document.getElementById('replay-intro').addEventListener('click',()=>{switchView('home');playIntro()});
 document.getElementById('palette-select').addEventListener('change',e=>{state.settings.palette=e.target.value;save();applyTheme()});document.getElementById('theme-select').addEventListener('change',e=>{state.settings.theme=e.target.value;save();applyTheme()});
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(state.settings.theme==='auto')applyTheme()});
+document.getElementById('project-create-form').addEventListener('submit',e=>{e.preventDefault();const input=document.getElementById('new-project-name');createProject(input.value);input.value=''});
+bindBookDesigner();
 
-renderSidebar();renderEditor();applyTheme();renderHome();initDB();playIntro();
+renderSidebar();renderEditor();applyTheme();renderHome();renderProjects();initializeOfflineStorage();playIntro();
 </script>
 </body>
 </html>
