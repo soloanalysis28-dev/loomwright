@@ -270,10 +270,9 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
     </section>
 
     <section class="view" id="view-projects" aria-labelledby="projects-title">
-      <div class="page-intro"><h2 id="projects-title">Projects</h2><p>Keep each book in its own workspace. Projects save automatically in this browser and are available offline on this device.</p></div>
+      <div class="page-intro"><h2 id="projects-title">Projects</h2></div>
       <form class="project-create" id="project-create-form"><label class="sr-only" for="new-project-name">New project name</label><input id="new-project-name" maxlength="80" placeholder="Name your next book or writing project" required><button class="primary-button" type="submit">＋ New project</button></form>
       <div id="project-grid" class="project-grid" aria-live="polite"></div>
-      <p class="local-storage-note">Offline storage is active. Online saving is reserved for a future option and is currently off; your projects are not uploaded or shared.</p>
     </section>
 
     <section class="view" id="view-write" aria-labelledby="write-title">
@@ -343,7 +342,7 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
     </section>
 
     <section class="view" id="view-settings" aria-labelledby="settings-title">
-      <div class="page-intro"><h2 id="settings-title">Settings</h2><p>Make your writing space feel like yours. Changes apply immediately and are saved with this browser’s project data.</p></div>
+      <div class="page-intro"><h2 id="settings-title">Settings</h2><p>Make your writing space feel like yours. Appearance choices apply across the app and are saved for this browser, not to individual projects.</p></div>
       <div class="settings-grid">
         <div class="settings-panel setting-section"><h3>Appearance</h3>
           <div class="setting-row"><div class="setting-copy"><strong>Color palette</strong><small>Choose the color family for panels, accents, and backgrounds.</small></div><select id="palette-select" aria-label="Color palette"><option value="sage">Sage</option><option value="parchment">Parchment</option><option value="slate">Slate</option><option value="forest">Forest</option><option value="ink">Ink</option></select></div>
@@ -362,19 +361,23 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
 
 <script>
 if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,settings:{palette:'sage',theme:'light'},charNotes:{},finaliseChecklist:{}};
-const PROJECTS_STORAGE_KEY='loomwright_projects_v1',ACTIVE_PROJECT_KEY='loomwright_active_project_v1';
+const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,charNotes:{},finaliseChecklist:{}};
+const PROJECTS_STORAGE_KEY='loomwright_projects_v1',ACTIVE_PROJECT_KEY='loomwright_active_project_v1',APP_SETTINGS_KEY='loomwright_app_settings_v1';
 const ONLINE_SYNC_ENABLED=false; // Reserved for a later, explicit online-save feature; offline mode is the only active storage.
 const DEFAULT_BOOK={title:'',subtitle:'',author:'',coverStyle:'botanical',trim:'trade',font:'serif',dedication:'',includeToc:true,includeCopyright:true};
 function newProjectId(){return 'project-'+(window.crypto?.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2,9))}
-function newProjectState(){return {...DEFAULT_STATE,sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],settings:{...DEFAULT_STATE.settings},charNotes:{},finaliseChecklist:{},book:{...DEFAULT_BOOK}}}
-function normalizeSettings(settings){const next={...DEFAULT_STATE.settings,...(settings||{})};if(next.palette==='parchment'&&next.theme==='auto'){next.palette='sage';next.theme='light'}return next}
-function normalizeProjectState(value){const next=value&&typeof value==='object'?value:newProjectState();if(!Array.isArray(next.sections)||!next.sections.length)next.sections=newProjectState().sections;next.settings=normalizeSettings(next.settings);next.charNotes=next.charNotes||{};next.finaliseChecklist=next.finaliseChecklist||{};next.book={...DEFAULT_BOOK,...(next.book||{})};return next}
+function newProjectState(){return {...DEFAULT_STATE,sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],charNotes:{},finaliseChecklist:{},book:{...DEFAULT_BOOK}}}
+function normalizeSettings(settings){const next={palette:'sage',theme:'light',...(settings||{})};if(!['sage','parchment','slate','forest','ink'].includes(next.palette))next.palette='sage';if(!['auto','light','dark'].includes(next.theme))next.theme='light';if(next.palette==='parchment'&&next.theme==='auto'){next.palette='sage';next.theme='light'}return next}
+function normalizeProjectState(value){const next=value&&typeof value==='object'?value:newProjectState();if(!Array.isArray(next.sections)||!next.sections.length)next.sections=newProjectState().sections;delete next.settings;next.charNotes=next.charNotes||{};next.finaliseChecklist=next.finaliseChecklist||{};next.book={...DEFAULT_BOOK,...(next.book||{})};return next}
 let legacyState=null,projectStore=null;
 try{legacyState=JSON.parse(localStorage.getItem('loomwright_state')||'null')}catch(e){}
 try{projectStore=JSON.parse(localStorage.getItem(PROJECTS_STORAGE_KEY)||'null')}catch(e){}
+const initialActiveId=projectStore?.activeProjectId||localStorage.getItem(ACTIVE_PROJECT_KEY)||'';
+const initialActiveProject=projectStore?.projects?.find(p=>p.id===initialActiveId);
+let appSettings,appSettingsStoredAtBoot=false,appSettingsTouched=false;
+try{const savedAppSettings=JSON.parse(localStorage.getItem(APP_SETTINGS_KEY)||'null');appSettingsStoredAtBoot=!!(savedAppSettings&&typeof savedAppSettings==='object');appSettings=normalizeSettings(savedAppSettings||initialActiveProject?.data?.settings||legacyState?.settings)}catch(e){appSettings=normalizeSettings(null)}
 let projects=Array.isArray(projectStore?.projects)?projectStore.projects:[];
-let activeProjectId=projectStore?.activeProjectId||localStorage.getItem(ACTIVE_PROJECT_KEY)||'';
+let activeProjectId=initialActiveId;
 if(!projects.length){activeProjectId=newProjectId();projects=[{id:activeProjectId,name:'My First Project',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),data:normalizeProjectState(legacyState)}]}
 projects=projects.filter(p=>p&&p.id).map(p=>({...p,name:String(p.name||'Untitled Project'),createdAt:p.createdAt||new Date().toISOString(),updatedAt:p.updatedAt||p.createdAt||new Date().toISOString(),data:normalizeProjectState(p.data)}));
 if(!projects.length){activeProjectId=newProjectId();projects=[{id:activeProjectId,name:'My First Project',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),data:newProjectState()}]}
@@ -384,9 +387,19 @@ let offlineDb=null,offlineSaveTimer=null,offlineStorageReady=false;
 function openOfflineDatabase(){return new Promise((resolve,reject)=>{if(!window.indexedDB){reject(new Error('IndexedDB unavailable'));return}const request=indexedDB.open('loomwright-offline-library',1);request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains('library'))request.result.createObjectStore('library')};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error||new Error('Could not open offline storage'))})}
 function indexedRead(){return new Promise((resolve,reject)=>{const tx=offlineDb.transaction('library','readonly'),request=tx.objectStore('library').get('projects');request.onsuccess=()=>resolve(request.result||null);request.onerror=()=>reject(request.error)})}
 function indexedWrite(record){return new Promise((resolve,reject)=>{if(!offlineDb){resolve();return}const tx=offlineDb.transaction('library','readwrite');tx.objectStore('library').put(record,'projects');tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error||new Error('Offline save failed'))})}
-function currentProjectRecord(){return {version:1,activeProjectId,projects,savedAt:Date.now()}}
+function currentProjectRecord(){return {version:2,activeProjectId,appSettings,projects,savedAt:Date.now()}}
 function persistProjectStore(){const record=currentProjectRecord(),hasIndexedDB=!!offlineDb,localRecord=hasIndexedDB?{...record,projects:projects.map(({id,name,createdAt,updatedAt})=>({id,name,createdAt,updatedAt}))}:record;try{localStorage.setItem(PROJECTS_STORAGE_KEY,JSON.stringify(localRecord));localStorage.setItem(ACTIVE_PROJECT_KEY,activeProjectId);if(!hasIndexedDB)localStorage.setItem('loomwright_state',JSON.stringify(state))}catch(e){if(hasIndexedDB)toast('Saved in offline storage; browser backup limit reached.');else toast('Browser storage is full. Export a copy from Finalise.')}if(offlineDb){clearTimeout(offlineSaveTimer);offlineSaveTimer=setTimeout(()=>indexedWrite(record).catch(()=>toast('Offline save needs attention; export a copy from Finalise.')),180)}}
-async function initializeOfflineStorage(){try{offlineDb=await openOfflineDatabase();let localRecord=null;try{localRecord=JSON.parse(localStorage.getItem(PROJECTS_STORAGE_KEY)||'null')}catch(e){}const localHasContent=Array.isArray(localRecord?.projects)&&localRecord.projects.some(p=>p.data&&Array.isArray(p.data.sections)),stored=await indexedRead();let loadedIndexed=false;if(stored&&Array.isArray(stored.projects)&&(!localHasContent||(stored.savedAt||0)>(localRecord?.savedAt||0))){projects=stored.projects.filter(p=>p&&p.id).map(p=>({...p,data:normalizeProjectState(p.data)}));if(!projects.length)throw new Error('Offline library is empty');activeProjectId=stored.activeProjectId||projects[0].id;if(!projects.some(p=>p.id===activeProjectId))activeProjectId=projects[0].id;state=projects.find(p=>p.id===activeProjectId).data;loadedIndexed=true}offlineStorageReady=true;persistProjectStore();if(loadedIndexed)refreshProjectViews();setSyncStatus('Offline · this device',false)}catch(e){offlineDb=null;offlineStorageReady=true;persistProjectStore();setSyncStatus('Offline · this browser',false)}}
+async function initializeOfflineStorage(){
+  try{
+    offlineDb=await openOfflineDatabase();let localRecord=null;
+    try{localRecord=JSON.parse(localStorage.getItem(PROJECTS_STORAGE_KEY)||'null')}catch(e){}
+    const localHasContent=Array.isArray(localRecord?.projects)&&localRecord.projects.some(p=>p.data&&Array.isArray(p.data.sections)),stored=await indexedRead(),useIndexed=stored&&Array.isArray(stored.projects)&&(!localHasContent||(stored.savedAt||0)>(localRecord?.savedAt||0));
+    if(useIndexed&&!appSettingsStoredAtBoot&&!appSettingsTouched){const oldActive=stored.projects.find(p=>p.id===(stored.activeProjectId||activeProjectId)),storedSettings=stored.appSettings||oldActive?.data?.settings;if(storedSettings)appSettings=normalizeSettings(storedSettings)}
+    let loadedIndexed=false;
+    if(useIndexed){projects=stored.projects.filter(p=>p&&p.id).map(p=>({...p,data:normalizeProjectState(p.data)}));if(!projects.length)throw new Error('Offline library is empty');activeProjectId=stored.activeProjectId||projects[0].id;if(!projects.some(p=>p.id===activeProjectId))activeProjectId=projects[0].id;state=projects.find(p=>p.id===activeProjectId).data;loadedIndexed=true}
+    offlineStorageReady=true;persistAppSettings();persistProjectStore();if(loadedIndexed)refreshProjectViews();else applyTheme();setSyncStatus('Offline · this device',false);
+  }catch(e){offlineDb=null;offlineStorageReady=true;persistAppSettings();persistProjectStore();setSyncStatus('Offline · this browser',false)}
+}
 state.sections.forEach(s=>{if(s.text!==undefined&&!s.html){s.html=s.text.split(/\n\n+/).map(p=>'<p>'+escapeHtml(p)+'</p>').join('');delete s.text}});
 function escapeHtml(value){return String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 
@@ -398,25 +411,28 @@ async function initDB(){
     dbRef=await claude.use('db');if(!dbRef)return;
     const doc=await dbRef.doc('data/state').get();
     if(doc&&doc.exists&&doc.data&&Array.isArray(doc.data.sections)&&doc.data.sections.length){
-      const oldRemoteSettings=JSON.stringify(doc.data.settings||{}),normalizedRemoteSettings=normalizeSettings(doc.data.settings),remoteNeedsThemeMigration=JSON.stringify(normalizedRemoteSettings)!==oldRemoteSettings;
-      state={...DEFAULT_STATE,...doc.data,settings:normalizedRemoteSettings,charNotes:doc.data.charNotes||{},finaliseChecklist:doc.data.finaliseChecklist||{}};
+      const remoteProject={...doc.data},remoteSettings=remoteProject.settings;delete remoteProject.settings;
+      if(remoteSettings&&!appSettingsStoredAtBoot&&!appSettingsTouched){appSettings=normalizeSettings(remoteSettings);persistAppSettings()}
+      state=normalizeProjectState({...DEFAULT_STATE,...remoteProject,charNotes:doc.data.charNotes||{},finaliseChecklist:doc.data.finaliseChecklist||{}});
       localStorage.setItem('loomwright_state',JSON.stringify(state));renderSidebar();renderEditor();applyTheme();renderHome();
-      if(remoteNeedsThemeMigration)await dbRef.doc('data/state').set(state);
+      if(remoteSettings)await dbRef.doc('data/state').set(state);
     }else{await dbRef.doc('data/state').set(state)}
     setSyncStatus('Synced',true);
   }catch(e){setSyncStatus('Local only',false)}
 }
 function save(){
-  const project=projects.find(p=>p.id===activeProjectId);if(project){project.data=state;project.updatedAt=new Date().toISOString()}
+  delete state.settings;const project=projects.find(p=>p.id===activeProjectId);if(project){project.data=state;project.updatedAt=new Date().toISOString()}
   persistProjectStore();
   if(ONLINE_SYNC_ENABLED&&dbRef){clearTimeout(dbSaveTimer);dbSaveTimer=setTimeout(async()=>{try{await dbRef.doc('data/state').set(state);setSyncStatus('Synced',true)}catch(e){setSyncStatus('Sync failed',false)}},800)}
 }
+function persistAppSettings(){try{localStorage.setItem(APP_SETTINGS_KEY,JSON.stringify(appSettings));appSettingsStoredAtBoot=true;return true}catch(e){toast('Appearance settings could not be saved in this browser.');return false}}
+function updateAppSetting(key,value){appSettings[key]=value;appSettingsTouched=true;persistAppSettings();persistProjectStore();applyTheme()}
 function applyTheme(){
-  let resolved=state.settings.theme;
+  let resolved=appSettings.theme;
   if(resolved==='auto')resolved=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
-  document.documentElement.setAttribute('data-theme',resolved);document.documentElement.setAttribute('data-palette',state.settings.palette);
+  document.documentElement.setAttribute('data-theme',resolved);document.documentElement.setAttribute('data-palette',appSettings.palette);
   const palette=document.getElementById('palette-select'),theme=document.getElementById('theme-select');
-  if(palette)palette.value=state.settings.palette;if(theme)theme.value=state.settings.theme;
+  if(palette)palette.value=appSettings.palette;if(theme)theme.value=appSettings.theme;
 }
 function textOf(html){
   const d=document.createElement('div');d.innerHTML=html;
@@ -582,8 +598,8 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 function revealApp(){clearTimeout(introTimer);const splash=document.getElementById('splash'),shell=document.getElementById('app-shell');splash.classList.add('leaving');shell.classList.add('is-ready');setTimeout(()=>{splash.hidden=true},360)}
 function playIntro(){const splash=document.getElementById('splash'),shell=document.getElementById('app-shell');splash.hidden=false;splash.classList.remove('leaving');shell.classList.remove('is-ready');const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;introTimer=setTimeout(revealApp,reduced?220:1380)}
 document.getElementById('skip-intro').addEventListener('click',revealApp);document.getElementById('replay-intro').addEventListener('click',()=>{switchView('home');playIntro()});
-document.getElementById('palette-select').addEventListener('change',e=>{state.settings.palette=e.target.value;save();applyTheme()});document.getElementById('theme-select').addEventListener('change',e=>{state.settings.theme=e.target.value;save();applyTheme()});
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(state.settings.theme==='auto')applyTheme()});
+document.getElementById('palette-select').addEventListener('change',e=>updateAppSetting('palette',e.target.value));document.getElementById('theme-select').addEventListener('change',e=>updateAppSetting('theme',e.target.value));
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(appSettings.theme==='auto')applyTheme()});
 document.getElementById('project-create-form').addEventListener('submit',e=>{e.preventDefault();const input=document.getElementById('new-project-name');createProject(input.value);input.value=''});
 bindBookDesigner();
 
