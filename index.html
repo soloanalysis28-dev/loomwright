@@ -3,445 +3,437 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Loomwright</title>
+<meta name="theme-color" content="#faf8f4">
+<title>Loomwright — Your writing desk</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
-:root{ --danger:#c15540; box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
-
-[data-palette="parchment"][data-theme="light"]{ --bg:#faf8f4; --panel:#fff; --ink:#1f1c18; --sub:#6b645a; --line:#e8e2d8; --accent:#8a5a44; --accent2:#4a6b5a; --card:#f3efe6; }
-[data-palette="parchment"][data-theme="dark"]{ --bg:#181613; --panel:#211e1a; --ink:#efe9e0; --sub:#a79f92; --line:#332e28; --accent:#d3a184; --accent2:#8fbfa4; --card:#26221d; }
-[data-palette="slate"][data-theme="light"]{ --bg:#f4f6f8; --panel:#fff; --ink:#1c2430; --sub:#5b6673; --line:#dde3e8; --accent:#3b6ea5; --accent2:#5b8a72; --card:#eaeef2; }
-[data-palette="slate"][data-theme="dark"]{ --bg:#12161c; --panel:#1a1f27; --ink:#e6ebf0; --sub:#8b97a5; --line:#2a313b; --accent:#7aa8d9; --accent2:#8fc4a3; --card:#1f242c; }
-[data-palette="forest"][data-theme="light"]{ --bg:#f6f7f0; --panel:#fff; --ink:#20281f; --sub:#5f6b57; --line:#dfe4d3; --accent:#5b7a4f; --accent2:#a2703f; --card:#eef1e3; }
-[data-palette="forest"][data-theme="dark"]{ --bg:#141712; --panel:#1b1f17; --ink:#e6ecdd; --sub:#93a086; --line:#2c3325; --accent:#8bb377; --accent2:#d19a63; --card:#20261b; }
-[data-palette="ink"][data-theme="light"]{ --bg:#fafafa; --panel:#fff; --ink:#161616; --sub:#6e6e6e; --line:#e2e2e2; --accent:#8a6a3f; --accent2:#5e5e5e; --card:#f1f1f1; }
-[data-palette="ink"][data-theme="dark"]{ --bg:#121212; --panel:#191919; --ink:#ededed; --sub:#9a9a9a; --line:#2c2c2c; --accent:#c9a06b; --accent2:#a8a8a8; --card:#1f1f1f; }
-
+:root{--danger:#c15540;--ease-out:cubic-bezier(.23,1,.32,1);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[data-palette="parchment"][data-theme="light"]{--bg:#faf8f4;--panel:#fff;--ink:#1f1c18;--sub:#6b645a;--line:#e8e2d8;--accent:#8a5a44;--accent2:#4a6b5a;--card:#f3efe6;--card-strong:#ece4d7}
+[data-palette="parchment"][data-theme="dark"]{--bg:#181613;--panel:#211e1a;--ink:#efe9e0;--sub:#a79f92;--line:#332e28;--accent:#d3a184;--accent2:#8fbfa4;--card:#26221d;--card-strong:#302a23}
+[data-palette="slate"][data-theme="light"]{--bg:#f4f6f8;--panel:#fff;--ink:#1c2430;--sub:#5b6673;--line:#dde3e8;--accent:#3b6ea5;--accent2:#5b8a72;--card:#eaeef2;--card-strong:#dfe7ee}
+[data-palette="slate"][data-theme="dark"]{--bg:#12161c;--panel:#1a1f27;--ink:#e6ebf0;--sub:#8b97a5;--line:#2a313b;--accent:#7aa8d9;--accent2:#8fc4a3;--card:#1f242c;--card-strong:#272f39}
+[data-palette="forest"][data-theme="light"]{--bg:#f6f7f0;--panel:#fff;--ink:#20281f;--sub:#5f6b57;--line:#dfe4d3;--accent:#5b7a4f;--accent2:#a2703f;--card:#eef1e3;--card-strong:#e3e9d4}
+[data-palette="forest"][data-theme="dark"]{--bg:#141712;--panel:#1b1f17;--ink:#e6ecdd;--sub:#93a086;--line:#2c3325;--accent:#8bb377;--accent2:#d19a63;--card:#20261b;--card-strong:#2a3224}
+[data-palette="ink"][data-theme="light"]{--bg:#fafafa;--panel:#fff;--ink:#161616;--sub:#6e6e6e;--line:#e2e2e2;--accent:#8a6a3f;--accent2:#5e5e5e;--card:#f1f1f1;--card-strong:#e8e8e8}
+[data-palette="ink"][data-theme="dark"]{--bg:#121212;--panel:#191919;--ink:#ededed;--sub:#9a9a9a;--line:#2c2c2c;--accent:#c9a06b;--accent2:#a8a8a8;--card:#1f1f1f;--card-strong:#292929}
 *{box-sizing:border-box}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,'Iowan Old Style',serif;height:100%;transition:background .2s,color .2s}
-.app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:1100px;margin:0 auto}
-header{padding:16px 20px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
-header h1{font-size:1.3rem;margin:0;letter-spacing:.02em}
-header h1 span{color:var(--accent)}
-.hdr-right{display:flex;align-items:center;gap:10px;font-family:-apple-system,Segoe UI,sans-serif}
-.stats{font-size:.8rem;color:var(--sub)}
-.hdr-right select{font-family:inherit;font-size:.75rem;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:5px 7px}
-nav{display:flex;gap:4px;padding:10px 20px 0;border-bottom:1px solid var(--line);overflow-x:auto}
-nav button{font-family:-apple-system,Segoe UI,sans-serif;background:none;border:none;padding:10px 14px;cursor:pointer;color:var(--sub);font-size:.85rem;border-bottom:2px solid transparent;white-space:nowrap}
-nav button.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
-main{flex:1;overflow:auto;padding:20px}
-.view{display:none}
+html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,'Iowan Old Style',serif;min-height:100vh;transition:background .2s,color .2s}
+button,input,select,textarea{font:inherit}
+button{color:inherit}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[contenteditable]:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 58%,transparent);outline-offset:2px}
+.app-shell{min-height:100vh;max-width:1180px;margin:0 auto;opacity:0;transform:translateY(5px);transition:opacity .28s var(--ease-out),transform .28s var(--ease-out);visibility:hidden}
+.app-shell.is-ready{opacity:1;transform:none;visibility:visible}
+.app-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:17px 28px 14px;border-bottom:1px solid var(--line)}
+.brand-button{display:flex;align-items:center;gap:10px;border:0;background:transparent;padding:0;cursor:pointer;color:var(--ink);font-size:1.38rem;letter-spacing:.015em}
+.brand-mark{width:30px;height:30px;color:var(--accent);flex:none}
+.brand-button span span{color:var(--accent)}
+.header-right{display:flex;align-items:center;gap:10px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.stats{font-size:.76rem;color:var(--sub);white-space:nowrap}
+.status-pill{border:1px solid var(--line);border-radius:999px;padding:6px 10px;background:var(--panel)}
+.home-shortcut{border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:7px 11px;font:500 .78rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer;transition:background .16s,transform .16s}
+.home-shortcut:hover{background:var(--card)}
+.app-nav{display:flex;gap:5px;padding:10px 22px 0;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:thin}
+.tab{display:inline-flex;align-items:center;gap:7px;font:500 .83rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:transparent;border:0;border-bottom:2px solid transparent;padding:10px 12px 11px;cursor:pointer;color:var(--sub);white-space:nowrap;transition:color .16s,border-color .16s,background .16s}
+.tab:hover{color:var(--ink);background:color-mix(in srgb,var(--card) 55%,transparent);border-radius:8px 8px 0 0}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:650}
+.tab svg{width:16px;height:16px}
+main{padding:24px 28px 44px}
+.view{display:none;animation:view-in .22s var(--ease-out) both}
 .view.active{display:block}
-
-.sec-list{display:flex;gap:16px;align-items:flex-start}
-.sec-sidebar{width:220px;flex-shrink:0}
-.sec-item{padding:9px 10px;border-radius:8px;cursor:pointer;font-family:-apple-system,Segoe UI,sans-serif;font-size:.85rem;color:var(--sub);margin-bottom:2px;display:flex;justify-content:space-between}
-.sec-item:hover{background:var(--card)}
-.sec-item.active{background:var(--card);color:var(--ink);font-weight:600}
-.sec-item small{opacity:.6}
+@keyframes view-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+/* Opening animation */
+.splash{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;background:var(--bg);transition:opacity .32s var(--ease-out),visibility .32s;overflow:hidden}
+.splash[hidden]{display:none}
+.splash.leaving{opacity:0;visibility:hidden;pointer-events:none}
+.splash-content{text-align:center;padding:24px;animation:splash-rise .65s var(--ease-out) both}
+@keyframes splash-rise{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+.thread-mark{width:78px;height:78px;margin:0 auto 18px;color:var(--accent)}
+.thread-mark path{stroke-dasharray:210;stroke-dashoffset:210;animation:thread-draw 1s var(--ease-out) .1s forwards}
+.thread-mark circle{opacity:0;animation:dot-appear .2s ease-out .82s forwards}
+@keyframes thread-draw{to{stroke-dashoffset:0}}
+@keyframes dot-appear{to{opacity:1}}
+.splash-name{font-size:2rem;letter-spacing:.02em;margin:0}
+.splash-name span{color:var(--accent)}
+.splash-caption{font: .84rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub);margin:9px 0 0}
+.skip-intro{position:absolute;right:22px;bottom:18px;border:1px solid var(--line);border-radius:999px;background:var(--panel);padding:7px 12px;font: .75rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub);cursor:pointer}
+/* Home dashboard */
+.welcome-panel{position:relative;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(220px,.7fr);gap:24px;align-items:center;overflow:hidden;border:1px solid var(--line);border-radius:18px;padding:28px 34px;background:linear-gradient(112deg,var(--panel) 4%,var(--card) 100%);}
+.welcome-panel:after{content:"";position:absolute;width:330px;height:330px;border:1px solid color-mix(in srgb,var(--accent2) 18%,transparent);border-radius:50%;right:8%;top:-210px;pointer-events:none}
+.eyebrow{font:700 .68rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+.welcome-panel h2{font-size:clamp(1.9rem,4vw,2.8rem);font-weight:400;line-height:1.08;letter-spacing:-.025em;margin:9px 0 9px;max-width:600px}
+.welcome-panel p{color:var(--sub);font: .96rem/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;max-width:590px}
+.welcome-actions{display:flex;align-items:center;gap:12px;margin-top:18px;flex-wrap:wrap}
+.primary-button,.secondary-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;border-radius:9px;padding:10px 15px;font:600 .83rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer;transition:transform .15s var(--ease-out),filter .15s,background .15s}
+.primary-button{background:var(--accent);border:1px solid var(--accent);color:#fff}
+.primary-button:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.secondary-button{background:var(--panel);border:1px solid var(--line);color:var(--ink)}
+.secondary-button:hover{background:var(--card)}
+.primary-button:active,.secondary-button:active,.home-tile:active{transform:scale(.985)}
+.welcome-art{height:170px;display:grid;place-items:center;position:relative}
+.orbit{position:absolute;width:152px;height:152px;border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);border-radius:50%;animation:orbit-drift 14s linear infinite}
+.orbit:before,.orbit:after{content:"";position:absolute;border-radius:50%;width:7px;height:7px;background:var(--accent2)}
+.orbit:before{top:20px;left:20px}.orbit:after{right:8px;bottom:32px;background:var(--accent)}
+@keyframes orbit-drift{to{transform:rotate(360deg)}}
+.art-book{position:relative;z-index:1;width:88px;height:111px;border-radius:5px 10px 10px 5px;background:var(--panel);border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));box-shadow:8px 9px 0 color-mix(in srgb,var(--accent2) 14%,transparent),0 15px 35px #00000012;display:grid;place-items:center;color:var(--accent)}
+.art-book svg{width:43px;height:43px}.art-book:after{content:"";position:absolute;left:9px;top:0;bottom:0;border-left:1px solid color-mix(in srgb,var(--accent) 25%,transparent)}
+.dashboard-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:17px 0 23px}
+.stat-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 16px;display:flex;align-items:center;gap:12px}
+.stat-icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--accent2);background:var(--card);flex:none}
+.stat-icon svg{width:18px;height:18px}.stat-value{font:650 1rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}.stat-label{font:.72rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub);margin-top:2px}
+.section-heading{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:25px 0 12px}
+.section-heading h3{font-size:1.22rem;font-weight:400;margin:0}.section-heading p{font:.78rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub);margin:4px 0 0}
+.tile-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.home-tile{min-height:151px;text-align:left;position:relative;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:17px 17px 15px;cursor:pointer;transition:transform .2s var(--ease-out),box-shadow .2s,border-color .2s,background .2s;display:flex;flex-direction:column;align-items:flex-start}
+.home-tile:hover{transform:translateY(-3px);box-shadow:0 8px 22px #241a1010;border-color:color-mix(in srgb,var(--accent) 40%,var(--line));background:color-mix(in srgb,var(--panel) 80%,var(--card))}
+.tile-icon{width:39px;height:39px;border-radius:11px;background:var(--card);color:var(--accent);display:grid;place-items:center;margin-bottom:15px}
+.tile-icon svg{width:21px;height:21px}
+.tile-title{font:650 .95rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.tile-desc{font:.74rem/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub);margin-top:5px;max-width:92%}
+.tile-arrow{position:absolute;right:15px;top:19px;color:var(--sub);font-size:1.1rem;transition:transform .18s}
+.home-tile:hover .tile-arrow{transform:translateX(3px);color:var(--accent)}
+.finalise-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center;margin-top:13px;border:1px solid color-mix(in srgb,var(--accent2) 32%,var(--line));border-radius:14px;padding:17px 19px;background:color-mix(in srgb,var(--card) 72%,var(--panel));}
+.finalise-card-main{display:flex;align-items:center;gap:14px}.finalise-card .tile-icon{margin:0;background:var(--panel)}
+.finalise-card h4{font:650 .93rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0}.finalise-card p{font:.74rem/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub);margin:4px 0 0}
+.finalise-progress-wrap{display:flex;align-items:center;gap:10px;margin-top:8px;max-width:280px}
+.progress-track{height:6px;border-radius:999px;background:var(--line);overflow:hidden;flex:1}
+.progress-fill{height:100%;width:0;background:var(--accent2);border-radius:inherit;transition:width .24s var(--ease-out)}
+.progress-label{font:600 .7rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub);white-space:nowrap}
+/* Shared panels / writing views */
+.page-intro{margin:2px 0 18px}.page-intro h2{font-size:1.65rem;font-weight:400;margin:0}.page-intro p{font:.84rem/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub);margin:6px 0 0;max-width:720px}
 .write-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
-.write-top select{flex:1;min-width:160px;font-family:-apple-system,Segoe UI,sans-serif;font-size:.9rem;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}
-.addbtn{padding:8px 14px;border:1px dashed var(--line);background:none;border-radius:8px;color:var(--sub);font-family:-apple-system,Segoe UI,sans-serif;font-size:.8rem;cursor:pointer;white-space:nowrap}
-.importbtn{padding:8px 14px;border:1px solid var(--line);background:var(--card);border-radius:8px;color:var(--ink);font-family:-apple-system,Segoe UI,sans-serif;font-size:.8rem;cursor:pointer;white-space:nowrap}
+.write-top select{flex:1;min-width:160px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.9rem;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}
+.addbtn,.importbtn{padding:8px 13px;border-radius:8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.8rem;cursor:pointer;white-space:nowrap;transition:background .16s,transform .16s}
+.addbtn{border:1px dashed var(--line);background:transparent;color:var(--sub)}.addbtn:hover{background:var(--card)}
+.importbtn{border:1px solid var(--line);background:var(--card);color:var(--ink)}.importbtn:hover{filter:brightness(.98)}
 .editor{width:100%}
-.editor input[type=text]{width:100%;font-size:1.15rem;font-family:inherit;border:none;background:none;color:var(--ink);padding:4px 0;border-bottom:1px solid var(--line);margin-bottom:10px}
+.editor input[type=text]{width:100%;font-size:1.15rem;font-family:inherit;border:0;background:transparent;color:var(--ink);padding:4px 0;border-bottom:1px solid var(--line);margin-bottom:10px}
 .toolbar{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap}
-.toolbar button{padding:6px 10px;border:1px solid var(--line);background:var(--card);border-radius:6px;cursor:pointer;font-family:-apple-system,Segoe UI,sans-serif;font-size:.78rem;color:var(--ink)}
+.toolbar button{padding:6px 10px;border:1px solid var(--line);background:var(--card);border-radius:6px;cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.78rem;color:var(--ink);transition:background .15s}
 .toolbar button:hover{background:var(--line)}
-[contenteditable]{width:100%;min-height:55vh;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:20px;font-size:1.05rem;line-height:1.7;font-family:inherit;overflow-y:auto}
-[contenteditable] h1{font-size:1.4rem;margin:.4em 0}
-[contenteditable] h2{font-size:1.2rem;margin:.4em 0}
-[contenteditable] p{margin:0 0 .8em}
-.editor .row{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-family:-apple-system,Segoe UI,sans-serif;font-size:.78rem;color:var(--sub)}
-.del{color:var(--danger);cursor:pointer;background:none;border:none;font-family:-apple-system,Segoe UI,sans-serif;font-size:.78rem}
-
+[contenteditable]{width:100%;min-height:50vh;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:20px;font-size:1.05rem;line-height:1.7;font-family:inherit;overflow-y:auto}
+[contenteditable] h1{font-size:1.4rem;margin:.4em 0}[contenteditable] h2{font-size:1.2rem;margin:.4em 0}[contenteditable] p{margin:0 0 .8em}
+.editor .row{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.78rem;color:var(--sub)}
+.del{color:var(--danger);cursor:pointer;background:transparent;border:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.78rem;padding:6px}
 .char-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
-.char-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;font-family:-apple-system,Segoe UI,sans-serif}
-.char-card h3{margin:0 0 4px;font-family:Georgia,serif;color:var(--accent)}
-.char-card .count{font-size:.75rem;color:var(--sub);margin-bottom:8px}
-.char-card textarea{width:100%;min-height:60px;font-size:.82rem;border:1px solid var(--line);border-radius:6px;padding:6px;background:var(--bg);color:var(--ink);font-family:inherit}
+.char-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.char-card h3{margin:0 0 4px;font-family:Georgia,serif;color:var(--accent)}.char-card .count{font-size:.75rem;color:var(--sub);margin-bottom:8px}
+.char-card textarea{width:100%;min-height:60px;font-size:.82rem;border:1px solid var(--line);border-radius:6px;padding:7px;background:var(--bg);color:var(--ink);font-family:inherit}
 .char-card .chapters{margin-top:8px;font-size:.72rem;color:var(--sub)}
-.empty{color:var(--sub);font-family:-apple-system,Segoe UI,sans-serif;font-size:.85rem;padding:20px;text-align:center}
-
-#webcanvas{width:100%;height:60vh;border:1px solid var(--line);border-radius:10px;background:var(--panel);touch-action:none}
-.web-hint{font-family:-apple-system,Segoe UI,sans-serif;font-size:.78rem;color:var(--sub);margin-top:8px}
-
-.ai-box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;font-family:-apple-system,Segoe UI,sans-serif}
-.ai-box select,.ai-box textarea{width:100%;font-family:inherit;font-size:.85rem;border:1px solid var(--line);border-radius:6px;padding:8px;background:var(--bg);color:var(--ink);margin-top:6px}
-.ai-box textarea{min-height:90px}
-.ai-box label{font-size:.78rem;color:var(--sub);font-weight:600;display:block;margin-top:14px}
+.empty{color:var(--sub);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.85rem;padding:22px;text-align:center}
+#webcanvas{width:100%;height:min(60vh,560px);min-height:340px;border:1px solid var(--line);border-radius:12px;background:var(--panel);touch-action:none;display:block}
+.web-hint{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.78rem;color:var(--sub);margin-top:8px}
+.ai-box,.settings-panel,.finalise-panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.ai-box select,.ai-box textarea{width:100%;font-family:inherit;font-size:.85rem;border:1px solid var(--line);border-radius:7px;padding:9px;background:var(--bg);color:var(--ink);margin-top:6px}
+.ai-box textarea{min-height:100px;line-height:1.5}.ai-box label{font-size:.78rem;color:var(--sub);font-weight:650;display:block;margin-top:14px}
 .btnrow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-button.primary{background:var(--accent);color:#fff;border:none;padding:9px 16px;border-radius:7px;font-family:-apple-system,Segoe UI,sans-serif;font-size:.82rem;cursor:pointer}
-button.ghost{background:none;border:1px solid var(--line);color:var(--ink);padding:9px 16px;border-radius:7px;font-family:-apple-system,Segoe UI,sans-serif;font-size:.82rem;cursor:pointer}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:20px;font-family:-apple-system,Segoe UI,sans-serif;font-size:.8rem;opacity:0;transition:opacity .25s;pointer-events:none;z-index:99}
+button.primary{background:var(--accent);color:#fff;border:0;padding:9px 15px;border-radius:7px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.82rem;cursor:pointer}
+button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink);padding:9px 15px;border-radius:7px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.82rem;cursor:pointer}
+/* Finalise */
+.finalise-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(250px,.8fr);gap:15px;align-items:start}
+.checklist{display:grid;gap:9px;margin-top:15px}
+.check-item{display:flex;gap:12px;align-items:flex-start;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:13px;cursor:pointer;transition:border-color .15s,background .15s}
+.check-item:hover{border-color:color-mix(in srgb,var(--accent) 40%,var(--line));background:var(--card)}
+.check-item input{width:17px;height:17px;margin:2px 0 0;accent-color:var(--accent2);flex:none}
+.check-copy strong{font-size:.82rem;display:block}.check-copy small{font-size:.73rem;line-height:1.45;color:var(--sub);display:block;margin-top:3px}
+.finalise-side{display:grid;gap:12px}
+.summary-card{border:1px solid var(--line);border-radius:11px;padding:15px;background:var(--bg)}.summary-card h3{font:650 .88rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0 0 11px}
+.summary-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:.77rem}.summary-row:last-child{border:0;padding-bottom:0}.summary-row span:first-child{color:var(--sub)}.summary-row strong{font-weight:650;text-align:right}
+.export-note{font-size:.73rem;line-height:1.5;color:var(--sub);margin:0 0 10px}.export-buttons{display:grid;gap:8px}
+/* Settings */
+.settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.setting-row{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 0;border-bottom:1px solid var(--line)}.setting-row:last-child{border-bottom:0;padding-bottom:0}
+.setting-copy strong{font-size:.84rem;display:block}.setting-copy small{font-size:.73rem;line-height:1.45;color:var(--sub);display:block;margin-top:4px;max-width:430px}
+.setting-row select{max-width:180px;min-width:125px;font: .8rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:8px}
+.setting-section h3{font:650 .9rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0 0 2px}.settings-footnote{font-size:.74rem;line-height:1.5;color:var(--sub);margin:13px 0 0}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:20px;font: .8rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;opacity:0;transition:opacity .25s;pointer-events:none;z-index:1100;max-width:calc(100vw - 24px);text-align:center}
 .toast.show{opacity:1}
+@media(max-width:800px){.app-header{padding:14px 17px}.app-nav{padding-left:10px;padding-right:10px}main{padding:19px 17px 36px}.tile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.welcome-panel{padding:24px;grid-template-columns:minmax(0,1fr) 190px}.welcome-art{height:145px}.finalise-layout{grid-template-columns:1fr}.finalise-side{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.app-header{align-items:flex-start;gap:8px}.brand-button{font-size:1.18rem}.header-right{gap:6px;flex-wrap:wrap;justify-content:flex-end}.status-pill{display:none}.stats{font-size:.7rem}.home-shortcut{padding:6px 8px}.tab{padding:10px 9px;font-size:.77rem}.tab svg{display:none}.welcome-panel{display:block;padding:22px 20px}.welcome-panel h2{font-size:2rem}.welcome-art{height:112px;margin-top:10px}.orbit{width:100px;height:100px}.art-book{width:66px;height:83px}.art-book svg{width:32px;height:32px}.dashboard-stats{gap:6px}.stat-card{padding:10px 8px;display:block;text-align:center}.stat-icon{margin:0 auto 7px;width:29px;height:29px}.stat-value{font-size:.9rem}.stat-label{font-size:.65rem}.tile-grid{gap:8px}.home-tile{min-height:136px;padding:13px}.tile-icon{width:34px;height:34px;margin-bottom:12px}.tile-desc{font-size:.7rem}.finalise-card{grid-template-columns:1fr;padding:14px}.finalise-card>.primary-button{justify-self:start;margin-left:52px}.settings-grid{grid-template-columns:1fr}.setting-row{align-items:flex-start;flex-direction:column;gap:9px}.setting-row select{max-width:none;width:100%}.finalise-side{grid-template-columns:1fr}#webcanvas{height:48vh;min-height:290px}main{padding-left:13px;padding-right:13px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.thread-mark path{stroke-dashoffset:0}}
 </style>
 </head>
 <body>
-<div class="app">
-  <header>
-    <h1>Loom<span>wright</span></h1>
-    <div class="hdr-right">
-      <select id="palette-select">
-        <option value="parchment">Parchment</option>
-        <option value="slate">Slate</option>
-        <option value="forest">Forest</option>
-        <option value="ink">Ink</option>
-      </select>
-      <select id="theme-select">
-        <option value="auto">Auto</option>
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-      </select>
-      <div class="stats" id="sync-status" title="">○ Local only</div>
+<div class="splash" id="splash" aria-label="Opening Loomwright">
+  <div class="splash-content">
+    <svg class="thread-mark" viewBox="0 0 80 80" aria-hidden="true"><path d="M15 39c9-23 31-29 45-18 10 8 5 19-8 22L28 49c-13 4-14 17-2 21 12 5 28-3 39-16M20 18c14 23 31 28 43 22M17 58c12-17 31-23 46-22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="61" cy="56" r="3.2" fill="currentColor"/></svg>
+    <h1 class="splash-name">Loom<span>wright</span></h1>
+    <p class="splash-caption">Your story, in progress.</p>
+  </div>
+  <button class="skip-intro" id="skip-intro" type="button">Skip intro</button>
+</div>
+
+<div class="app-shell" id="app-shell">
+  <header class="app-header">
+    <button class="brand-button" type="button" data-open-view="home" aria-label="Loomwright home">
+      <svg class="brand-mark" viewBox="0 0 80 80" aria-hidden="true"><path d="M15 39c9-23 31-29 45-18 10 8 5 19-8 22L28 49c-13 4-14 17-2 21 12 5 28-3 39-16M20 18c14 23 31 28 43 22M17 58c12-17 31-23 46-22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+      <span>Loom<span>wright</span></span>
+    </button>
+    <div class="header-right">
+      <div class="stats status-pill" id="sync-status" title="Where your work is saved">○ Local only</div>
       <div class="stats" id="totalstats">0 words</div>
+      <button class="home-shortcut" type="button" data-open-view="home">Home</button>
     </div>
   </header>
-  <nav>
-    <button class="tab active" data-view="write">Write</button>
-    <button class="tab" data-view="characters">Characters</button>
-    <button class="tab" data-view="web">Story Web</button>
-    <button class="tab" data-view="ai">AI Assist</button>
+  <nav class="app-nav" aria-label="Main navigation">
+    <button class="tab active" data-view="home" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+    <button class="tab" data-view="write" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m15 5 4 4M4 20l4-.8L19 8a2.8 2.8 0 0 0-4-4L4 15z"/></svg>Write</button>
+    <button class="tab" data-view="characters" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5.5a3 3 0 0 1 0 5.8M18 14c2 .8 3 2.5 3 5"/></svg>Characters</button>
+    <button class="tab" data-view="web" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="5" cy="5" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="19" r="2"/><path d="m7 6 10-1M6 7l5 10m7-9-5 10"/></svg>Story Web</button>
+    <button class="tab" data-view="ai" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg>AI Assist</button>
+    <button class="tab" data-view="finalise" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m5 12 4 4L19 6"/><path d="M20 12a8 8 0 1 1-4-6.9"/></svg>Finalise</button>
+    <button class="tab" data-view="settings" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 3.1-.2-.1a1.7 1.7 0 0 0-1.8-.2 1.7 1.7 0 0 0-1 1.5v.2h-3.6v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.2l-.2.1-1.8-3.1.1-.1A1.7 1.7 0 0 0 7 15a1.7 1.7 0 0 0-1.5-1H5.3v-3.6h.2A1.7 1.7 0 0 0 7 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-3.1.2.1a1.7 1.7 0 0 0 1.8.2 1.7 1.7 0 0 0 1-1.5v-.2H15v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.2l.2-.1 1.8 3.1-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.2v3.6h-.2a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</button>
   </nav>
   <main>
-    <div class="view active" id="view-write">
-      <div class="write-top">
-        <select id="section-select"></select>
-        <button class="addbtn" onclick="addSection()">+ New Section</button>
-        <button class="importbtn" onclick="document.getElementById('file-input').click()">⇪ Import</button>
-        <input type="file" id="file-input" accept=".txt,.docx,.pdf" multiple style="display:none">
+    <section class="view active" id="view-home" aria-labelledby="home-title">
+      <div class="welcome-panel">
+        <div>
+          <div class="eyebrow">Your writing desk</div>
+          <h2 id="home-title">Where your story takes shape.</h2>
+          <p>Pick up where you left off, keep track of the people in your story, and follow the threads that connect it all.</p>
+          <div class="welcome-actions"><button class="primary-button" type="button" data-open-view="write">Continue writing <span aria-hidden="true">→</span></button><button class="secondary-button" type="button" data-open-view="finalise">Open Finalise</button></div>
+        </div>
+        <div class="welcome-art" aria-hidden="true"><div class="orbit"></div><div class="art-book"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 10c7-2 12 0 16 4 4-4 9-6 16-4v26c-7-2-12 0-16 4-4-4-9-6-16-4z"/><path d="M24 14v26M13 16c3-.5 6 0 8 1m-8 5c3-.5 6 0 8 1m14-7c-3-.5-6 0-8 1m8 5c-3-.5-6 0-8 1"/></svg></div></div>
       </div>
+      <div class="dashboard-stats" aria-label="Manuscript overview">
+        <div class="stat-card"><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg></span><div><div class="stat-value" id="home-word-count">0</div><div class="stat-label">Words drafted</div></div></div>
+        <div class="stat-card"><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5h16v15H4zM8 3v4m8-4v4M7 11h3m4 0h3M7 15h3"/></svg></span><div><div class="stat-value" id="home-section-count">1</div><div class="stat-label">Sections</div></div></div>
+        <div class="stat-card"><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M17 8a2.5 2.5 0 1 1 0 5m1 2c2 .6 3 2 3 4"/></svg></span><div><div class="stat-value" id="home-character-count">0</div><div class="stat-label">Recurring characters</div></div></div>
+      </div>
+      <div class="section-heading"><div><h3>Your workspaces</h3><p>Choose a place to continue shaping your story.</p></div></div>
+      <div class="tile-grid">
+        <button class="home-tile" type="button" data-open-view="write"><span class="tile-arrow" aria-hidden="true">↗</span><span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m15 5 4 4M4 20l4-.8L19 8a2.8 2.8 0 0 0-4-4L4 15z"/></svg></span><span class="tile-title">Write</span><span class="tile-desc">Draft and organize your sections in one quiet space.</span></button>
+        <button class="home-tile" type="button" data-open-view="characters"><span class="tile-arrow" aria-hidden="true">↗</span><span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5.5a3 3 0 0 1 0 5.8M18 14c2 .8 3 2.5 3 5"/></svg></span><span class="tile-title">Characters</span><span class="tile-desc">Keep recurring names, notes, and appearances close.</span></button>
+        <button class="home-tile" type="button" data-open-view="web"><span class="tile-arrow" aria-hidden="true">↗</span><span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="5" cy="5" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="19" r="2"/><path d="m7 6 10-1M6 7l5 10m7-9-5 10"/></svg></span><span class="tile-title">Story Web</span><span class="tile-desc">See which characters appear together across sections.</span></button>
+        <button class="home-tile" type="button" data-open-view="settings"><span class="tile-arrow" aria-hidden="true">↗</span><span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 3.1-.2-.1a1.7 1.7 0 0 0-1.8-.2 1.7 1.7 0 0 0-1 1.5v.2h-3.6v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.2l-.2.1-1.8-3.1.1-.1A1.7 1.7 0 0 0 7 15a1.7 1.7 0 0 0-1.5-1H5.3v-3.6h.2A1.7 1.7 0 0 0 7 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-3.1.2.1a1.7 1.7 0 0 0 1.8.2 1.7 1.7 0 0 0 1-1.5v-.2H15v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.2l.2-.1 1.8 3.1-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.2v3.6h-.2a1.7 1.7 0 0 0-1.5 1z"/></svg></span><span class="tile-title">Settings</span><span class="tile-desc">Choose a palette, theme, and opening experience.</span></button>
+      </div>
+      <div class="finalise-card">
+        <div class="finalise-card-main"><span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m5 12 4 4L19 6"/><path d="M20 12a8 8 0 1 1-4-6.9"/></svg></span><div><h4>Finalise your manuscript</h4><p>A calm last-pass checklist and export options for when you’re ready to share.</p><div class="finalise-progress-wrap"><div class="progress-track"><div class="progress-fill" id="home-finalise-progress"></div></div><span class="progress-label" id="home-finalise-label">0 of 5 ready</span></div></div></div>
+        <button class="primary-button" type="button" data-open-view="finalise">Open Finalise <span aria-hidden="true">→</span></button>
+      </div>
+      <div class="section-heading"><div><h3>Need a second pair of eyes?</h3><p>Prepare a prompt to use with Claude or ChatGPT, then bring the response back into your draft.</p></div></div>
+      <button class="home-tile" type="button" data-open-view="ai" style="min-height:112px;width:100%;flex-direction:row;align-items:center;gap:14px"><span class="tile-icon" style="margin:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg></span><span><span class="tile-title">AI Assist</span><span class="tile-desc" style="display:block">Copy a section prompt, get outside feedback, then decide what belongs in your story.</span></span><span class="tile-arrow" aria-hidden="true">↗</span></button>
+    </section>
+
+    <section class="view" id="view-write" aria-labelledby="write-title">
+      <div class="page-intro"><h2 id="write-title">Write</h2><p>Work one section at a time; your draft stays saved as you go.</p></div>
+      <div class="write-top"><select id="section-select" aria-label="Choose a section"></select><button class="addbtn" id="add-section" type="button">+ New Section</button><button class="importbtn" id="import-trigger" type="button">⇪ Import</button><input type="file" id="file-input" accept=".txt,.docx,.pdf" multiple hidden></div>
       <div class="editor" id="editor-wrap"></div>
-    </div>
-    <div class="view" id="view-characters"><div id="char-grid" class="char-grid"></div></div>
-    <div class="view" id="view-web">
-      <svg id="webcanvas"></svg>
-      <div class="web-hint">Drag nodes to rearrange. Lines connect characters who appear together in the same section.</div>
-    </div>
-    <div class="view" id="view-ai">
+    </section>
+
+    <section class="view" id="view-characters" aria-labelledby="characters-title">
+      <div class="page-intro"><h2 id="characters-title">Characters</h2><p>Recurring names are gathered from your manuscript. Add notes to keep each person’s details in view.</p></div>
+      <div id="char-grid" class="char-grid"></div>
+    </section>
+
+    <section class="view" id="view-web" aria-labelledby="web-title">
+      <div class="page-intro"><h2 id="web-title">Story Web</h2><p>Drag nodes to rearrange. Lines connect recurring characters who appear together in a section.</p></div>
+      <svg id="webcanvas" role="img" aria-label="Character relationship web"></svg>
+      <div id="web-empty" class="empty" hidden>Add recurring characters to your sections to see the story web.</div>
+      <div class="web-hint">The web is a quick visual aid, not a substitute for your own continuity notes.</div>
+    </section>
+
+    <section class="view" id="view-ai" aria-labelledby="ai-title">
+      <div class="page-intro"><h2 id="ai-title">AI Assist</h2><p>Choose a section, copy a prompt to Claude or ChatGPT, then decide whether to use any suggestions.</p></div>
       <div class="ai-box">
-        <label>Section to send</label>
-        <select id="ai-section"></select>
-        <label>Prompt template</label>
-        <textarea id="ai-template">Here is a section from my story. Please suggest improvements to pacing, clarity, and voice. Keep my style, just tighten and elevate it.
+        <label for="ai-section">Section to send</label><select id="ai-section"></select>
+        <label for="ai-template">Prompt template</label><textarea id="ai-template">Here is a section from my story. Please suggest improvements to pacing, clarity, and voice. Keep my style, just tighten and elevate it.
 
 ---
 {{TEXT}}</textarea>
-        <div class="btnrow"><button class="primary" onclick="copyPrompt()">Copy Prompt for Claude/ChatGPT</button></div>
-        <label>Paste AI response back here</label>
-        <textarea id="ai-response" placeholder="Paste what Claude or ChatGPT gave you..."></textarea>
-        <div class="btnrow"><button class="ghost" onclick="insertResponse()">Insert into current section</button></div>
+        <div class="btnrow"><button class="primary" type="button" id="copy-prompt">Copy Prompt for Claude/ChatGPT</button></div>
+        <label for="ai-response">Paste AI response back here</label><textarea id="ai-response" placeholder="Paste what Claude or ChatGPT gave you..."></textarea>
+        <div class="btnrow"><button class="ghost" type="button" id="insert-response">Insert into current section</button></div>
       </div>
-    </div>
+    </section>
+
+    <section class="view" id="view-finalise" aria-labelledby="finalise-title">
+      <div class="page-intro"><h2 id="finalise-title">Finalise</h2><p>A before-you-publish pass to review the manuscript, check your story details, and export a copy when you’re ready. Your checklist is saved with your project.</p></div>
+      <div class="finalise-layout">
+        <div class="finalise-panel">
+          <div class="section-heading" style="margin:0"><div><h3>Before you share</h3><p>Check off each step when it feels complete—there’s no required order.</p></div><span class="progress-label" id="finalise-count">0 of 5 complete</span></div>
+          <div class="progress-track" style="margin-top:13px"><div class="progress-fill" id="finalise-progress"></div></div>
+          <div id="finalise-checklist" class="checklist"></div>
+        </div>
+        <aside class="finalise-side">
+          <div class="summary-card"><h3>Manuscript at a glance</h3><div class="summary-row"><span>Words</span><strong id="final-word-count">0</strong></div><div class="summary-row"><span>Sections</span><strong id="final-section-count">1</strong></div><div class="summary-row"><span>Recurring characters</span><strong id="final-character-count">0</strong></div></div>
+          <div class="summary-card"><h3>Take a copy with you</h3><p class="export-note">Export a plain-text draft for easy editing or a formatted HTML copy to keep section headings and rich text.</p><div class="export-buttons"><button class="secondary-button" type="button" id="export-txt">Download plain text (.txt)</button><button class="secondary-button" type="button" id="export-html">Download formatted copy (.html)</button></div></div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="view" id="view-settings" aria-labelledby="settings-title">
+      <div class="page-intro"><h2 id="settings-title">Settings</h2><p>Make your writing space feel like yours. Changes apply immediately and are saved with this browser’s project data.</p></div>
+      <div class="settings-grid">
+        <div class="settings-panel setting-section"><h3>Appearance</h3>
+          <div class="setting-row"><div class="setting-copy"><strong>Color palette</strong><small>Choose the color family for panels, accents, and backgrounds.</small></div><select id="palette-select" aria-label="Color palette"><option value="parchment">Parchment</option><option value="slate">Slate</option><option value="forest">Forest</option><option value="ink">Ink</option></select></div>
+          <div class="setting-row"><div class="setting-copy"><strong>Theme</strong><small>Use a light or dark surface, or follow your device setting.</small></div><select id="theme-select" aria-label="Theme"><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
+        </div>
+        <div class="settings-panel setting-section"><h3>Opening & storage</h3>
+          <div class="setting-row"><div class="setting-copy"><strong>Opening animation</strong><small>A short, quiet Loomwright welcome before the home screen. You can also skip it as it plays.</small></div><button class="secondary-button" type="button" id="replay-intro">Replay intro</button></div>
+          <p class="settings-footnote" id="storage-note">Your project is stored in this browser unless the app is running in a Claude environment that supports project sync. Export a copy from Finalise for safekeeping.</p>
+        </div>
+      </div>
+    </section>
   </main>
 </div>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
-if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,settings:{palette:'parchment',theme:'auto'},charNotes:{},finaliseChecklist:{}};
+let state;
+try{state=JSON.parse(localStorage.getItem('loomwright_state')||'null')||DEFAULT_STATE}catch(e){state=DEFAULT_STATE}
+if(!state||!Array.isArray(state.sections)||!state.sections.length)state=DEFAULT_STATE;
+if(!state.settings)state.settings={palette:'parchment',theme:'auto'};
+if(!state.charNotes){try{state.charNotes=JSON.parse(localStorage.getItem('loomwright_notes')||'{}')}catch(e){state.charNotes={}}}
+if(!state.finaliseChecklist)state.finaliseChecklist={};
+state.sections.forEach(s=>{if(s.text!==undefined&&!s.html){s.html=s.text.split(/\n\n+/).map(p=>'<p>'+escapeHtml(p)+'</p>').join('');delete s.text}});
+function escapeHtml(value){return String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 
-let state = JSON.parse(localStorage.getItem('loomwright_state') || 'null') || {
-  sections: [{id:1, title:'Chapter 1', html:'<p></p>'}],
-  activeId: 1,
-  settings: {palette:'parchment', theme:'auto'},
-  charNotes: {}
-};
-if(!state.settings) state.settings = {palette:'parchment', theme:'auto'};
-if(!state.charNotes){
-  state.charNotes = JSON.parse(localStorage.getItem('loomwright_notes')||'{}');
-}
-state.sections.forEach(s=>{ if(s.text!==undefined && !s.html){ s.html = s.text.split(/\n\n+/).map(p=>'<p>'+escapeHtml(p)+'</p>').join(''); delete s.text; } });
-function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-let dbRef = null, dbSaveTimer = null;
-function setSyncStatus(msg, ok){
-  const el = document.getElementById('sync-status');
-  el.textContent = (ok?'● ':'○ ') + msg;
-}
+let dbRef=null,dbSaveTimer=null,introTimer=null;
+function setSyncStatus(msg,ok){const el=document.getElementById('sync-status');el.textContent=(ok?'● ':'○ ')+msg}
 async function initDB(){
   try{
-    if(!window.claude) return;
-    dbRef = await claude.use('db');
-    if(!dbRef){ return; }
-    const doc = await dbRef.doc('data/state').get();
-    if(doc && doc.exists && doc.data && doc.data.sections){
-      // Remote copy exists — prefer it as source of truth across devices
-      state = doc.data;
-      localStorage.setItem('loomwright_state', JSON.stringify(state));
-      renderSidebar(); renderEditor();
-    } else {
-      // Seed the remote doc with whatever we have locally
-      await dbRef.doc('data/state').set(state);
-    }
-    setSyncStatus('Synced', true);
-  } catch(e){
-    setSyncStatus('Local only', false);
-  }
+    if(!window.claude)return;
+    dbRef=await claude.use('db');if(!dbRef)return;
+    const doc=await dbRef.doc('data/state').get();
+    if(doc&&doc.exists&&doc.data&&Array.isArray(doc.data.sections)&&doc.data.sections.length){
+      state={...DEFAULT_STATE,...doc.data,settings:{...DEFAULT_STATE.settings,...(doc.data.settings||{})},charNotes:doc.data.charNotes||{},finaliseChecklist:doc.data.finaliseChecklist||{}};
+      localStorage.setItem('loomwright_state',JSON.stringify(state));renderSidebar();renderEditor();applyTheme();renderHome();
+    }else{await dbRef.doc('data/state').set(state)}
+    setSyncStatus('Synced',true);
+  }catch(e){setSyncStatus('Local only',false)}
 }
 function save(){
-  localStorage.setItem('loomwright_state', JSON.stringify(state));
-  if(dbRef){
-    clearTimeout(dbSaveTimer);
-    dbSaveTimer = setTimeout(async ()=>{
-      try{ await dbRef.doc('data/state').set(state); setSyncStatus('Synced', true); }
-      catch(e){ setSyncStatus('Sync failed', false); }
-    }, 800);
-  }
+  localStorage.setItem('loomwright_state',JSON.stringify(state));
+  if(dbRef){clearTimeout(dbSaveTimer);dbSaveTimer=setTimeout(async()=>{try{await dbRef.doc('data/state').set(state);setSyncStatus('Synced',true)}catch(e){setSyncStatus('Sync failed',false)}},800)}
 }
-
 function applyTheme(){
-  let resolved = state.settings.theme;
-  if(resolved==='auto') resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark':'light';
-  document.documentElement.setAttribute('data-theme', resolved);
-  document.documentElement.setAttribute('data-palette', state.settings.palette);
-  document.getElementById('palette-select').value = state.settings.palette;
-  document.getElementById('theme-select').value = state.settings.theme;
+  let resolved=state.settings.theme;
+  if(resolved==='auto')resolved=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+  document.documentElement.setAttribute('data-theme',resolved);document.documentElement.setAttribute('data-palette',state.settings.palette);
+  const palette=document.getElementById('palette-select'),theme=document.getElementById('theme-select');
+  if(palette)palette.value=state.settings.palette;if(theme)theme.value=state.settings.theme;
 }
-document.getElementById('palette-select').onchange = e=>{ state.settings.palette=e.target.value; save(); applyTheme(); };
-document.getElementById('theme-select').onchange = e=>{ state.settings.theme=e.target.value; save(); applyTheme(); };
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>{ if(state.settings.theme==='auto') applyTheme(); });
-applyTheme();
-
-document.querySelectorAll('.tab').forEach(t=>{
-  t.onclick = ()=>{
-    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
-    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-    t.classList.add('active');
-    document.getElementById('view-'+t.dataset.view).classList.add('active');
-    if(t.dataset.view==='characters') renderCharacters();
-    if(t.dataset.view==='web') renderWeb();
-    if(t.dataset.view==='ai') renderAI();
-  };
-});
-
 function textOf(html){
-  const d=document.createElement('div'); d.innerHTML=html;
+  const d=document.createElement('div');d.innerHTML=html;
   d.querySelectorAll('p,div,li,h1,h2,br').forEach(el=>el.insertAdjacentText('afterend','\n'));
   return d.textContent||'';
 }
-function wc(html){ const t=textOf(html).trim(); return t? t.split(/\s+/).length : 0; }
-function totalWords(){ return state.sections.reduce((a,s)=>a+wc(s.html),0); }
+function wc(html){const t=textOf(html).trim();return t?t.split(/\s+/).length:0}
+function totalWords(){return state.sections.reduce((n,s)=>n+wc(s.html||''),0)}
+function totalCharacters(){return detectCharacters().length}
 
+function switchView(name){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));
+  if(name==='home')renderHome();if(name==='characters')renderCharacters();if(name==='web')renderWeb();if(name==='ai')renderAI();if(name==='finalise')renderFinalise();if(name==='settings')applyTheme();
+  window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>switchView(t.dataset.view)));
+document.querySelectorAll('[data-open-view]').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.openView)));
+
+function renderHome(){
+  const words=totalWords(),sections=state.sections.length,characters=totalCharacters();
+  document.getElementById('home-word-count').textContent=words.toLocaleString();document.getElementById('home-section-count').textContent=sections.toLocaleString();document.getElementById('home-character-count').textContent=characters.toLocaleString();
+  const done=Object.values(state.finaliseChecklist).filter(Boolean).length,total=FINALISE_ITEMS.length,pct=Math.round(done/total*100);
+  document.getElementById('home-finalise-progress').style.width=pct+'%';document.getElementById('home-finalise-label').textContent=`${done} of ${total} ready`;
+  document.getElementById('totalstats').textContent=words.toLocaleString()+' words';
+}
 function renderSidebar(){
-  const sel = document.getElementById('section-select');
-  sel.innerHTML = '';
-  state.sections.forEach(s=>{
-    const o = document.createElement('option');
-    o.value = s.id; o.textContent = `${s.title||'Untitled'} (${wc(s.html)}w)`;
-    sel.appendChild(o);
-  });
-  sel.value = state.activeId;
-  sel.onchange = ()=>{ state.activeId = Number(sel.value); save(); renderEditor(); };
-  document.getElementById('totalstats').textContent = totalWords()+' words total';
+  const sel=document.getElementById('section-select');sel.innerHTML='';
+  state.sections.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=`${s.title||'Untitled'} (${wc(s.html||'')}w)`;sel.appendChild(o)});
+  sel.value=state.activeId;sel.onchange=()=>{state.activeId=Number(sel.value);save();renderEditor()};
+  document.getElementById('totalstats').textContent=totalWords().toLocaleString()+' words';
 }
-function cmd(c,v=null){ document.execCommand(c,false,v); document.getElementById('content-editable').focus(); }
+function cmd(command,value=null){document.execCommand(command,false,value);document.getElementById('content-editable')?.focus()}
 function renderEditor(){
-  const s = state.sections.find(x=>x.id===state.activeId);
-  const wrap = document.getElementById('editor-wrap');
-  if(!s){ wrap.innerHTML = '<div class="empty">No section selected.</div>'; return; }
-  wrap.innerHTML = `
-    <input type="text" id="title-input" value="${s.title.replace(/"/g,'&quot;')}">
-    <div class="toolbar">
-      <button onclick="cmd('bold')"><b>B</b></button>
-      <button onclick="cmd('italic')"><i>I</i></button>
-      <button onclick="cmd('underline')"><u>U</u></button>
-      <button onclick="cmd('formatBlock','H1')">H1</button>
-      <button onclick="cmd('formatBlock','H2')">H2</button>
-      <button onclick="cmd('formatBlock','P')">¶</button>
-      <button onclick="cmd('insertUnorderedList')">• List</button>
-      <button onclick="cmd('insertOrderedList')">1. List</button>
-      <button onclick="cmd('removeFormat')">Clear</button>
+  const s=state.sections.find(x=>String(x.id)===String(state.activeId)),wrap=document.getElementById('editor-wrap');
+  if(!s){wrap.innerHTML='<div class="empty">No section selected.</div>';return}
+  wrap.innerHTML=`<input type="text" id="title-input" aria-label="Section title" value="${escapeHtml(s.title||'Untitled')}">
+    <div class="toolbar" aria-label="Formatting tools">
+      <button type="button" data-cmd="bold" title="Bold"><b>B</b></button><button type="button" data-cmd="italic" title="Italic"><i>I</i></button><button type="button" data-cmd="underline" title="Underline"><u>U</u></button>
+      <button type="button" data-cmd="formatBlock" data-value="H1">H1</button><button type="button" data-cmd="formatBlock" data-value="H2">H2</button><button type="button" data-cmd="formatBlock" data-value="P">¶</button>
+      <button type="button" data-cmd="insertUnorderedList">• List</button><button type="button" data-cmd="insertOrderedList">1. List</button><button type="button" data-cmd="removeFormat">Clear</button>
     </div>
-    <div contenteditable="true" id="content-editable">${s.html}</div>
-    <div class="row"><span id="livecount">${wc(s.html)} words</span><button class="del" onclick="delSection(${s.id})">Delete section</button></div>
-  `;
-  document.getElementById('title-input').oninput = e=>{ s.title=e.target.value; save(); renderSidebar(); };
-  document.getElementById('content-editable').oninput = e=>{
-    s.html=e.target.innerHTML; save();
-    document.getElementById('livecount').textContent = wc(s.html)+' words';
-    document.getElementById('totalstats').textContent = totalWords()+' words total';
-  };
+    <div contenteditable="true" id="content-editable" role="textbox" aria-multiline="true" aria-label="Manuscript section">${s.html||'<p></p>'}</div>
+    <div class="row"><span id="livecount">${wc(s.html||'')} words</span><button class="del" type="button" id="delete-section">Delete section</button></div>`;
+  document.getElementById('title-input').oninput=e=>{s.title=e.target.value;save();renderSidebar();renderHome()};
+  document.getElementById('content-editable').oninput=e=>{s.html=e.target.innerHTML;save();document.getElementById('livecount').textContent=wc(s.html)+' words';document.getElementById('totalstats').textContent=totalWords().toLocaleString()+' words';renderHome()};
+  wrap.querySelectorAll('[data-cmd]').forEach(b=>b.addEventListener('click',()=>cmd(b.dataset.cmd,b.dataset.value||null)));
+  document.getElementById('delete-section').onclick=()=>delSection(s.id);
 }
-function addSection(){
-  const id = Date.now();
-  state.sections.push({id, title:'New Section', html:'<p></p>'});
-  state.activeId = id; save(); renderSidebar(); renderEditor();
-}
-function delSection(id){
-  if(state.sections.length===1){ toast("Can't delete your only section"); return; }
-  state.sections = state.sections.filter(s=>s.id!==id);
-  state.activeId = state.sections[0].id; save(); renderSidebar(); renderEditor();
-}
+function addSection(){const id=Date.now();state.sections.push({id,title:'New Section',html:'<p></p>'});state.activeId=id;save();renderSidebar();renderEditor();renderHome();document.getElementById('title-input')?.focus()}
+function delSection(id){if(state.sections.length===1){toast("You can’t delete your only section.");return}state.sections=state.sections.filter(s=>s.id!==id);state.activeId=state.sections[0].id;save();renderSidebar();renderEditor();renderHome()}
 
-document.getElementById('file-input').onchange = async e=>{
-  for(const file of e.target.files){
-    try{
-      const name = file.name.replace(/\.(docx|pdf|txt)$/i,'');
-      let html = '';
-      if(file.name.toLowerCase().endsWith('.docx')){
-        const buf = await file.arrayBuffer();
-        const result = await mammoth.convertToHtml({arrayBuffer: buf});
-        html = result.value || '<p></p>';
-      } else if(file.name.toLowerCase().endsWith('.pdf')){
-        const buf = await file.arrayBuffer();
-        const doc = await pdfjsLib.getDocument({data: buf}).promise;
-        let paras = [];
-        for(let i=1;i<=doc.numPages;i++){
-          const page = await doc.getPage(i);
-          const content = await page.getTextContent();
-          const text = content.items.map(it=>it.str).join(' ');
-          paras.push('<p>'+escapeHtml(text)+'</p>');
-        }
-        html = paras.join('');
-        toast('PDF imported as plain text (formatting not preserved)');
-      } else {
-        const text = await file.text();
-        html = text.split(/\n\n+/).map(p=>'<p>'+escapeHtml(p)+'</p>').join('');
-      }
-      const id = Date.now()+Math.floor(Math.random()*1000);
-      state.sections.push({id, title:name, html});
-      state.activeId = id;
-    } catch(err){
-      toast('Could not import '+file.name);
-      console.error(err);
-    }
-  }
-  save(); renderSidebar(); renderEditor();
-  e.target.value = '';
+document.getElementById('add-section').addEventListener('click',addSection);
+document.getElementById('import-trigger').addEventListener('click',()=>document.getElementById('file-input').click());
+document.getElementById('file-input').onchange=async e=>{
+  for(const file of e.target.files){try{
+    const name=file.name.replace(/\.(docx|pdf|txt)$/i,'');let html='';
+    if(file.name.toLowerCase().endsWith('.docx')){if(!window.mammoth)throw new Error('DOCX importer unavailable');const result=await mammoth.convertToHtml({arrayBuffer:await file.arrayBuffer()});html=result.value||'<p></p>'}
+    else if(file.name.toLowerCase().endsWith('.pdf')){if(!window.pdfjsLib)throw new Error('PDF importer unavailable');const doc=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;const paras=[];for(let i=1;i<=doc.numPages;i++){const page=await doc.getPage(i),content=await page.getTextContent();paras.push('<p>'+escapeHtml(content.items.map(it=>it.str).join(' '))+'</p>')}html=paras.join('');toast('PDF imported as text; formatting is not preserved.')}
+    else html=(await file.text()).split(/\n\n+/).map(p=>'<p>'+escapeHtml(p)+'</p>').join('');
+    const id=Date.now()+Math.floor(Math.random()*1000);state.sections.push({id,title:name,html});state.activeId=id;
+  }catch(err){toast('Could not import '+file.name);console.error(err)}}
+  save();renderSidebar();renderEditor();renderHome();e.target.value='';
 };
 
-const STOPWORDS = new Set(['The','A','An','I','He','She','They','We','It','You','Us','Them','Its','Your','Yours','Yourself','Our','Ours','Ourselves','Themselves','Himself','Herself','Myself','Someone','Somebody','Something','Somewhere','Somehow','Anyone','Anybody','Anything','Anywhere','Everyone','Everybody','Everything','Everywhere','Nothing','Nobody','Nowhere','None',
-  'But','And','Or','Nor','So','Yet','If','When','Then','Than','There','Here','This','That','These','Those','His','Her','Their',
-  'Because','Although','Though','While','Since','Unless','Until','After','Before','Above','Below','Between','Among','Beyond','Within','Without','Through','Across','Around','Toward','Towards','During','Despite',
-  'Perhaps','Suddenly','Meanwhile','However','Instead','Otherwise','Still','Also','Even','Just','Now','Soon','Later','Finally','Eventually','Indeed','Certainly','Probably','Maybe','Well','Oh','Ah','Yes','No','Okay','Alright','Sure','Right','Look','Listen','Wait','Stop','Come','Go','Let','Once','Again','Almost','Already','Always','Never','Every','Each','Both','Few','Many','Most','Some','All','Any',
-  'Can','Could','Would','Should','Will','Shall','Must','May','Might','Do','Does','Did','Am','Is','Are','Was','Were','Being','Been','Have','Has','Had',
-  'Sorry','Please','Thanks','Thank','Hello','Hi','Hey','Goodbye','Bye','Congratulations','Welcome',
-  'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','January','February','March','April','May','June','July','August','September','October','November','December',
-  'Chapter','Prologue','Epilogue','Part']);
-
+const STOPWORDS=new Set(['The','A','An','I','He','She','They','We','It','You','Us','Them','Its','Your','Yours','Yourself','Our','Ours','Ourselves','Themselves','Himself','Herself','Myself','Someone','Somebody','Something','Somewhere','Somehow','Anyone','Anybody','Anything','Anywhere','Everyone','Everybody','Everything','Everywhere','Nothing','Nobody','Nowhere','None','But','And','Or','Nor','So','Yet','If','When','Then','Than','There','Here','This','That','These','Those','His','Her','Their','Because','Although','Though','While','Since','Unless','Until','After','Before','Above','Below','Between','Among','Beyond','Within','Without','Through','Across','Around','Toward','Towards','During','Despite','Perhaps','Suddenly','Meanwhile','However','Instead','Otherwise','Still','Also','Even','Just','Now','Soon','Later','Finally','Eventually','Indeed','Certainly','Probably','Maybe','Well','Oh','Ah','Yes','No','Okay','Alright','Sure','Right','Look','Listen','Wait','Stop','Come','Go','Let','Once','Again','Almost','Already','Always','Never','Every','Each','Both','Few','Many','Most','Some','All','Any','Can','Could','Would','Should','Will','Shall','Must','May','Might','Do','Does','Did','Am','Is','Are','Was','Were','Being','Been','Have','Has','Had','Sorry','Please','Thanks','Thank','Hello','Hi','Hey','Goodbye','Bye','Congratulations','Welcome','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','January','February','March','April','May','June','July','August','September','October','November','December','Chapter','Prologue','Epilogue','Part']);
 function detectCharacters(){
-  // Signal 1: case consistency — collect every word ever seen in plain lowercase
-  // anywhere in the manuscript. A real name never doubles as an ordinary word.
-  const lowerSeen = new Set();
-  state.sections.forEach(s=>{
-    const plain = textOf(s.html).replace(/\n+/g, '. ');
-    (plain.match(/[A-Za-z']+/g) || []).forEach(w=>{ if(/^[a-z][a-z']{2,}$/.test(w)) lowerSeen.add(w); });
-  });
-
-  const counts = {}; // name -> {count, sections:Set, midHits, afterDeterminer}
-  state.sections.forEach(s=>{
-    let plain = textOf(s.html).replace(/\n+/g, '. ');
-    const tokens = plain.match(/[A-Za-z']+|[.!?]|["“”:]/g) || [];
-    let atStart = true, prevWord = '';
-    const seen = new Set();
-    tokens.forEach(tok=>{
-      if(tok==='.'||tok==='!'||tok==='?'||tok==='"'||tok==='“'||tok==='”'||tok===':'){ atStart = true; return; }
-      if(/^[A-Z][a-z]{2,}$/.test(tok) && !STOPWORDS.has(tok)){
-        if(!counts[tok]) counts[tok] = {count:0, sections:new Set(), midHits:0, afterDeterminer:0};
-        counts[tok].count++;
-        if(!atStart) counts[tok].midHits++;
-        // Signal 2: determiner adjacency — "the/a/an X" reads as a common noun or
-        // title ("the King"), not a personal name ("the Marcus" doesn't happen).
-        if(prevWord==='the'||prevWord==='a'||prevWord==='an') counts[tok].afterDeterminer++;
-        seen.add(tok);
-      }
-      prevWord = tok.toLowerCase();
-      atStart = false;
-    });
+  const lowerSeen=new Set();state.sections.forEach(s=>{const plain=textOf(s.html||'').replace(/\n+/g,'. ');(plain.match(/[A-Za-z']+/g)||[]).forEach(w=>{if(/^[a-z][a-z']{2,}$/.test(w))lowerSeen.add(w)})});
+  const counts={};state.sections.forEach(s=>{const plain=textOf(s.html||'').replace(/\n+/g,'. '),tokens=plain.match(/[A-Za-z']+|[.!?]|["“”:]/g)||[];let atStart=true,prevWord='';const seen=new Set();
+    tokens.forEach(tok=>{if(tok==='.'||tok==='!'||tok==='?'||tok==='"'||tok==='“'||tok==='”'||tok===':'){atStart=true;return}if(/^[A-Z][a-z]{2,}$/.test(tok)&&!STOPWORDS.has(tok)){if(!counts[tok])counts[tok]={count:0,sections:new Set(),midHits:0,afterDeterminer:0};counts[tok].count++;if(!atStart)counts[tok].midHits++;if(prevWord==='the'||prevWord==='a'||prevWord==='an')counts[tok].afterDeterminer++;seen.add(tok)}prevWord=tok.toLowerCase();atStart=false});
     seen.forEach(w=>counts[w].sections.add(s.title||'Untitled'));
   });
-  return Object.entries(counts).filter(([n,d])=>{
-    if(d.count<2 || d.midHits<1) return false;                 // must recur, and not only at sentence-start
-    if(lowerSeen.has(n.toLowerCase())) return false;            // also used as an ordinary word -> not a name
-    if(d.afterDeterminer/d.count > 0.4) return false;           // usually "the/a/an X" -> common noun or title
-    return true;
-  }).sort((a,b)=>b[1].count-a[1].count);
+  return Object.entries(counts).filter(([n,d])=>d.count>=2&&d.midHits>=1&&!lowerSeen.has(n.toLowerCase())&&d.afterDeterminer/d.count<=.4).sort((a,b)=>b[1].count-a[1].count);
 }
 function renderCharacters(){
-  const grid = document.getElementById('char-grid');
-  const chars = detectCharacters();
-  if(!chars.length){ grid.innerHTML = '<div class="empty">No recurring characters detected yet. Names mentioned 2+ times across your sections will show up here.</div>'; return; }
-  grid.innerHTML = '';
-  chars.forEach(([name,d])=>{
-    const c = document.createElement('div'); c.className='char-card';
-    c.innerHTML = `<h3>${name}</h3><div class="count">Mentioned ${d.count} times</div>
-      <textarea placeholder="Role, notes...">${state.charNotes[name]||''}</textarea>
-      <div class="chapters">Appears in: ${[...d.sections].join(', ')}</div>`;
-    c.querySelector('textarea').oninput = e=>{ state.charNotes[name]=e.target.value; save(); };
-    grid.appendChild(c);
-  });
+  const grid=document.getElementById('char-grid'),chars=detectCharacters();
+  if(!chars.length){grid.innerHTML='<div class="empty">No recurring characters detected yet. Names mentioned two or more times, including away from sentence starts, will appear here.</div>';return}
+  grid.innerHTML='';chars.forEach(([name,d])=>{const card=document.createElement('div');card.className='char-card';card.innerHTML=`<h3>${escapeHtml(name)}</h3><div class="count">Mentioned ${d.count} times</div><textarea aria-label="Notes for ${escapeHtml(name)}" placeholder="Role, notes...">${escapeHtml(state.charNotes[name]||'')}</textarea><div class="chapters">Appears in: ${[...d.sections].map(escapeHtml).join(', ')}</div>`;card.querySelector('textarea').oninput=e=>{state.charNotes[name]=e.target.value;save()};grid.appendChild(card)});
 }
-
 function renderWeb(){
-  const svg = document.getElementById('webcanvas');
-  const chars = detectCharacters().slice(0,15);
-  if(!chars.length){
-    const div = document.createElement('div'); div.className='empty'; div.id='webcanvas-ph'; div.textContent='Add characters (mentioned 2+ times) to see the web.';
-    svg.replaceWith(div); return;
-  }
-  svg.innerHTML='';
-  const w = svg.clientWidth||700, h = svg.clientHeight||400, cx=w/2, cy=h/2, r=Math.min(w,h)/2-60;
-  const nodes = chars.map(([name,d],i)=>{ const a=(i/chars.length)*Math.PI*2; return {name,x:cx+r*Math.cos(a),y:cy+r*Math.sin(a),sections:d.sections}; });
-  const ns='http://www.w3.org/2000/svg';
-  const edgeLayer = document.createElementNS(ns,'g');
-  for(let i=0;i<nodes.length;i++) for(let j=i+1;j<nodes.length;j++){
-    if([...nodes[i].sections].some(x=>nodes[j].sections.has(x))){
-      const line=document.createElementNS(ns,'line');
-      line.setAttribute('x1',nodes[i].x);line.setAttribute('y1',nodes[i].y);line.setAttribute('x2',nodes[j].x);line.setAttribute('y2',nodes[j].y);
-      line.setAttribute('stroke','var(--line)');line.setAttribute('stroke-width','1.5');line.dataset.a=i;line.dataset.b=j;
-      edgeLayer.appendChild(line);
-    }
-  }
-  svg.appendChild(edgeLayer);
-  const nodeLayer = document.createElementNS(ns,'g');
-  nodes.forEach((n,i)=>{
-    const g=document.createElementNS(ns,'g'); g.style.cursor='grab';
-    const circ=document.createElementNS(ns,'circle'); circ.setAttribute('cx',n.x);circ.setAttribute('cy',n.y);circ.setAttribute('r',22);circ.setAttribute('fill','var(--accent2)');circ.setAttribute('opacity','0.85');
-    const text=document.createElementNS(ns,'text'); text.setAttribute('x',n.x);text.setAttribute('y',n.y+38);text.setAttribute('text-anchor','middle');text.setAttribute('font-size','12');text.setAttribute('fill','var(--ink)');text.setAttribute('font-family','sans-serif');text.textContent=n.name;
-    g.appendChild(circ); g.appendChild(text);
-    let dragging=false;
-    g.addEventListener('pointerdown',e=>{dragging=true;g.setPointerCapture(e.pointerId);});
-    g.addEventListener('pointermove',e=>{
-      if(!dragging)return;
-      const rect=svg.getBoundingClientRect(); n.x=e.clientX-rect.left; n.y=e.clientY-rect.top;
-      circ.setAttribute('cx',n.x);circ.setAttribute('cy',n.y);text.setAttribute('x',n.x);text.setAttribute('y',n.y+38);
-      edgeLayer.querySelectorAll('line').forEach(line=>{
-        const a=+line.dataset.a,b=+line.dataset.b;
-        if(a===i){line.setAttribute('x1',n.x);line.setAttribute('y1',n.y);}
-        if(b===i){line.setAttribute('x2',n.x);line.setAttribute('y2',n.y);}
-      });
-    });
-    g.addEventListener('pointerup',()=>dragging=false);
-    nodeLayer.appendChild(g);
-  });
-  svg.appendChild(nodeLayer);
+  const svg=document.getElementById('webcanvas'),empty=document.getElementById('web-empty'),chars=detectCharacters().slice(0,15);
+  svg.innerHTML='';if(!chars.length){svg.hidden=true;empty.hidden=false;return}svg.hidden=false;empty.hidden=true;
+  const w=svg.clientWidth||700,h=svg.clientHeight||400,cx=w/2,cy=h/2,r=Math.min(w,h)/2-58;
+  const nodes=chars.map(([name,d],i)=>{const a=(i/chars.length)*Math.PI*2;return{name,x:cx+r*Math.cos(a),y:cy+r*Math.sin(a),sections:d.sections}}),ns='http://www.w3.org/2000/svg',edgeLayer=document.createElementNS(ns,'g');
+  for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++)if([...nodes[i].sections].some(x=>nodes[j].sections.has(x))){const line=document.createElementNS(ns,'line');line.setAttribute('x1',nodes[i].x);line.setAttribute('y1',nodes[i].y);line.setAttribute('x2',nodes[j].x);line.setAttribute('y2',nodes[j].y);line.setAttribute('stroke','var(--line)');line.setAttribute('stroke-width','1.5');line.dataset.a=i;line.dataset.b=j;edgeLayer.appendChild(line)}
+  svg.appendChild(edgeLayer);const nodeLayer=document.createElementNS(ns,'g');nodes.forEach((n,i)=>{const g=document.createElementNS(ns,'g');g.style.cursor='grab';const circ=document.createElementNS(ns,'circle');circ.setAttribute('cx',n.x);circ.setAttribute('cy',n.y);circ.setAttribute('r',22);circ.setAttribute('fill','var(--accent2)');circ.setAttribute('opacity','.85');const text=document.createElementNS(ns,'text');text.setAttribute('x',n.x);text.setAttribute('y',n.y+39);text.setAttribute('text-anchor','middle');text.setAttribute('font-size','12');text.setAttribute('fill','var(--ink)');text.setAttribute('font-family','sans-serif');text.textContent=n.name;g.append(circ,text);let dragging=false;g.addEventListener('pointerdown',e=>{dragging=true;g.setPointerCapture(e.pointerId)});g.addEventListener('pointermove',e=>{if(!dragging)return;const rect=svg.getBoundingClientRect();n.x=e.clientX-rect.left;n.y=e.clientY-rect.top;circ.setAttribute('cx',n.x);circ.setAttribute('cy',n.y);text.setAttribute('x',n.x);text.setAttribute('y',n.y+39);edgeLayer.querySelectorAll('line').forEach(line=>{const a=+line.dataset.a,b=+line.dataset.b;if(a===i){line.setAttribute('x1',n.x);line.setAttribute('y1',n.y)}if(b===i){line.setAttribute('x2',n.x);line.setAttribute('y2',n.y)}})});g.addEventListener('pointerup',()=>dragging=false);g.addEventListener('pointercancel',()=>dragging=false);nodeLayer.appendChild(g)});svg.appendChild(nodeLayer);
 }
+function renderAI(){const sel=document.getElementById('ai-section');sel.innerHTML='';state.sections.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.title||'Untitled';sel.appendChild(o)});sel.value=state.activeId}
+async function copyPrompt(){const s=state.sections.find(x=>String(x.id)===String(document.getElementById('ai-section').value)),tpl=document.getElementById('ai-template').value,prompt=tpl.replace('{{TEXT}}',s?textOf(s.html):'');try{await navigator.clipboard.writeText(prompt);toast('Prompt copied. Paste it into Claude or ChatGPT.')}catch(e){toast('Clipboard unavailable—select and copy the prompt manually.')}}
+function insertResponse(){const resp=document.getElementById('ai-response').value,s=state.sections.find(x=>String(x.id)===String(state.activeId));if(!s||!resp.trim()){toast('Nothing to insert.');return}s.html=(s.html||'')+'<p>'+escapeHtml(resp)+'</p>';save();renderEditor();renderSidebar();renderHome();toast('Added to '+(s.title||'your section')+'.')}
+document.getElementById('copy-prompt').addEventListener('click',copyPrompt);document.getElementById('insert-response').addEventListener('click',insertResponse);
 
-function renderAI(){
-  const sel = document.getElementById('ai-section'); sel.innerHTML='';
-  state.sections.forEach(s=>{ const o=document.createElement('option'); o.value=s.id; o.textContent=s.title; sel.appendChild(o); });
-  sel.value = state.activeId;
+const FINALISE_ITEMS=[
+  {id:'section-order',title:'Sections are titled and in the intended order.',hint:'Review your section list and confirm the sequence reads the way you want.'},
+  {id:'character-pass',title:'Character names and appearances have had a continuity pass.',hint:'Use Characters and Story Web to catch details worth a second look.'},
+  {id:'story-pass',title:'The story threads and ending have been reviewed.',hint:'Check that the ideas you set up have the landing you intended.'},
+  {id:'proofread',title:'Spelling, punctuation, and dialogue have had a final read.',hint:'A slow read aloud can reveal small issues that a quick skim misses.'},
+  {id:'backup',title:'I have saved a copy somewhere safe.',hint:'Export a plain-text or formatted copy below before you share or publish.'}
+];
+function renderFinalise(){
+  const list=document.getElementById('finalise-checklist');list.innerHTML='';FINALISE_ITEMS.forEach(item=>{const label=document.createElement('label');label.className='check-item';const input=document.createElement('input');input.type='checkbox';input.checked=!!state.finaliseChecklist[item.id];input.setAttribute('aria-label',item.title);const copy=document.createElement('span');copy.className='check-copy';copy.innerHTML=`<strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.hint)}</small>`;input.addEventListener('change',()=>{state.finaliseChecklist[item.id]=input.checked;save();updateFinaliseProgress();renderHome()});label.append(input,copy);list.appendChild(label)});
+  document.getElementById('final-word-count').textContent=totalWords().toLocaleString();document.getElementById('final-section-count').textContent=state.sections.length.toLocaleString();document.getElementById('final-character-count').textContent=totalCharacters().toLocaleString();updateFinaliseProgress();
 }
-function copyPrompt(){
-  const s = state.sections.find(x=>x.id==document.getElementById('ai-section').value);
-  const tpl = document.getElementById('ai-template').value;
-  const prompt = tpl.replace('{{TEXT}}', s? textOf(s.html) : '');
-  navigator.clipboard.writeText(prompt).then(()=>toast('Prompt copied — paste into Claude or ChatGPT'));
-}
-function insertResponse(){
-  const resp = document.getElementById('ai-response').value;
-  const s = state.sections.find(x=>x.id===state.activeId);
-  if(!s || !resp.trim()){ toast('Nothing to insert'); return; }
-  s.html += '<p>'+escapeHtml(resp)+'</p>';
-  save(); renderEditor(); renderSidebar();
-  toast('Inserted into '+s.title);
-}
+function updateFinaliseProgress(){const done=FINALISE_ITEMS.filter(x=>state.finaliseChecklist[x.id]).length,pct=Math.round(done/FINALISE_ITEMS.length*100);document.getElementById('finalise-count').textContent=`${done} of ${FINALISE_ITEMS.length} complete`;document.getElementById('finalise-progress').style.width=pct+'%'}
+function downloadFile(filename,content,type){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+function fileBase(){return (state.sections[0]?.title||'loomwright-manuscript').replace(/[^a-z0-9-_]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()||'loomwright-manuscript'}
+function exportText(){const content=state.sections.map(s=>`${s.title||'Untitled'}\n${'='.repeat(Math.min(40,(s.title||'Untitled').length))}\n\n${textOf(s.html||'').trim()}`).join('\n\n\n');downloadFile(fileBase()+'.txt',content,'text/plain;charset=utf-8');toast('Plain-text copy downloaded.')}
+function exportHtml(){const sections=state.sections.map(s=>`<section><h1>${escapeHtml(s.title||'Untitled')}</h1>${s.html||'<p></p>'}</section>`).join('\n');const doc=`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escapeHtml(state.sections[0]?.title||'Loomwright manuscript')}</title><style>body{max-width:720px;margin:4rem auto;padding:0 1.25rem;font:18px/1.75 Georgia,serif;color:#24211d}section{margin:0 0 4rem}h1{font-size:1.5rem;font-weight:normal;margin:0 0 1.5rem}</style></head><body>${sections}</body></html>`;downloadFile(fileBase()+'.html',doc,'text/html;charset=utf-8');toast('Formatted copy downloaded.')}
+document.getElementById('export-txt').addEventListener('click',exportText);document.getElementById('export-html').addEventListener('click',exportHtml);
 
-function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2400); }
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('show'),2600)}
+function revealApp(){clearTimeout(introTimer);const splash=document.getElementById('splash'),shell=document.getElementById('app-shell');splash.classList.add('leaving');shell.classList.add('is-ready');setTimeout(()=>{splash.hidden=true},360)}
+function playIntro(){const splash=document.getElementById('splash'),shell=document.getElementById('app-shell');splash.hidden=false;splash.classList.remove('leaving');shell.classList.remove('is-ready');const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;introTimer=setTimeout(revealApp,reduced?220:1380)}
+document.getElementById('skip-intro').addEventListener('click',revealApp);document.getElementById('replay-intro').addEventListener('click',()=>{switchView('home');playIntro()});
+document.getElementById('palette-select').addEventListener('change',e=>{state.settings.palette=e.target.value;save();applyTheme()});document.getElementById('theme-select').addEventListener('change',e=>{state.settings.theme=e.target.value;save();applyTheme()});
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(state.settings.theme==='auto')applyTheme()});
 
-renderSidebar(); renderEditor(); initDB();
+renderSidebar();renderEditor();applyTheme();renderHome();initDB();playIntro();
 </script>
 </body>
 </html>
