@@ -308,17 +308,33 @@ document.getElementById('file-input').onchange = async e=>{
   e.target.value = '';
 };
 
-const STOPWORDS = new Set(['The','A','An','I','He','She','They','We','It','But','And','Or','If','When','Then','There','This','That','His','Her','Their','My','Your','Chapter','Prologue','Epilogue']);
+const STOPWORDS = new Set(['The','A','An','I','He','She','They','We','It','You','Us','Them','Its','Your','Yours','Yourself','Our','Ours','Ourselves','Themselves','Himself','Herself','Myself','Someone','Somebody','Something','Somewhere','Somehow','Anyone','Anybody','Anything','Anywhere','Everyone','Everybody','Everything','Everywhere','Nothing','Nobody','Nowhere','None',
+  'But','And','Or','Nor','So','Yet','If','When','Then','Than','There','Here','This','That','These','Those','His','Her','Their',
+  'Because','Although','Though','While','Since','Unless','Until','After','Before','Above','Below','Between','Among','Beyond','Within','Without','Through','Across','Around','Toward','Towards','During','Despite',
+  'Perhaps','Suddenly','Meanwhile','However','Instead','Otherwise','Still','Also','Even','Just','Now','Soon','Later','Finally','Eventually','Indeed','Certainly','Probably','Maybe','Well','Oh','Ah','Yes','No','Okay','Alright','Sure','Right','Look','Listen','Wait','Stop','Come','Go','Let','Once','Again','Almost','Already','Always','Never','Every','Each','Both','Few','Many','Most','Some','All','Any',
+  'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','January','February','March','April','May','June','July','August','September','October','November','December',
+  'Chapter','Prologue','Epilogue','Part']);
+
 function detectCharacters(){
-  const counts = {};
+  const counts = {}; // name -> {count, sections:Set, midHits}
   state.sections.forEach(s=>{
     const plain = textOf(s.html);
-    const words = plain.match(/\b[A-Z][a-z]{2,}\b/g) || [];
+    const tokens = plain.match(/[A-Za-z']+|[.!?]/g) || [];
+    let atStart = true;
     const seen = new Set();
-    words.forEach(w=>{ if(STOPWORDS.has(w)) return; if(!counts[w]) counts[w]={count:0,sections:new Set()}; counts[w].count++; seen.add(w); });
+    tokens.forEach(tok=>{
+      if(tok==='.'||tok==='!'||tok==='?'){ atStart = true; return; }
+      if(/^[A-Z][a-z]{2,}$/.test(tok) && !STOPWORDS.has(tok)){
+        if(!counts[tok]) counts[tok] = {count:0, sections:new Set(), midHits:0};
+        counts[tok].count++;
+        if(!atStart) counts[tok].midHits++;
+        seen.add(tok);
+      }
+      atStart = false;
+    });
     seen.forEach(w=>counts[w].sections.add(s.title||'Untitled'));
   });
-  return Object.entries(counts).filter(([n,d])=>d.count>=2).sort((a,b)=>b[1].count-a[1].count);
+  return Object.entries(counts).filter(([n,d])=>d.count>=2 && d.midHits>=1).sort((a,b)=>b[1].count-a[1].count);
 }
 function renderCharacters(){
   const grid = document.getElementById('char-grid');
