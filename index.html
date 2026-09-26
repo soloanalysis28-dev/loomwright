@@ -1,14 +1,16 @@
 <!DOCTYPE html>
-<html lang="en" data-palette="parchment" data-theme="light">
+<html lang="en" data-palette="sage" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#faf8f4">
+<meta name="theme-color" content="#fbfcfa">
 <title>Loomwright — Your writing desk</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
-:root{--danger:#c15540;--ease-out:cubic-bezier(.23,1,.32,1);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root{--danger:#c15540;--primary-text:#fff;--ease-out:cubic-bezier(.23,1,.32,1);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[data-palette="sage"][data-theme="light"]{--bg:#fbfcfa;--panel:#fff;--ink:#26362d;--sub:#68776e;--line:#e3eae4;--accent:#91a997;--accent2:#718b78;--card:#f1f5f1;--card-strong:#e7eee8;--primary-text:#1e3527}
+[data-palette="sage"][data-theme="dark"]{--bg:#151a16;--panel:#1c241e;--ink:#e7eee8;--sub:#a5b1a8;--line:#313a33;--accent:#9bb39f;--accent2:#8eaa94;--card:#222a24;--card-strong:#2b352e;--primary-text:#17231a}
 [data-palette="parchment"][data-theme="light"]{--bg:#faf8f4;--panel:#fff;--ink:#1f1c18;--sub:#6b645a;--line:#e8e2d8;--accent:#8a5a44;--accent2:#4a6b5a;--card:#f3efe6;--card-strong:#ece4d7}
 [data-palette="parchment"][data-theme="dark"]{--bg:#181613;--panel:#211e1a;--ink:#efe9e0;--sub:#a79f92;--line:#332e28;--accent:#d3a184;--accent2:#8fbfa4;--card:#26221d;--card-strong:#302a23}
 [data-palette="slate"][data-theme="light"]{--bg:#f4f6f8;--panel:#fff;--ink:#1c2430;--sub:#5b6673;--line:#dde3e8;--accent:#3b6ea5;--accent2:#5b8a72;--card:#eaeef2;--card-strong:#dfe7ee}
@@ -66,7 +68,7 @@ main{padding:24px 28px 44px}
 .welcome-panel p{color:var(--sub);font: .96rem/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;max-width:590px}
 .welcome-actions{display:flex;align-items:center;gap:12px;margin-top:18px;flex-wrap:wrap}
 .primary-button,.secondary-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;border-radius:9px;padding:10px 15px;font:600 .83rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer;transition:transform .15s var(--ease-out),filter .15s,background .15s}
-.primary-button{background:var(--accent);border:1px solid var(--accent);color:#fff}
+.primary-button{background:var(--accent);border:1px solid var(--accent);color:var(--primary-text)}
 .primary-button:hover{filter:brightness(1.06);transform:translateY(-1px)}
 .secondary-button{background:var(--panel);border:1px solid var(--line);color:var(--ink)}
 .secondary-button:hover{background:var(--card)}
@@ -128,7 +130,7 @@ main{padding:24px 28px 44px}
 .ai-box select,.ai-box textarea{width:100%;font-family:inherit;font-size:.85rem;border:1px solid var(--line);border-radius:7px;padding:9px;background:var(--bg);color:var(--ink);margin-top:6px}
 .ai-box textarea{min-height:100px;line-height:1.5}.ai-box label{font-size:.78rem;color:var(--sub);font-weight:650;display:block;margin-top:14px}
 .btnrow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-button.primary{background:var(--accent);color:#fff;border:0;padding:9px 15px;border-radius:7px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.82rem;cursor:pointer}
+button.primary{background:var(--accent);color:var(--primary-text);border:0;padding:9px 15px;border-radius:7px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.82rem;cursor:pointer}
 button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink);padding:9px 15px;border-radius:7px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.82rem;cursor:pointer}
 /* Finalise */
 .finalise-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(250px,.8fr);gap:15px;align-items:start}
@@ -267,7 +269,7 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
       <div class="page-intro"><h2 id="settings-title">Settings</h2><p>Make your writing space feel like yours. Changes apply immediately and are saved with this browser’s project data.</p></div>
       <div class="settings-grid">
         <div class="settings-panel setting-section"><h3>Appearance</h3>
-          <div class="setting-row"><div class="setting-copy"><strong>Color palette</strong><small>Choose the color family for panels, accents, and backgrounds.</small></div><select id="palette-select" aria-label="Color palette"><option value="parchment">Parchment</option><option value="slate">Slate</option><option value="forest">Forest</option><option value="ink">Ink</option></select></div>
+          <div class="setting-row"><div class="setting-copy"><strong>Color palette</strong><small>Choose the color family for panels, accents, and backgrounds.</small></div><select id="palette-select" aria-label="Color palette"><option value="sage">Sage</option><option value="parchment">Parchment</option><option value="slate">Slate</option><option value="forest">Forest</option><option value="ink">Ink</option></select></div>
           <div class="setting-row"><div class="setting-copy"><strong>Theme</strong><small>Use a light or dark surface, or follow your device setting.</small></div><select id="theme-select" aria-label="Theme"><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
         </div>
         <div class="settings-panel setting-section"><h3>Opening & storage</h3>
@@ -282,11 +284,13 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
 
 <script>
 if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,settings:{palette:'parchment',theme:'auto'},charNotes:{},finaliseChecklist:{}};
+const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,settings:{palette:'sage',theme:'light'},charNotes:{},finaliseChecklist:{}};
 let state;
 try{state=JSON.parse(localStorage.getItem('loomwright_state')||'null')||DEFAULT_STATE}catch(e){state=DEFAULT_STATE}
 if(!state||!Array.isArray(state.sections)||!state.sections.length)state=DEFAULT_STATE;
-if(!state.settings)state.settings={palette:'parchment',theme:'auto'};
+function normalizeSettings(settings){const next={...DEFAULT_STATE.settings,...(settings||{})};if(next.palette==='parchment'&&next.theme==='auto'){next.palette='sage';next.theme='light'}return next}
+const storedSettings=JSON.stringify(state.settings||{});state.settings=normalizeSettings(state.settings);
+if(JSON.stringify(state.settings)!==storedSettings)localStorage.setItem('loomwright_state',JSON.stringify(state));
 if(!state.charNotes){try{state.charNotes=JSON.parse(localStorage.getItem('loomwright_notes')||'{}')}catch(e){state.charNotes={}}}
 if(!state.finaliseChecklist)state.finaliseChecklist={};
 state.sections.forEach(s=>{if(s.text!==undefined&&!s.html){s.html=s.text.split(/\n\n+/).map(p=>'<p>'+escapeHtml(p)+'</p>').join('');delete s.text}});
@@ -300,8 +304,10 @@ async function initDB(){
     dbRef=await claude.use('db');if(!dbRef)return;
     const doc=await dbRef.doc('data/state').get();
     if(doc&&doc.exists&&doc.data&&Array.isArray(doc.data.sections)&&doc.data.sections.length){
-      state={...DEFAULT_STATE,...doc.data,settings:{...DEFAULT_STATE.settings,...(doc.data.settings||{})},charNotes:doc.data.charNotes||{},finaliseChecklist:doc.data.finaliseChecklist||{}};
+      const oldRemoteSettings=JSON.stringify(doc.data.settings||{}),normalizedRemoteSettings=normalizeSettings(doc.data.settings),remoteNeedsThemeMigration=JSON.stringify(normalizedRemoteSettings)!==oldRemoteSettings;
+      state={...DEFAULT_STATE,...doc.data,settings:normalizedRemoteSettings,charNotes:doc.data.charNotes||{},finaliseChecklist:doc.data.finaliseChecklist||{}};
       localStorage.setItem('loomwright_state',JSON.stringify(state));renderSidebar();renderEditor();applyTheme();renderHome();
+      if(remoteNeedsThemeMigration)await dbRef.doc('data/state').set(state);
     }else{await dbRef.doc('data/state').set(state)}
     setSyncStatus('Synced',true);
   }catch(e){setSyncStatus('Local only',false)}
