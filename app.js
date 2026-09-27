@@ -106,6 +106,7 @@ function setOfflineAppStatus(message){const el=document.getElementById('offline-
 async function offlineCacheCount(){const names=(await caches.keys()).filter(name=>name.startsWith('loomwright-offline-'));let count=0;for(const name of names)count+=(await (await caches.open(name)).keys()).length;return count}
 function updateInstallButton(){const button=document.getElementById('install-app');if(button)button.hidden=!deferredInstallPrompt}
 async function prepareOfflineApp(){
+  if(isLocalPreview()){setOfflineAppStatus('Local preview · refresh this tab after app files change.');return}
   if(!('serviceWorker'in navigator)||!window.isSecureContext){setOfflineAppStatus('To install and open while offline, use Loomwright from a secure website address (https) once. Your browser-saved books still work here.');return}
   const button=document.getElementById('prepare-offline');if(button)button.disabled=true;setOfflineAppStatus('Saving the app files on this device… no manuscript is sent.');
   try{
@@ -123,8 +124,17 @@ function setupOfflineApp(){
   install?.addEventListener('click',async()=>{if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;updateInstallButton()});
   window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;updateInstallButton()});
   window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;updateInstallButton();setOfflineAppStatus('Loomwright is installed. Use “Prepare offline” once while connected to save all app files.')});
+  if(isLocalPreview()){setOfflineAppStatus('Local preview · refresh this tab after app files change.');clearOfflinePreviewCache();return}
   if(!('serviceWorker'in navigator)||!window.isSecureContext){setOfflineAppStatus('Offline installation needs a secure website address. Open Loomwright once while connected, then prepare the offline copy.');return}
   navigator.serviceWorker.register(new URL('./sw.js',import.meta.url),{scope:new URL('./',import.meta.url).pathname}).then(async()=>{await navigator.serviceWorker.ready;const count=await offlineCacheCount();if(count>=10)setOfflineAppStatus(`Offline copy ready · ${count} app files saved on this device.`);else setOfflineAppStatus('The app can be prepared for offline use from this setting.');}).catch(()=>setOfflineAppStatus('Offline preparation could not start. Reopen Loomwright while connected and try again.'));
+}
+function isLocalPreview(){return ['localhost','127.0.0.1','::1'].includes(location.hostname)}
+async function clearOfflinePreviewCache(){
+  if(!('serviceWorker'in navigator))return;
+  const registrations=await navigator.serviceWorker.getRegistrations();
+  await Promise.all(registrations.filter(registration=>new URL(registration.scope).origin===location.origin).map(registration=>registration.unregister()));
+  const names=await caches.keys();
+  await Promise.all(names.filter(name=>name.startsWith('loomwright-offline-')).map(name=>caches.delete(name)));
 }
 async function initDB(){
   try{
