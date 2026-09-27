@@ -20,6 +20,7 @@ def main() -> None:
         "./app-icon-192.png",
         "./app-icon-512.png",
         "./sw.js",
+        "./theme-bootstrap.js",
         "./offline-assets.json",
     }
     for directory in (ROOT / "fonts", ROOT / "vendor"):

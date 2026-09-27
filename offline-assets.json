@@ -45,6 +45,7 @@
   "./manifest.webmanifest",
   "./offline-assets.json",
   "./sw.js",
+  "./theme-bootstrap.js",
   "./vendor/dompurify/purify.es.mjs",
   "./vendor/dompurify/purify.min.js",
   "./vendor/fflate/browser.js",
