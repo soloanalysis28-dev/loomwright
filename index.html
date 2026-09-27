@@ -7,6 +7,7 @@
 <title>Loomwright — Your writing desk</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,700;1,400&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Crimson+Text:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Bitter:ital,wght@0,400;0,700&display=swap">
 <style>
 :root{--danger:#c15540;--primary-text:#fff;--ease-out:cubic-bezier(.23,1,.32,1);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 [data-palette="sage"][data-theme="light"]{--bg:#fbfcfa;--panel:#fff;--ink:#26362d;--sub:#68776e;--line:#e3eae4;--accent:#91a997;--accent2:#718b78;--card:#f1f5f1;--card-strong:#e7eee8;--primary-text:#1e3527}
@@ -111,9 +112,16 @@ main{padding:24px 28px 44px}
 .importbtn{border:1px solid var(--line);background:var(--card);color:var(--ink)}.importbtn:hover{filter:brightness(.98)}
 .editor{width:100%}
 .editor input[type=text]{width:100%;font-size:1.15rem;font-family:inherit;border:0;background:transparent;color:var(--ink);padding:4px 0;border-bottom:1px solid var(--line);margin-bottom:10px}
-.toolbar{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap}
-.toolbar button{padding:6px 10px;border:1px solid var(--line);background:var(--card);border-radius:6px;cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.78rem;color:var(--ink);transition:background .15s}
+.toolbar{display:flex;gap:14px;margin-bottom:8px;flex-wrap:wrap;align-items:center;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+.tb-group{display:flex;gap:4px;align-items:center;padding-right:14px;border-right:1px solid var(--line)}
+.tb-group:last-child{border-right:none;padding-right:0}
+.toolbar button{padding:6px 9px;border:1px solid var(--line);background:var(--panel);border-radius:6px;cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.78rem;color:var(--ink);transition:background .15s}
 .toolbar button:hover{background:var(--line)}
+.toolbar select{padding:6px 7px;border:1px solid var(--line);background:var(--panel);border-radius:6px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.78rem;color:var(--ink);cursor:pointer}
+.tb-font-select{width:150px}
+.tb-color-wrap{position:relative;width:30px;height:30px}
+.tb-color-wrap input[type=color]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.tb-color-swatch{width:30px;height:30px;border:1px solid var(--line);border-radius:6px;background:var(--panel);display:flex;align-items:center;justify-content:center;font-size:.75rem;pointer-events:none}
 [contenteditable]{width:100%;min-height:50vh;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:20px;font-size:1.05rem;line-height:1.7;font-family:inherit;overflow-y:auto}
 [contenteditable] h1{font-size:1.4rem;margin:.4em 0}[contenteditable] h2{font-size:1.2rem;margin:.4em 0}[contenteditable] p{margin:0 0 .8em}
 .editor .row{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.78rem;color:var(--sub)}
@@ -489,20 +497,66 @@ function renderSidebar(){
   document.getElementById('totalstats').textContent=totalWords().toLocaleString()+' words';
 }
 function cmd(command,value=null){document.execCommand(command,false,value);document.getElementById('content-editable')?.focus()}
+const BOOK_FONTS=[
+  {group:'Manuscript standard',fonts:['Times New Roman','Georgia','Garamond','Book Antiqua','Cambria','Courier New','Calibri','Arial']},
+  {group:'Book typeset',fonts:['EB Garamond','Libre Baskerville','Lora','Merriweather','Crimson Text','Playfair Display','PT Serif','Bitter']}
+];
+function setFontSize(px){
+  document.execCommand('fontSize',false,'7');
+  const editor=document.getElementById('content-editable');
+  editor.querySelectorAll('font[size="7"]').forEach(el=>{el.removeAttribute('size');el.style.fontSize=px+'px'});
+  editor.focus();
+}
+function setHighlight(color){document.execCommand('hiliteColor',false,color)||document.execCommand('backColor',false,color);document.getElementById('content-editable')?.focus()}
+function setLineSpacing(val){const s=state.sections.find(x=>String(x.id)===String(state.activeId));if(!s)return;s.lineHeight=val;save();const el=document.getElementById('content-editable');if(el)el.style.lineHeight=val}
 function renderEditor(){
   const s=state.sections.find(x=>String(x.id)===String(state.activeId)),wrap=document.getElementById('editor-wrap');
   if(!s){wrap.innerHTML='<div class="empty">No section selected.</div>';return}
+  const fontOptions=BOOK_FONTS.map(g=>`<optgroup label="${g.group}">${g.fonts.map(f=>`<option value="${f}" style="font-family:'${f}'">${f}</option>`).join('')}</optgroup>`).join('');
   wrap.innerHTML=`<input type="text" id="title-input" aria-label="Section title" value="${escapeHtml(s.title||'Untitled')}">
     <div class="toolbar" aria-label="Formatting tools">
-      <button type="button" data-cmd="bold" title="Bold"><b>B</b></button><button type="button" data-cmd="italic" title="Italic"><i>I</i></button><button type="button" data-cmd="underline" title="Underline"><u>U</u></button>
-      <button type="button" data-cmd="formatBlock" data-value="H1">H1</button><button type="button" data-cmd="formatBlock" data-value="H2">H2</button><button type="button" data-cmd="formatBlock" data-value="P">¶</button>
-      <button type="button" data-cmd="insertUnorderedList">• List</button><button type="button" data-cmd="insertOrderedList">1. List</button><button type="button" data-cmd="removeFormat">Clear</button>
+      <div class="tb-group">
+        <button type="button" data-cmd="undo" title="Undo">↶</button><button type="button" data-cmd="redo" title="Redo">↷</button>
+      </div>
+      <div class="tb-group">
+        <select id="tb-font" class="tb-font-select" aria-label="Font family"><option value="">Font ▾</option>${fontOptions}</select>
+        <select id="tb-size" aria-label="Font size"><option value="">Size ▾</option>${[10,11,12,14,16,18,20,24,28,32].map(n=>`<option value="${n}">${n}</option>`).join('')}</select>
+      </div>
+      <div class="tb-group">
+        <button type="button" data-cmd="bold" title="Bold"><b>B</b></button><button type="button" data-cmd="italic" title="Italic"><i>I</i></button><button type="button" data-cmd="underline" title="Underline"><u>U</u></button><button type="button" data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
+        <button type="button" data-cmd="superscript" title="Superscript">x²</button><button type="button" data-cmd="subscript" title="Subscript">x₂</button>
+      </div>
+      <div class="tb-group">
+        <div class="tb-color-wrap" title="Text color"><div class="tb-color-swatch">A</div><input type="color" id="tb-forecolor" value="#000000"></div>
+        <div class="tb-color-wrap" title="Highlight"><div class="tb-color-swatch">🖍</div><input type="color" id="tb-highlight" value="#fff59d"></div>
+        <button type="button" data-cmd="removeFormat" title="Clear formatting">Clear</button>
+      </div>
+      <div class="tb-group">
+        <select id="tb-style" aria-label="Paragraph style"><option value="">Style ▾</option><option value="P">Normal</option><option value="H1">Heading 1</option><option value="H2">Heading 2</option><option value="H3">Heading 3</option><option value="BLOCKQUOTE">Quote</option></select>
+      </div>
+      <div class="tb-group">
+        <button type="button" data-cmd="justifyLeft" title="Align left">◧</button><button type="button" data-cmd="justifyCenter" title="Center">▣</button><button type="button" data-cmd="justifyRight" title="Align right">◨</button><button type="button" data-cmd="justifyFull" title="Justify">▦</button>
+      </div>
+      <div class="tb-group">
+        <button type="button" data-cmd="insertUnorderedList" title="Bullet list">• List</button><button type="button" data-cmd="insertOrderedList" title="Numbered list">1. List</button>
+        <button type="button" data-cmd="outdent" title="Decrease indent">⇤</button><button type="button" data-cmd="indent" title="Increase indent">⇥</button>
+      </div>
+      <div class="tb-group">
+        <select id="tb-linespacing" aria-label="Line spacing"><option value="1.4">Single</option><option value="1.6">1.15</option><option value="1.8">1.5</option><option value="2.2">Double</option></select>
+      </div>
     </div>
-    <div contenteditable="true" id="content-editable" role="textbox" aria-multiline="true" aria-label="Manuscript section">${s.html||'<p></p>'}</div>
+    <div contenteditable="true" id="content-editable" role="textbox" aria-multiline="true" aria-label="Manuscript section" style="line-height:${s.lineHeight||'1.7'}">${s.html||'<p></p>'}</div>
     <div class="row"><span id="livecount">${wc(s.html||'')} words</span><button class="del" type="button" id="delete-section">Delete section</button></div>`;
   document.getElementById('title-input').oninput=e=>{s.title=e.target.value;save();renderSidebar();renderHome()};
   document.getElementById('content-editable').oninput=e=>{s.html=e.target.innerHTML;save();document.getElementById('livecount').textContent=wc(s.html)+' words';document.getElementById('totalstats').textContent=totalWords().toLocaleString()+' words';renderHome()};
-  wrap.querySelectorAll('[data-cmd]').forEach(b=>b.addEventListener('click',()=>cmd(b.dataset.cmd,b.dataset.value||null)));
+  wrap.querySelectorAll('.toolbar [data-cmd]').forEach(b=>b.addEventListener('click',()=>cmd(b.dataset.cmd,b.dataset.value||null)));
+  document.getElementById('tb-font').onchange=e=>{if(e.target.value)cmd('fontName',e.target.value);e.target.value=''};
+  document.getElementById('tb-size').onchange=e=>{if(e.target.value)setFontSize(e.target.value);e.target.value=''};
+  document.getElementById('tb-style').onchange=e=>{if(e.target.value)cmd('formatBlock',e.target.value);e.target.value=''};
+  document.getElementById('tb-forecolor').oninput=e=>cmd('foreColor',e.target.value);
+  document.getElementById('tb-highlight').oninput=e=>setHighlight(e.target.value);
+  const lsSelect=document.getElementById('tb-linespacing');lsSelect.value=s.lineHeight||'1.7';if(![...lsSelect.options].some(o=>o.value===lsSelect.value))lsSelect.value='1.4';
+  lsSelect.onchange=e=>setLineSpacing(e.target.value);
   document.getElementById('delete-section').onclick=()=>delSection(s.id);
 }
 function addSection(){const id=Date.now();state.sections.push({id,title:'New Section',html:'<p></p>'});state.activeId=id;save();renderSidebar();renderEditor();renderHome();document.getElementById('title-input')?.focus()}
