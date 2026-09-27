@@ -231,26 +231,37 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
 .setting-section h3{font:650 .9rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0 0 2px}.settings-footnote{font-size:.74rem;line-height:1.5;color:var(--sub);margin:13px 0 0}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:20px;font: .8rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;opacity:0;transition:opacity .25s;pointer-events:none;z-index:1100;max-width:calc(100vw - 24px);text-align:center}
 .toast.show{opacity:1}
-/* Loomwright write dashboard */
-.write-shell{display:grid;gap:18px}
-.write-hero{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 6px 6px}
-.write-hero h2{margin:0;font-size:2.1rem;font-weight:400;letter-spacing:-.03em}
-.write-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+/* Loomwright writing flow */
+.write-shell{display:block;min-height:70vh}
+.write-library{max-width:1120px;margin:0 auto}
+.write-library-hero{display:flex;align-items:center;justify-content:space-between;gap:28px;padding:38px 4px 30px;border-bottom:1px solid var(--line)}
+.write-library-copy{max-width:620px}
+.write-library-copy h2{margin:8px 0;font-size:2.15rem;font-weight:400;line-height:1.12}
+.write-library-copy p{margin:0;color:var(--sub);font: .9rem/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.write-library-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .upload-button{display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
-.write-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;align-items:start}
-.write-sidebar,.write-editor-panel{min-width:0;padding:0;border:0;border-radius:0;background:transparent}
-.write-sidebar-header h3{margin:0 0 6px;font-size:.78rem;font-weight:600;color:var(--sub);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-.document-list{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 7px;scrollbar-width:thin}
-.document-item{display:flex;flex:0 0 min(235px,78vw);min-width:0;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer;transition:border-color .15s,transform .15s,background .15s}
+.write-library-documents{padding:26px 4px}
+.write-library-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:13px}
+.write-library-heading h3{margin:0;font-size:1.1rem;font-weight:400}
+.write-library-heading span{color:var(--sub);font: .72rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.document-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:10px}
+.document-item{display:flex;min-width:0;align-items:center;gap:11px;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer;text-align:left;transition:border-color .15s,transform .15s,background .15s}
 .document-item:hover{border-color:color-mix(in srgb,var(--accent) 48%,var(--line));transform:translateY(-1px)}
 .document-item.active{background:var(--card);border-color:color-mix(in srgb,var(--accent) 62%,var(--line));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 30%,transparent)}
 .doc-thumb{width:34px;height:34px;border-radius:7px;background:linear-gradient(180deg,var(--card),color-mix(in srgb,var(--accent) 20%,var(--card)));display:grid;place-items:center;color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 25%,var(--line));font-weight:700;flex:none}
 .doc-meta{min-width:0;display:flex;flex-direction:column;gap:3px}
 .doc-title{font:600 .95rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .doc-subtle{font-size:.7rem;color:var(--sub)}
-.write-top{padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
-.write-editor-panel .toolbar{position:sticky;top:6px;z-index:5;background:var(--card)}
-.write-editor-panel [contenteditable]{width:100%;min-height:65vh;border-radius:6px;padding:28px 34px;background:var(--panel);box-shadow:0 3px 14px #0000000a}
+.write-workspace[hidden],.write-library[hidden]{display:none}
+.writer-command-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px;padding:8px 0;border-bottom:1px solid var(--line)}
+.writer-command-actions{display:flex;align-items:center;gap:8px;min-width:0}
+.writer-back{flex:none;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink);font:600 .78rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer}
+.writer-command-bar select{min-width:160px;max-width:min(38vw,340px);padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink);font: .82rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.write-workspace .toolbar{position:sticky;top:6px;z-index:5;background:var(--card)}
+.write-workspace [contenteditable]{width:100%;min-height:68vh;border-radius:6px;padding:28px 34px;background:var(--panel);box-shadow:0 3px 14px #0000000a}
+#view-write{position:relative;left:50%;width:100vw;max-width:100vw;margin-left:-50vw;padding:20px 28px 44px}
+#view-write:has(.write-workspace:not([hidden])){padding-top:8px}
+.write-workspace .editor input[type=text]{margin:8px 0 12px;font-size:1.3rem}
 #view-write{position:relative;left:50%;width:100vw;max-width:100vw;margin-left:-50vw;padding:20px 28px 44px}
 .metrics-shell{display:grid;gap:16px}
 .metrics-summary{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px}
@@ -269,14 +280,14 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
 .bar-fill{position:absolute;inset:0 auto 0 0;border-radius:inherit;background:linear-gradient(90deg,var(--accent),var(--accent2))}
 .bar-value{justify-self:end;color:var(--ink);font-weight:600}
 .metric-table-wrap{overflow:auto}.metric-table{border-collapse:collapse;width:100%;font:.72rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;white-space:nowrap}.metric-table th,.metric-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:center}.metric-table thead th{color:var(--sub);font-weight:600}.metric-table th:first-child{text-align:left}.metric-table tbody th{font-weight:600}.metric-table td{color:var(--sub)}
-.node-graph-wrap{position:relative;border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,var(--panel),var(--card));overflow:hidden}
-#webcanvas{width:100%;height:min(62vh,520px);min-height:320px;border:0;background:transparent}
-.node-shell{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
-.node-chips{display:flex;gap:8px;flex-wrap:wrap}
-.node-chip{padding:6px 9px;border-radius:999px;border:1px solid var(--line);background:var(--card);font-size:.72rem;color:var(--ink)}
+.node-graph-wrap{position:relative;border:1px solid var(--line);border-radius:10px;background:linear-gradient(180deg,var(--panel),var(--card));overflow:auto}
+#webcanvas{width:100%;height:570px;min-height:570px;border:0;background:transparent;touch-action:none;display:block}
+.web-legend{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0 8px;font: .74rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub)}
+.web-legend span{display:inline-flex;align-items:center;gap:6px}.web-legend i{width:11px;height:11px;border-radius:4px;background:var(--panel);border:1px solid var(--line)}.web-legend .legend-story{background:var(--accent);border-color:var(--accent)}.web-legend .legend-chapter{background:var(--card-strong);border-color:var(--accent2)}
+.web-selection{min-height:34px;padding:8px 0;color:var(--sub);font: .75rem/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 
-@media(max-width:800px){.app-header{padding:14px 17px}.app-nav{padding-left:10px;padding-right:10px}main{padding:19px 17px 36px}.tile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.welcome-panel{padding:24px;grid-template-columns:minmax(0,1fr) 190px}.welcome-art{height:145px}.write-layout{grid-template-columns:1fr}.write-hero{display:block}.write-actions{margin-top:12px}.finalise-layout{grid-template-columns:1fr}.finalise-side{grid-template-columns:repeat(2,minmax(0,1fr))}.book-design-grid{grid-template-columns:1fr}.metrics-summary,.metric-grid{grid-template-columns:1fr 1fr}}
-@media(max-width:560px){.app-header{align-items:flex-start;gap:8px}.brand-button{font-size:1.18rem}.header-right{gap:6px;flex-wrap:wrap;justify-content:flex-end}.status-pill{display:none}.stats{font-size:.7rem}.home-shortcut{padding:6px 8px}.tab{padding:10px 9px;font-size:.77rem}.tab svg{display:none}.welcome-panel{display:block;padding:22px 20px}.welcome-panel h2{font-size:2rem}.welcome-art{height:112px;margin-top:10px}.orbit{width:100px;height:100px}.art-book{width:66px;height:83px}.art-book svg{width:32px;height:32px}.dashboard-stats{gap:6px}.stat-card{padding:10px 8px;display:block;text-align:center}.stat-icon{margin:0 auto 7px;width:29px;height:29px}.stat-value{font-size:.9rem}.stat-label{font-size:.65rem}.tile-grid{gap:8px}.home-tile{min-height:136px;padding:13px}.tile-icon{width:34px;height:34px;margin-bottom:12px}.tile-desc{font-size:.7rem}.finalise-card{grid-template-columns:1fr;padding:14px}.finalise-card>.primary-button{justify-self:start;margin-left:52px}.settings-grid{grid-template-columns:1fr}.setting-row{align-items:flex-start;flex-direction:column;gap:9px}.setting-row select{max-width:none;width:100%}.finalise-side{grid-template-columns:1fr}.project-home-strip{align-items:flex-start;flex-direction:column}.project-create input{width:100%}.book-options{grid-template-columns:1fr}.book-preview-pages{grid-template-columns:repeat(2,minmax(0,1fr))}.book-page{min-height:230px;padding:17px 12px}.metrics-summary,.metric-grid{grid-template-columns:1fr}.bar-row{grid-template-columns:80px minmax(0,1fr) 32px}#webcanvas{height:48vh;min-height:290px}#view-write{padding:16px 13px 32px}.write-editor-panel [contenteditable]{min-height:60vh;padding:18px 16px}main{padding-left:13px;padding-right:13px}}
+@media(max-width:800px){.app-header{padding:14px 17px}.app-nav{padding-left:10px;padding-right:10px}main{padding:19px 17px 36px}.tile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.welcome-panel{padding:24px;grid-template-columns:minmax(0,1fr) 190px}.welcome-art{height:145px}.finalise-layout{grid-template-columns:1fr}.finalise-side{grid-template-columns:repeat(2,minmax(0,1fr))}.book-design-grid{grid-template-columns:1fr}.metrics-summary,.metric-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.app-header{align-items:flex-start;gap:8px}.brand-button{font-size:1.18rem}.header-right{gap:6px;flex-wrap:wrap;justify-content:flex-end}.status-pill{display:none}.stats{font-size:.7rem}.home-shortcut{padding:6px 8px}.tab{padding:10px 9px;font-size:.77rem}.tab svg{display:none}.welcome-panel{display:block;padding:22px 20px}.welcome-panel h2{font-size:2rem}.welcome-art{height:112px;margin-top:10px}.orbit{width:100px;height:100px}.art-book{width:66px;height:83px}.art-book svg{width:32px;height:32px}.dashboard-stats{gap:6px}.stat-card{padding:10px 8px;display:block;text-align:center}.stat-icon{margin:0 auto 7px;width:29px;height:29px}.stat-value{font-size:.9rem}.stat-label{font-size:.65rem}.tile-grid{gap:8px}.home-tile{min-height:136px;padding:13px}.tile-icon{width:34px;height:34px;margin-bottom:12px}.tile-desc{font-size:.7rem}.finalise-card{grid-template-columns:1fr;padding:14px}.finalise-card>.primary-button{justify-self:start;margin-left:52px}.settings-grid{grid-template-columns:1fr}.setting-row{align-items:flex-start;flex-direction:column;gap:9px}.setting-row select{max-width:none;width:100%}.finalise-side{grid-template-columns:1fr}.project-home-strip{align-items:flex-start;flex-direction:column}.project-create input{width:100%}.book-options{grid-template-columns:1fr}.book-preview-pages{grid-template-columns:repeat(2,minmax(0,1fr))}.book-page{min-height:230px;padding:17px 12px}.metrics-summary,.metric-grid{grid-template-columns:1fr}.bar-row{grid-template-columns:80px minmax(0,1fr) 32px}#webcanvas{height:48vh;min-height:290px}#view-write{padding:16px 13px 32px}.write-library-hero{display:block;padding:24px 0}.write-library-actions{margin-top:16px}.writer-command-bar{align-items:flex-start;flex-direction:column}.writer-command-actions{width:100%}.writer-command-bar select{flex:1;min-width:0;max-width:none}.write-workspace [contenteditable]{min-height:60vh;padding:18px 16px}main{padding-left:13px;padding-right:13px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.thread-mark path{stroke-dashoffset:0}}
 </style>
 </head>
@@ -359,31 +370,17 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
 
     <section class="view" id="view-write" aria-labelledby="write-title">
       <div class="write-shell">
-        <div class="write-hero">
-          <div>
-            <div class="eyebrow">Loomwright drafting studio</div>
-            <h2 id="write-title">Write</h2>
+        <section class="write-library" id="write-library" aria-label="Writing desk">
+          <div class="write-library-hero">
+            <div class="write-library-copy"><div class="eyebrow">Loomwright writing desk</div><h2 id="write-title">Where would you like to begin?</h2><p>Open a recent document or start a new one. Your writing stays saved on this device.</p></div>
+            <div class="write-library-actions"><button class="primary-button" id="create-blank-doc" type="button">＋ New document</button><label class="secondary-button upload-button" for="file-input">⇪ Import documents</label><input type="file" id="file-input" accept=".txt,.docx,.pdf" multiple hidden></div>
           </div>
-          <div class="write-actions">
-            <button class="primary-button" id="create-blank-doc" type="button">＋ Create blank document</button>
-            <label class="secondary-button upload-button" for="file-input">⇪ Upload a file</label>
-            <input type="file" id="file-input" accept=".txt,.docx,.pdf" multiple hidden>
-          </div>
-        </div>
-
-        <div class="write-layout">
-          <aside class="write-sidebar">
-            <div class="write-sidebar-header">
-              <h3>Jump back in</h3>
-            </div>
-            <div class="document-list" id="document-list" aria-live="polite"></div>
-          </aside>
-
-          <div class="write-editor-panel">
-            <div class="write-top"><select id="section-select" aria-label="Choose a section"></select><button class="addbtn" id="add-section" type="button">+ New Section</button><button class="importbtn" id="import-trigger" type="button">⇪ Import</button></div>
-            <div class="editor" id="editor-wrap"></div>
-          </div>
-        </div>
+          <section class="write-library-documents" aria-labelledby="document-list-title"><div class="write-library-heading"><h3 id="document-list-title">Recent documents</h3><span id="write-document-count"></span></div><div class="document-list" id="document-list" aria-live="polite"></div></section>
+        </section>
+        <section class="write-workspace" id="write-workspace" aria-label="Writing workspace" hidden>
+          <div class="writer-command-bar"><button class="writer-back" id="write-back" type="button">← Documents</button><div class="writer-command-actions"><select id="section-select" aria-label="Choose a section"></select><button class="addbtn" id="add-section" type="button">＋ Chapter</button></div></div>
+          <div class="editor" id="editor-wrap"></div>
+        </section>
       </div>
     </section>
 
@@ -398,8 +395,10 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
     </section>
 
     <section class="view" id="view-web" aria-labelledby="web-title">
-      <div class="page-intro"><h2 id="web-title">Story Web</h2><p>Drag nodes to rearrange. Lines connect recurring characters who appear together in a section.</p></div>
-      <svg id="webcanvas" role="img" aria-label="Character relationship web"></svg>
+      <div class="page-intro"><h2 id="web-title">Story Web</h2><p>Follow the story from manuscript to chapters to characters. Drag any node to arrange your map.</p></div>
+      <div class="node-graph-wrap"><svg id="webcanvas" role="img" aria-label="Story graph connecting chapters and recurring characters"></svg></div>
+      <div class="web-legend" aria-label="Node types"><span><i class="legend-story"></i>Story</span><span><i class="legend-chapter"></i>Chapter</span><span><i></i>Character</span></div>
+      <div id="web-selection" class="web-selection" role="status" aria-live="polite"></div>
       <div id="web-empty" class="empty" hidden>Add recurring characters to your sections to see the story web.</div>
       <div class="web-hint">The web is a quick visual aid, not a substitute for your own continuity notes.</div>
     </section>

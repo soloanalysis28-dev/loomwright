@@ -177,7 +177,7 @@ function totalCharacters(){return detectCharacters().length}
 function switchView(name){
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));
-  if(name==='home')renderHome();if(name==='projects')renderProjects();if(name==='write')renderDocumentList();if(name==='metrics')renderMetrics();if(name==='characters')renderCharacters();if(name==='web')renderWeb();if(name==='ai')renderAI();if(name==='finalise')renderFinalise();if(name==='settings')applyTheme();
+  if(name==='home')renderHome();if(name==='projects')renderProjects();if(name==='write')showWriteLibrary();if(name==='metrics')renderMetrics();if(name==='characters')renderCharacters();if(name==='web')renderWeb();if(name==='ai')renderAI();if(name==='finalise')renderFinalise();if(name==='settings')applyTheme();
   window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
 }
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>switchView(t.dataset.view)));
@@ -195,15 +195,40 @@ function renderDocumentList(){
   const list=document.getElementById('document-list');
   if(!list)return;
   list.innerHTML='';
+  const count=document.getElementById('write-document-count');
+  if(count)count.textContent=`${state.sections.length} ${state.sections.length===1?'document':'documents'}`;
   state.sections.forEach(section=>{
     const item=document.createElement('button');
     item.type='button';
     item.className='document-item'+(String(section.id)===String(state.activeId)?' active':'');
     item.setAttribute('data-id',String(section.id));
     item.innerHTML=`<div class="doc-thumb">${escapeHtml((section.title||'Untitled').trim().slice(0,1).toUpperCase()||'U')}</div><div class="doc-meta"><span class="doc-title">${escapeHtml(section.title||'Untitled')}</span><span class="doc-subtle">${wc(section.html||'')} words</span></div>`;
-    item.addEventListener('click',()=>{state.activeId=section.id;save();renderSidebar();renderEditor();});
+    item.addEventListener('click',()=>openSection(section.id));
     list.appendChild(item);
   });
+}
+function showWriteLibrary(){
+  document.getElementById('write-library').hidden=false;
+  document.getElementById('write-workspace').hidden=true;
+  renderDocumentList();
+}
+function showWriteWorkspace(){
+  document.getElementById('write-library').hidden=true;
+  document.getElementById('write-workspace').hidden=false;
+  renderSidebar();
+  renderEditor();
+}
+function openSection(id){
+  const section=state.sections.find(item=>String(item.id)===String(id));
+  if(!section)return;
+  state.activeId=section.id;
+  save();
+  showWriteWorkspace();
+}
+function createBlankDocument(){
+  addSection();
+  showWriteWorkspace();
+  document.getElementById('title-input')?.focus();
 }
 function getChapterMetrics(){
   const names=detectCharacters().map(([name])=>name);
@@ -340,7 +365,8 @@ function addSection(){const id=Date.now();state.sections.push({id,title:'New Sec
 function delSection(id){if(state.sections.length===1){toast("You can’t delete your only section.");return}state.sections=state.sections.filter(s=>s.id!==id);state.activeId=state.sections[0].id;save();renderSidebar();renderEditor();renderHome()}
 
 document.getElementById('add-section').addEventListener('click',addSection);
-document.getElementById('import-trigger').addEventListener('click',()=>document.getElementById('file-input').click());
+document.getElementById('create-blank-doc').addEventListener('click',createBlankDocument);
+document.getElementById('write-back').addEventListener('click',showWriteLibrary);
 document.getElementById('file-input').onchange=async e=>{
   const files=[...e.target.files].slice(0,12);if(e.target.files.length>12)toast('Choose up to 12 files at a time.');let imported=0;
   for(const file of files){try{
@@ -355,10 +381,10 @@ document.getElementById('file-input').onchange=async e=>{
     html=sanitizeRichHtml(html);const id=Date.now()+Math.floor(Math.random()*1000);state.sections.push({id,title:name,html});state.activeId=id;imported++;
     setImportSafetyStatus(`${file.name}: local checks passed. Unsafe formatting and active links were removed.${check.notes.length?' '+check.notes.join(' '):''}`,check.notes.length?'warning':'ok');
   }catch(err){const message=err?.message||'Could not safely check this file.';setImportSafetyStatus(`${file.name}: not imported. ${message}`,'error');toast('Import stopped: '+message);console.warn('Import safety check stopped a file:',file.name,message)}}
-  if(imported){save();renderSidebar();renderEditor();renderHome();toast(`${imported} file${imported===1?'':'s'} safely imported.`)}e.target.value='';
+  if(imported){save();renderSidebar();renderEditor();renderHome();showWriteWorkspace();toast(`${imported} file${imported===1?'':'s'} safely imported.`)}e.target.value='';
 };
 
-const STOPWORDS=new Set(['The','A','An','I','He','She','They','We','It','You','Us','Them','Its','Your','Yours','Yourself','Our','Ours','Ourselves','Themselves','Himself','Herself','Myself','Someone','Somebody','Something','Somewhere','Somehow','Anyone','Anybody','Anything','Anywhere','Everyone','Everybody','Everything','Everywhere','Nothing','Nobody','Nowhere','None','But','And','Or','Nor','So','Yet','If','When','Then','Than','There','Here','This','That','These','Those','His','Her','Their','Because','Although','Though','While','Since','Unless','Until','After','Before','Above','Below','Between','Among','Beyond','Within','Without','Through','Across','Around','Toward','Towards','During','Despite','Perhaps','Suddenly','Meanwhile','However','Instead','Otherwise','Still','Also','Even','Just','Now','Soon','Later','Finally','Eventually','Indeed','Certainly','Probably','Maybe','Well','Oh','Ah','Yes','No','Okay','Alright','Sure','Right','Look','Listen','Wait','Stop','Come','Go','Let','Once','Again','Almost','Already','Always','Never','Every','Each','Both','Few','Many','Most','Some','All','Any','Can','Could','Would','Should','Will','Shall','Must','May','Might','Do','Does','Did','Am','Is','Are','Was','Were','Being','Been','Have','Has','Had','Sorry','Please','Thanks','Thank','Hello','Hi','Hey','Goodbye','Bye','Congratulations','Welcome','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','January','February','March','April','May','June','July','August','September','October','November','December','Chapter','Prologue','Epilogue','Part']);
+const STOPWORDS=new Set(['The','A','An','I','He','She','They','We','It','You','Us','Them','Its','Your','Yours','Yourself','Our','Ours','Ourselves','Themselves','Himself','Herself','Myself','Someone','Somebody','Something','Somewhere','Somehow','Anyone','Anybody','Anything','Anywhere','Everyone','Everybody','Everything','Everywhere','Nothing','Nobody','Nowhere','None','But','And','Or','Nor','So','Yet','If','When','Then','Than','There','Here','This','That','These','Those','His','Her','Their','Because','Although','Though','While','Since','Unless','Until','After','Before','Above','Below','Between','Among','Beyond','Within','Without','Through','Across','Around','Toward','Towards','During','Despite','Perhaps','Suddenly','Meanwhile','Normally','However','Instead','Otherwise','Still','Also','Even','Just','Now','Soon','Later','Finally','Eventually','Indeed','Certainly','Probably','Maybe','Well','Oh','Ah','Yes','No','Okay','Alright','Sure','Right','Look','Listen','Wait','Stop','Come','Go','Let','Once','Again','Almost','Already','Always','Never','Every','Each','Both','Few','Many','Most','Some','All','Any','Can','Could','Would','Should','Will','Shall','Must','May','Might','Do','Does','Did','Am','Is','Are','Was','Were','Being','Been','Have','Has','Had','Sorry','Please','Thanks','Thank','Hello','Hi','Hey','Goodbye','Bye','Congratulations','Welcome','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','January','February','March','April','May','June','July','August','September','October','November','December','Chapter','Prologue','Epilogue','Part']);
 const COMMON_ENGLISH=new Set(['the','of','and','a','to','in','is','was','he','for','it','with','as','his','on','be','at','by','i','this','had','not','are','but','from','or','have','an','they','which','one','you','were','her','all','she','there','would','their','we','him','been','has','when','who','will','more','no','if','out','so','said','what','up','its','about','into','than','them','can','only','other','new','some','could','time','these','two','may','then','do','first','any','my','now','such','like','our','over','me','even','most','made','after','also','did','many','before','must','through','back','where','much','your','way','well','down','should','because','each','just','those','how','too','little','very','make','still','own','see','work','long','here','get','both','between','know','while','last','might','us','old','year','come','right','used','take']);
 function sectionLooksNonEnglish(html){
   const words=(textOf(html).match(/[A-Za-z']+/g)||[]);
@@ -370,8 +396,8 @@ function detectCharacters(){
   const nonEnglish=new Set();state.sections.forEach(s=>{if(sectionLooksNonEnglish(s.html||''))nonEnglish.add(s.id)});
   const scanSections=state.sections.filter(s=>!nonEnglish.has(s.id));
   const lowerSeen=new Set();scanSections.forEach(s=>{const plain=textOf(s.html||'').replace(/\n+/g,'. ');(plain.match(/[A-Za-z']+/g)||[]).forEach(w=>{if(/^[a-z][a-z']{2,}$/.test(w))lowerSeen.add(w)})});
-  const solo={},bigrams={};scanSections.forEach(s=>{const plain=textOf(s.html||'').replace(/\n+/g,'. '),tokens=plain.match(/[A-Za-z']+|[.!?]|["“”:]/g)||[];let atStart=true,prevWord='',prevCand=null;const seenSolo=new Set(),seenBig=new Set();
-    tokens.forEach(tok=>{if(tok==='.'||tok==='!'||tok==='?'||tok==='"'||tok==='“'||tok==='”'||tok===':'){atStart=true;prevCand=null;return}
+  const solo={},bigrams={};scanSections.forEach(s=>{const plain=textOf(s.html||'').replace(/\n+/g,'. '),tokens=plain.match(/[A-Za-z']+|[.!?,;]|["“”:]/g)||[];let atStart=true,prevWord='',prevCand=null;const seenSolo=new Set(),seenBig=new Set();
+    tokens.forEach(tok=>{if(tok===','||tok===';'){prevCand=null;return}if(tok==='.'||tok==='!'||tok==='?'||tok==='"'||tok==='“'||tok==='”'||tok===':'){atStart=true;prevCand=null;return}
       const isCand=/^[A-Z][a-z]{2,}$/.test(tok)&&!STOPWORDS.has(tok)&&!lowerSeen.has(tok.toLowerCase());
       if(isCand){if(!solo[tok])solo[tok]={count:0,sections:new Set(),midHits:0,afterDeterminer:0};solo[tok].count++;if(!atStart)solo[tok].midHits++;if(prevWord==='the'||prevWord==='a'||prevWord==='an')solo[tok].afterDeterminer++;seenSolo.add(tok);
         if(prevCand){const key=prevCand+' '+tok;if(!bigrams[key])bigrams[key]={count:0,sections:new Set(),first:prevCand,last:tok};bigrams[key].count++;seenBig.add(key)}
@@ -381,7 +407,7 @@ function detectCharacters(){
     seenSolo.forEach(w=>solo[w].sections.add(s.title||'Untitled'));seenBig.forEach(k=>bigrams[k].sections.add(s.title||'Untitled'));
   });
   const used=new Set(),results=[];
-  Object.values(bigrams).forEach(b=>{const fc=solo[b.first]?solo[b.first].count:b.count,lc=solo[b.last]?solo[b.last].count:b.count,total=Math.max(fc+lc-b.count,b.count);const sections=new Set(b.sections);if(solo[b.first])solo[b.first].sections.forEach(x=>sections.add(x));if(solo[b.last])solo[b.last].sections.forEach(x=>sections.add(x));results.push([b.first+' '+b.last,{count:total,sections,aliases:[b.first,b.last]}]);used.add(b.first);used.add(b.last)});
+  Object.values(bigrams).forEach(b=>{const fc=solo[b.first]?solo[b.first].count:b.count,lc=solo[b.last]?solo[b.last].count:b.count,total=Math.max(fc+lc-b.count,b.count);if(total<2)return;const sections=new Set(b.sections);if(solo[b.first])solo[b.first].sections.forEach(x=>sections.add(x));if(solo[b.last])solo[b.last].sections.forEach(x=>sections.add(x));results.push([b.first+' '+b.last,{count:total,sections,aliases:[b.first,b.last]}]);used.add(b.first);used.add(b.last)});
   Object.entries(solo).forEach(([w,d])=>{if(used.has(w))return;if(d.count<2||d.midHits<1)return;if(d.afterDeterminer/d.count>.4)return;results.push([w,{count:d.count,sections:d.sections}])});
   const merged=applyCharMerges(results.filter(([n])=>!state.charIgnore?.[n]));
   return merged.sort((a,b)=>b[1].count-a[1].count);
@@ -404,7 +430,6 @@ function applyCharMerges(results){
   function ignoreCharacter(name){state.charIgnore=state.charIgnore||{};state.charIgnore[name]=true;save();renderCharacters();renderWeb();renderMetrics()}
   function restoreIgnoredCharacters(){state.charIgnore={};save();renderCharacters();renderWeb();renderMetrics()}
   function mergeCharacter(name,target){if(!target||target===name)return;state.charMerge=state.charMerge||{};state.charMerge[name]=target;save();renderCharacters();renderWeb();renderMetrics()}
-  document.getElementById('create-blank-doc')?.addEventListener('click',addSection);
 function renderCharacters(){
   const grid=document.getElementById('char-grid'),chars=detectCharacters(),hiddenCount=Object.keys(state.charIgnore||{}).length;
   if(!chars.length){grid.innerHTML='<div class="empty">No recurring characters detected yet. Names mentioned two or more times, including away from sentence starts, will appear here.</div>'+(hiddenCount?`<div class="empty"><a href="#" id="restore-hidden-link">Restore ${hiddenCount} hidden entr${hiddenCount===1?'y':'ies'}</a></div>`:'');if(hiddenCount)document.getElementById('restore-hidden-link').onclick=e=>{e.preventDefault();restoreIgnoredCharacters()};return}
@@ -421,19 +446,58 @@ function renderCharacters(){
   if(hiddenCount){const note=document.createElement('div');note.className='empty';note.innerHTML=`<a href="#" id="restore-hidden-link">Restore ${hiddenCount} hidden entr${hiddenCount===1?'y':'ies'}</a>`;grid.appendChild(note);document.getElementById('restore-hidden-link').onclick=e=>{e.preventDefault();restoreIgnoredCharacters()}}
 }
 function renderWeb(){
-  const svg=document.getElementById('webcanvas'),empty=document.getElementById('web-empty'),chars=detectCharacters().slice(0,15);
-  svg.innerHTML='';if(!chars.length){svg.hidden=true;empty.hidden=false;return}svg.hidden=false;empty.hidden=true;
+  const svg=document.getElementById('webcanvas'),empty=document.getElementById('web-empty'),selection=document.getElementById('web-selection');
+  const characters=detectCharacters(),chapters=state.sections;
+  if(!chapters.length){svg.hidden=true;empty.hidden=false;return}
+  svg.hidden=false;empty.hidden=characters.length>0;svg.innerHTML='';
   state.webPositions=state.webPositions||{};
-  const w=svg.clientWidth||700,h=svg.clientHeight||420,ns='http://www.w3.org/2000/svg',positions=state.webPositions;
-  const nodes=chars.map(([name,d],i)=>{const angle=i/chars.length*Math.PI*2,radius=Math.min(w,h)*.28,saved=positions[name];return{name,x:saved?Math.min(w-40,Math.max(40,saved.x)):w/2+radius*Math.cos(angle),y:saved?Math.min(h-40,Math.max(40,saved.y)):h/2+radius*Math.sin(angle),sections:d.sections}});
+  const ns='http://www.w3.org/2000/svg',positions=state.webPositions,width=svg.clientWidth||900;
+  const columns=Math.min(Math.max(1,Math.floor((width-24)/190)),Math.max(characters.length,1)),narrowLayout=width<500;
+  const rows=Math.ceil(characters.length/columns),characterStartY=narrowLayout?198+chapters.length*82+38:320,height=Math.max(570,characterStartY+rows*88);
+  svg.style.height=`${height}px`;
+  const spread=(index,count)=>width*(index+1)/(count+1);
+  const nodes=[{key:'story-root',type:'story',label:projects.find(project=>project.id===activeProjectId)?.name||'Story',detail:'STORY',width:198,height:58,defaultX:width/2,defaultY:66}];
+  chapters.forEach((chapter,index)=>nodes.push({key:`chapter:${chapter.id}`,type:'chapter',label:chapter.title||'Untitled chapter',detail:`${wc(chapter.html||'').toLocaleString()} words`,width:174,height:54,defaultX:narrowLayout?width/2:spread(index,chapters.length),defaultY:narrowLayout?198+index*82:198,section:chapter}));
+  characters.forEach(([name,data],index)=>{
+    const row=Math.floor(index/columns),column=index%columns,count=Math.min(columns,characters.length-row*columns);
+    nodes.push({key:`character:${name}`,type:'character',label:name,detail:`${data.count} mentions`,width:154,height:48,defaultX:spread(column,count),defaultY:characterStartY+row*88,character:data});
+  });
+  nodes.forEach(node=>{
+    const saved=positions[node.key],sameLayout=saved&&saved.columns===columns,halfWidth=node.width/2;
+    node.x=sameLayout?Math.min(width-halfWidth-6,Math.max(halfWidth+6,Number(saved.x)||node.defaultX)):node.defaultX;
+    node.y=sameLayout?Math.min(height-node.height/2-8,Math.max(node.height/2+8,Number(saved.y)||node.defaultY)):node.defaultY;
+  });
+  const byKey=new Map(nodes.map(node=>[node.key,node])),connections=[];
+  chapters.forEach(chapter=>connections.push([byKey.get('story-root'),byKey.get(`chapter:${chapter.id}`)]));
+  characters.forEach(([name,data])=>chapters.forEach(chapter=>{if(data.sections.has(chapter.title||'Untitled'))connections.push([byKey.get(`chapter:${chapter.id}`),byKey.get(`character:${name}`)])}));
   const edgeLayer=document.createElementNS(ns,'g');
-  for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++)if([...nodes[i].sections].some(section=>nodes[j].sections.has(section))){const line=document.createElementNS(ns,'line');line.setAttribute('x1',nodes[i].x);line.setAttribute('y1',nodes[i].y);line.setAttribute('x2',nodes[j].x);line.setAttribute('y2',nodes[j].y);line.setAttribute('stroke','var(--line)');line.setAttribute('stroke-width','1.5');line.dataset.from=nodes[i].name;line.dataset.to=nodes[j].name;edgeLayer.appendChild(line)}
-  svg.appendChild(edgeLayer);const nodeLayer=document.createElementNS(ns,'g');
-  nodes.forEach(node=>{const group=document.createElementNS(ns,'g');group.style.cursor='grab';const circle=document.createElementNS(ns,'circle');circle.setAttribute('cx',node.x);circle.setAttribute('cy',node.y);circle.setAttribute('r',26);circle.setAttribute('fill','var(--accent2)');circle.setAttribute('opacity','.88');const text=document.createElementNS(ns,'text');text.setAttribute('x',node.x);text.setAttribute('y',node.y+42);text.setAttribute('text-anchor','middle');text.setAttribute('font-size','12');text.setAttribute('fill','var(--ink)');text.setAttribute('font-family','sans-serif');text.textContent=node.name;group.append(circle,text);let dragging=false;
-    group.addEventListener('pointerdown',event=>{dragging=true;group.setPointerCapture(event.pointerId);group.style.cursor='grabbing'});
-    group.addEventListener('pointermove',event=>{if(!dragging)return;const rect=svg.getBoundingClientRect();node.x=Math.min(rect.width-40,Math.max(40,event.clientX-rect.left));node.y=Math.min(rect.height-40,Math.max(40,event.clientY-rect.top));positions[node.name]={x:node.x,y:node.y};circle.setAttribute('cx',node.x);circle.setAttribute('cy',node.y);text.setAttribute('x',node.x);text.setAttribute('y',node.y+42);edgeLayer.querySelectorAll('line').forEach(line=>{if(line.dataset.from===node.name){line.setAttribute('x1',node.x);line.setAttribute('y1',node.y)}if(line.dataset.to===node.name){line.setAttribute('x2',node.x);line.setAttribute('y2',node.y)}})});
-    group.addEventListener('pointerup',()=>{dragging=false;group.style.cursor='grab';save()});group.addEventListener('pointercancel',()=>{dragging=false;group.style.cursor='grab';save()});nodeLayer.appendChild(group)});
+  connections.forEach(([from,to])=>{const line=document.createElementNS(ns,'line');line.setAttribute('x1',from.x);line.setAttribute('y1',from.y);line.setAttribute('x2',to.x);line.setAttribute('y2',to.y);line.setAttribute('stroke','var(--line)');line.setAttribute('stroke-width','1.5');line.dataset.from=from.key;line.dataset.to=to.key;edgeLayer.appendChild(line)});
+  svg.appendChild(edgeLayer);
+  const nodeLayer=document.createElementNS(ns,'g');
+  nodes.forEach(node=>{
+    const group=document.createElementNS(ns,'g'),rect=document.createElementNS(ns,'rect'),label=document.createElementNS(ns,'text'),detail=document.createElementNS(ns,'text');
+    group.style.cursor='grab';group.setAttribute('role','button');group.setAttribute('tabindex','0');group.setAttribute('aria-label',`${node.type}: ${node.label}, ${node.detail}`);
+    group.dataset.key=node.key;
+    rect.setAttribute('x',node.x-node.width/2);rect.setAttribute('y',node.y-node.height/2);rect.setAttribute('width',node.width);rect.setAttribute('height',node.height);rect.setAttribute('rx',node.type==='character'?'9':'12');
+    rect.setAttribute('fill',node.type==='story'?'var(--accent)':node.type==='chapter'?'var(--card-strong)':'var(--panel)');rect.setAttribute('stroke',node.type==='story'?'var(--accent)':node.type==='chapter'?'var(--accent2)':'var(--line)');rect.setAttribute('stroke-width',node.type==='character'?'1':'1.5');
+    label.setAttribute('x',node.x);label.setAttribute('y',node.y-2);label.setAttribute('text-anchor','middle');label.setAttribute('font-size',node.type==='story'?'14':'12');label.setAttribute('font-weight','600');label.setAttribute('fill',node.type==='story'?'var(--primary-text)':'var(--ink)');label.setAttribute('font-family','sans-serif');label.textContent=node.label.length>21?node.label.slice(0,19)+'…':node.label;
+    detail.setAttribute('x',node.x);detail.setAttribute('y',node.y+14);detail.setAttribute('text-anchor','middle');detail.setAttribute('font-size','9');detail.setAttribute('fill',node.type==='story'?'var(--primary-text)':'var(--sub)');detail.setAttribute('font-family','sans-serif');detail.textContent=node.detail;
+    group.append(rect,label,detail);
+    let dragging=false;
+    const selectNode=()=>{if(!selection)return;selection.textContent=node.type==='character'?`${node.label} · ${node.detail} · Appears in ${[...node.character.sections].join(', ')}`:node.type==='chapter'?`${node.label} · ${node.detail}`:`${node.label} · manuscript root`};
+    group.addEventListener('click',selectNode);group.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selectNode()}});
+    group.addEventListener('pointerdown',event=>{dragging=true;group.setPointerCapture(event.pointerId);group.style.cursor='grabbing';event.preventDefault()});
+    group.addEventListener('pointermove',event=>{
+      if(!dragging)return;
+      const bounds=svg.getBoundingClientRect();node.x=Math.min(bounds.width-node.width/2-6,Math.max(node.width/2+6,event.clientX-bounds.left));node.y=Math.min(height-node.height/2-8,Math.max(node.height/2+8,event.clientY-bounds.top));
+      positions[node.key]={x:node.x,y:node.y,columns};rect.setAttribute('x',node.x-node.width/2);rect.setAttribute('y',node.y-node.height/2);label.setAttribute('x',node.x);label.setAttribute('y',node.y-2);detail.setAttribute('x',node.x);detail.setAttribute('y',node.y+14);
+      edgeLayer.querySelectorAll('line').forEach(line=>{if(line.dataset.from===node.key){line.setAttribute('x1',node.x);line.setAttribute('y1',node.y)}if(line.dataset.to===node.key){line.setAttribute('x2',node.x);line.setAttribute('y2',node.y)}});
+    });
+    group.addEventListener('pointerup',()=>{dragging=false;group.style.cursor='grab';save()});group.addEventListener('pointercancel',()=>{dragging=false;group.style.cursor='grab';save()});
+    nodeLayer.appendChild(group);
+  });
   svg.appendChild(nodeLayer);
+  if(selection)selection.textContent='Drag nodes to arrange the story, chapters, and characters. Select a node for details.';
 }
 function renderAI(){const sel=document.getElementById('ai-section');sel.innerHTML='';state.sections.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.title||'Untitled';sel.appendChild(o)});sel.value=state.activeId}
 async function copyPrompt(){const s=state.sections.find(x=>String(x.id)===String(document.getElementById('ai-section').value)),tpl=document.getElementById('ai-template').value,prompt=tpl.replace('{{TEXT}}',s?textOf(s.html):'');try{await navigator.clipboard.writeText(prompt);toast('Prompt copied. Paste it into Claude or ChatGPT.')}catch(e){toast('Clipboard unavailable—select and copy the prompt manually.')}}
