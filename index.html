@@ -25,6 +25,25 @@
 *{box-sizing:border-box}
 html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,'Iowan Old Style',serif;min-height:100vh;transition:background .2s,color .2s}
+#bg-effect{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.bg-layer{position:absolute;inset:0;display:none}
+html[data-bg-effect="rain"] .bg-rain{display:block}
+html[data-bg-effect="clouds"] .bg-clouds{display:block}
+html[data-bg-effect="thunder"] .bg-thunder{display:block}
+.bg-rain{color:var(--ink);opacity:.16;background-image:repeating-linear-gradient(112deg,transparent 0 7px,currentColor 7px 8px,transparent 8px 38px);background-size:100% 260%;animation:bgRainFall .65s linear infinite}
+@keyframes bgRainFall{from{background-position:0 0}to{background-position:0 64px}}
+.bg-clouds .cloud,.bg-thunder .cloud{position:absolute;border-radius:50%;background:var(--ink);filter:blur(28px);opacity:.1}
+.bg-clouds .c1,.bg-thunder .c1{width:38vw;height:14vw;top:6%;left:-25%;animation:bgCloudDrift 46s linear infinite}
+.bg-clouds .c2,.bg-thunder .c2{width:26vw;height:10vw;top:16%;left:-30%;animation:bgCloudDrift 62s linear infinite;animation-delay:-14s;opacity:.07}
+.bg-clouds .c3,.bg-thunder .c3{width:44vw;height:16vw;top:2%;left:-20%;animation:bgCloudDrift 80s linear infinite;animation-delay:-30s;opacity:.06}
+.bg-thunder .cloud{background:var(--ink);opacity:.14}
+@keyframes bgCloudDrift{from{transform:translateX(0)}to{transform:translateX(160vw)}}
+.bg-thunder .flash{position:absolute;inset:0;background:#fff;opacity:0;mix-blend-mode:overlay}
+.bg-thunder .flash-a{animation:bgLightningA 9s linear infinite}
+.bg-thunder .flash-b{animation:bgLightningB 13s linear infinite}
+@keyframes bgLightningA{0%,96%{opacity:0}96.6%{opacity:.5}97.1%{opacity:.05}97.6%{opacity:.35}98%{opacity:0}100%{opacity:0}}
+@keyframes bgLightningB{0%,93%{opacity:0}93.4%{opacity:.3}93.8%{opacity:0}100%{opacity:0}}
+@media(prefers-reduced-motion: reduce){#bg-effect{display:none}}
 button,input,select,textarea{font:inherit}
 button{color:inherit}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[contenteditable]:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 58%,transparent);outline-offset:2px}
@@ -259,6 +278,11 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
 </style>
 </head>
 <body>
+<div id="bg-effect" aria-hidden="true">
+  <div class="bg-layer bg-rain"></div>
+  <div class="bg-layer bg-clouds"><span class="cloud c1"></span><span class="cloud c2"></span><span class="cloud c3"></span></div>
+  <div class="bg-layer bg-thunder"><span class="cloud c1"></span><span class="cloud c2"></span><span class="cloud c3"></span><span class="flash flash-a"></span><span class="flash flash-b"></span></div>
+</div>
 <div class="splash" id="splash" aria-label="Opening Loomwright">
   <div class="splash-content">
     <svg class="thread-mark" viewBox="0 0 80 80" aria-hidden="true"><path d="M15 39c9-23 31-29 45-18 10 8 5 19-8 22L28 49c-13 4-14 17-2 21 12 5 28-3 39-16M20 18c14 23 31 28 43 22M17 58c12-17 31-23 46-22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="61" cy="56" r="3.2" fill="currentColor"/></svg>
@@ -431,6 +455,7 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
         <div class="settings-panel setting-section"><h3>Appearance</h3>
           <div class="setting-row"><div class="setting-copy"><strong>Color palette</strong><small>Choose the color family for panels, accents, and backgrounds.</small></div><select id="palette-select" aria-label="Color palette"><option value="sage">Sage</option><option value="parchment">Parchment</option><option value="slate">Slate</option><option value="forest">Forest</option><option value="ink">Ink</option></select></div>
           <div class="setting-row"><div class="setting-copy"><strong>Theme</strong><small>Use a light or dark surface, or follow your device setting.</small></div><select id="theme-select" aria-label="Theme"><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
+          <div class="setting-row"><div class="setting-copy"><strong>Background effect</strong><small>A quiet animated backdrop behind the app. Off by default to save power; turns off automatically if your system prefers reduced motion.</small></div><select id="bg-effect-select" aria-label="Background effect"><option value="none">None</option><option value="rain">Rain</option><option value="clouds">Drifting clouds</option><option value="thunder">Thunderstorm</option></select></div>
         </div>
         <div class="settings-panel setting-section"><h3>Opening & storage</h3>
           <div class="setting-row"><div class="setting-copy"><strong>Opening animation</strong><small>A short, quiet Loomwright welcome before the home screen. You can also skip it as it plays.</small></div><button class="secondary-button" type="button" id="replay-intro">Replay intro</button></div>
