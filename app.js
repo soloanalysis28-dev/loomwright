@@ -8,7 +8,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdfjs/build/pdf.worker.
 const PDF_CMAP_URL=new URL('./vendor/pdfjs/cmaps/',import.meta.url).href;
 const PDF_STANDARD_FONT_URL=new URL('./vendor/pdfjs/standard_fonts/',import.meta.url).href;
 
-const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,charNotes:{},finaliseChecklist:{},charIgnore:{},charMerge:{}};
+const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,charNotes:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webPositions:{}};
 const PROJECTS_STORAGE_KEY='loomwright_projects_v1',ACTIVE_PROJECT_KEY='loomwright_active_project_v1',APP_SETTINGS_KEY='loomwright_app_settings_v1';
 const ONLINE_SYNC_ENABLED=false; // Reserved for a later, explicit online-save feature; offline mode is the only active storage.
 const DEFAULT_BOOK={title:'',subtitle:'',author:'',coverStyle:'botanical',trim:'trade',font:'serif',dedication:'',includeToc:true,includeCopyright:true};
@@ -64,7 +64,7 @@ async function screenImportFile(file){
 function newProjectId(){return 'project-'+(window.crypto?.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2,9))}
 function newProjectState(){return {...DEFAULT_STATE,sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],charNotes:{},finaliseChecklist:{},charIgnore:{},charMerge:{},book:{...DEFAULT_BOOK}}}
 function normalizeSettings(settings){const next={palette:'sage',theme:'light',...(settings||{})};if(!['sage','parchment','slate','forest','ink'].includes(next.palette))next.palette='sage';if(!['auto','light','dark'].includes(next.theme))next.theme='light';if(next.palette==='parchment'&&next.theme==='auto'){next.palette='sage';next.theme='light'}return next}
-function normalizeProjectState(value){const next=value&&typeof value==='object'?value:newProjectState();if(!Array.isArray(next.sections)||!next.sections.length)next.sections=newProjectState().sections;next.sections=next.sections.filter(s=>s&&typeof s==='object').map(s=>({...s,html:sanitizeRichHtml(s.html||'')}));if(!next.sections.length)next.sections=newProjectState().sections;delete next.settings;next.charNotes=next.charNotes||{};next.finaliseChecklist=next.finaliseChecklist||{};next.charIgnore=next.charIgnore||{};next.charMerge=next.charMerge||{};next.book={...DEFAULT_BOOK,...(next.book||{})};return next}
+function normalizeProjectState(value){const next=value&&typeof value==='object'?value:newProjectState();if(!Array.isArray(next.sections)||!next.sections.length)next.sections=newProjectState().sections;next.sections=next.sections.filter(s=>s&&typeof s==='object').map(s=>({...s,html:sanitizeRichHtml(s.html||'')}));if(!next.sections.length)next.sections=newProjectState().sections;delete next.settings;next.charNotes=next.charNotes||{};next.finaliseChecklist=next.finaliseChecklist||{};next.charIgnore=next.charIgnore||{};next.charMerge=next.charMerge||{};next.webPositions=next.webPositions||{};next.book={...DEFAULT_BOOK,...(next.book||{})};return next}
 let legacyState=null,projectStore=null;
 try{legacyState=JSON.parse(localStorage.getItem('loomwright_state')||'null')}catch(e){}
 try{projectStore=JSON.parse(localStorage.getItem(PROJECTS_STORAGE_KEY)||'null')}catch(e){}
@@ -167,7 +167,7 @@ function totalCharacters(){return detectCharacters().length}
 function switchView(name){
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));
-  if(name==='home')renderHome();if(name==='projects')renderProjects();if(name==='characters')renderCharacters();if(name==='web')renderWeb();if(name==='ai')renderAI();if(name==='finalise')renderFinalise();if(name==='settings')applyTheme();
+  if(name==='home')renderHome();if(name==='projects')renderProjects();if(name==='write')renderDocumentList();if(name==='metrics')renderMetrics();if(name==='characters')renderCharacters();if(name==='web')renderWeb();if(name==='ai')renderAI();if(name==='finalise')renderFinalise();if(name==='settings')applyTheme();
   window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
 }
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>switchView(t.dataset.view)));
@@ -180,6 +180,56 @@ function renderHome(){
   document.getElementById('home-finalise-progress').style.width=pct+'%';document.getElementById('home-finalise-label').textContent=`${done} of ${total} ready`;
   document.getElementById('totalstats').textContent=words.toLocaleString()+' words';
   const project=projects.find(p=>p.id===activeProjectId);document.getElementById('project-current-name').textContent=project?.name||'Untitled Project';document.getElementById('project-home-count').textContent=`${projects.length} project${projects.length===1?'':'s'} saved on this device`;
+}
+function renderDocumentList(){
+  const list=document.getElementById('document-list');
+  if(!list)return;
+  list.innerHTML='';
+  state.sections.forEach(section=>{
+    const item=document.createElement('button');
+    item.type='button';
+    item.className='document-item'+(String(section.id)===String(state.activeId)?' active':'');
+    item.setAttribute('data-id',String(section.id));
+    item.innerHTML=`<div class="doc-thumb">${escapeHtml((section.title||'Untitled').trim().slice(0,1).toUpperCase()||'U')}</div><div class="doc-meta"><span class="doc-title">${escapeHtml(section.title||'Untitled')}</span><span class="doc-subtle">${wc(section.html||'')} words</span></div>`;
+    item.addEventListener('click',()=>{state.activeId=section.id;save();renderSidebar();renderEditor();});
+    list.appendChild(item);
+  });
+}
+function getChapterMetrics(){
+  const names=detectCharacters().map(([name])=>name);
+  return state.sections.map(section=>{
+    const text=textOf(section.html||''),words=wc(section.html||''),characterMentions={};
+    names.forEach(name=>{
+      const escaped=name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      const matches=text.match(new RegExp(`\\b${escaped}\\b`,'gi'));
+      if(matches)characterMentions[name]=matches.length;
+    });
+    return {title:section.title||'Untitled',words,pageEstimate:Math.ceil(words/250),characterMentions,characterCount:Object.keys(characterMentions).length};
+  });
+}
+function renderMetrics(){
+  const shell=document.getElementById('metrics-shell');
+  if(!shell)return;
+  const chapters=getChapterMetrics(),totalWords=chapters.reduce((sum,item)=>sum+item.words,0),totalPages=chapters.reduce((sum,item)=>sum+item.pageEstimate,0);
+  const maxWords=Math.max(...chapters.map(item=>item.words),0),maxPages=Math.max(...chapters.map(item=>item.pageEstimate),0);
+  const avgWords=chapters.length?Math.round(totalWords/chapters.length):0;
+  const characters=detectCharacters().slice(0,8),mostActive=characters[0];
+  const barRows=(items,max)=>items.map(item=>`<div class="bar-row"><span>${escapeHtml(item.title)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(0,max?item.value/max*100:0)}%"></div></div><span class="bar-value">${item.value}</span></div>`).join('');
+  const chapterHeaders=chapters.map(chapter=>`<th scope="col">${escapeHtml(chapter.title)}</th>`).join('');
+  const characterRows=characters.map(([name])=>`<tr><th scope="row">${escapeHtml(name)}</th>${chapters.map(chapter=>`<td>${chapter.characterMentions[name]||'—'}</td>`).join('')}</tr>`).join('');
+  shell.innerHTML=`<div class="metrics-summary">
+      <div class="metric-pill"><span class="label">Drafted</span><span class="value">${totalWords.toLocaleString()}</span><span class="detail">Words</span></div>
+      <div class="metric-pill"><span class="label">Layout</span><span class="value">${totalPages}</span><span class="detail">Estimated pages at 250 words per page</span></div>
+      <div class="metric-pill"><span class="label">Average</span><span class="value">${avgWords.toLocaleString()}</span><span class="detail">Words per chapter</span></div>
+      <div class="metric-pill"><span class="label">Lead</span><span class="value">${mostActive?escapeHtml(mostActive[0]):'—'}</span><span class="detail">${mostActive?`${mostActive[1].count} mentions`:'No active names yet'}</span></div>
+    </div>
+    <div class="metric-grid">
+      <article class="metric-card"><h3>Word count per chapter</h3><div class="bar-chart">${barRows(chapters.map(chapter=>({title:chapter.title,value:chapter.words})),maxWords)}</div></article>
+      <article class="metric-card"><h3>Distinct characters per chapter</h3><div class="bar-chart">${barRows(chapters.map(chapter=>({title:chapter.title,value:chapter.characterCount})),Math.max(...chapters.map(chapter=>chapter.characterCount),0))}</div></article>
+      <article class="metric-card"><h3>Estimated pages per chapter</h3><div class="bar-chart">${barRows(chapters.map(chapter=>({title:chapter.title,value:chapter.pageEstimate})),maxPages)}</div></article>
+      <article class="metric-card"><h3>Character mentions by chapter</h3><div class="metric-table-wrap"><table class="metric-table"><thead><tr><th scope="col">Character</th>${chapterHeaders}</tr></thead><tbody>${characterRows||`<tr><td colspan="${chapters.length+1}">Recurring characters will appear here as your draft develops.</td></tr>`}</tbody></table></div></article>
+      <article class="metric-card"><h3>Story rhythm</h3><div class="bar-chart">${barRows([{title:'Longest chapter',value:maxWords},{title:'Sections',value:chapters.length},{title:'Recurring characters',value:characters.length}],Math.max(maxWords,chapters.length,characters.length,1))}</div></article>
+    </div>`;
 }
 function formatProjectDate(value){const date=new Date(value||Date.now());return Number.isNaN(date.getTime())?'Recently edited':date.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'})}
 function renderProjects(){
@@ -205,8 +255,9 @@ function deleteProject(id){if(projects.length<2){toast('Keep at least one projec
 function renderSidebar(){
   const sel=document.getElementById('section-select');sel.innerHTML='';
   state.sections.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=`${s.title||'Untitled'} (${wc(s.html||'')}w)`;sel.appendChild(o)});
-  sel.value=state.activeId;sel.onchange=()=>{state.activeId=Number(sel.value);save();renderEditor()};
+  sel.value=state.activeId;sel.onchange=()=>{state.activeId=Number(sel.value);save();renderEditor();renderDocumentList()};
   document.getElementById('totalstats').textContent=totalWords().toLocaleString()+' words';
+  renderDocumentList();
 }
 function cmd(command,value=null){document.execCommand(command,false,value);document.getElementById('content-editable')?.focus()}
 const BOOK_FONTS=[
@@ -260,10 +311,11 @@ function renderEditor(){
     </div>
     <div contenteditable="true" id="content-editable" role="textbox" aria-multiline="true" aria-label="Manuscript section" style="line-height:${safeLineHeight(s.lineHeight)}">${sanitizeRichHtml(s.html||'<p></p>')}</div>
     <div class="row"><span id="livecount">${wc(s.html||'')} words</span><button class="del" type="button" id="delete-section">Delete section</button></div>`;
-  document.getElementById('title-input').oninput=e=>{s.title=e.target.value;save();renderSidebar();renderHome()};
+  document.getElementById('title-input').oninput=e=>{s.title=e.target.value;save();renderSidebar();renderHome();renderMetrics()};
   const editor=document.getElementById('content-editable');
   editor.onpaste=e=>{e.preventDefault();const html=e.clipboardData?.getData('text/html')||'';const plain=e.clipboardData?.getData('text/plain')||'';const safe=html?sanitizeRichHtml(html):plain.split(/\n{2,}/).map(p=>`<p>${escapeHtml(p).replace(/\n/g,'<br>')}</p>`).join('');document.execCommand('insertHTML',false,safe||'<p></p>');setImportSafetyStatus('Pasted text was cleaned before it was added.','ok')};
-  editor.oninput=e=>{s.html=sanitizeRichHtml(e.target.innerHTML);save();document.getElementById('livecount').textContent=wc(s.html)+' words';document.getElementById('totalstats').textContent=totalWords().toLocaleString()+' words';renderHome()};
+  editor.oninput=e=>{s.html=sanitizeRichHtml(e.target.innerHTML);save();document.getElementById('livecount').textContent=wc(s.html)+' words';document.getElementById('totalstats').textContent=totalWords().toLocaleString()+' words';renderHome();renderDocumentList();renderMetrics()};
+  renderMetrics();
   wrap.querySelectorAll('.toolbar [data-cmd]').forEach(b=>b.addEventListener('click',()=>cmd(b.dataset.cmd,b.dataset.value||null)));
   document.getElementById('tb-font').onchange=e=>{if(e.target.value)cmd('fontName',e.target.value);e.target.value=''};
   document.getElementById('tb-size').onchange=e=>{if(e.target.value)setFontSize(e.target.value);e.target.value=''};
@@ -339,9 +391,10 @@ function applyCharMerges(results){
   });
   return Object.entries(grouped).map(([name,d])=>[name,{count:d.count,sections:d.sections,aliases:d.aliasSet.size?[...d.aliasSet]:undefined}]);
 }
-function ignoreCharacter(name){state.charIgnore=state.charIgnore||{};state.charIgnore[name]=true;save();renderCharacters();renderWeb()}
-function restoreIgnoredCharacters(){state.charIgnore={};save();renderCharacters();renderWeb()}
-function mergeCharacter(name,target){if(!target||target===name)return;state.charMerge=state.charMerge||{};state.charMerge[name]=target;save();renderCharacters();renderWeb()}
+  function ignoreCharacter(name){state.charIgnore=state.charIgnore||{};state.charIgnore[name]=true;save();renderCharacters();renderWeb();renderMetrics()}
+  function restoreIgnoredCharacters(){state.charIgnore={};save();renderCharacters();renderWeb();renderMetrics()}
+  function mergeCharacter(name,target){if(!target||target===name)return;state.charMerge=state.charMerge||{};state.charMerge[name]=target;save();renderCharacters();renderWeb();renderMetrics()}
+  document.getElementById('create-blank-doc')?.addEventListener('click',addSection);
 function renderCharacters(){
   const grid=document.getElementById('char-grid'),chars=detectCharacters(),hiddenCount=Object.keys(state.charIgnore||{}).length;
   if(!chars.length){grid.innerHTML='<div class="empty">No recurring characters detected yet. Names mentioned two or more times, including away from sentence starts, will appear here.</div>'+(hiddenCount?`<div class="empty"><a href="#" id="restore-hidden-link">Restore ${hiddenCount} hidden entr${hiddenCount===1?'y':'ies'}</a></div>`:'');if(hiddenCount)document.getElementById('restore-hidden-link').onclick=e=>{e.preventDefault();restoreIgnoredCharacters()};return}
@@ -360,10 +413,17 @@ function renderCharacters(){
 function renderWeb(){
   const svg=document.getElementById('webcanvas'),empty=document.getElementById('web-empty'),chars=detectCharacters().slice(0,15);
   svg.innerHTML='';if(!chars.length){svg.hidden=true;empty.hidden=false;return}svg.hidden=false;empty.hidden=true;
-  const w=svg.clientWidth||700,h=svg.clientHeight||400,cx=w/2,cy=h/2,r=Math.min(w,h)/2-58;
-  const nodes=chars.map(([name,d],i)=>{const a=(i/chars.length)*Math.PI*2;return{name,x:cx+r*Math.cos(a),y:cy+r*Math.sin(a),sections:d.sections}}),ns='http://www.w3.org/2000/svg',edgeLayer=document.createElementNS(ns,'g');
-  for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++)if([...nodes[i].sections].some(x=>nodes[j].sections.has(x))){const line=document.createElementNS(ns,'line');line.setAttribute('x1',nodes[i].x);line.setAttribute('y1',nodes[i].y);line.setAttribute('x2',nodes[j].x);line.setAttribute('y2',nodes[j].y);line.setAttribute('stroke','var(--line)');line.setAttribute('stroke-width','1.5');line.dataset.a=i;line.dataset.b=j;edgeLayer.appendChild(line)}
-  svg.appendChild(edgeLayer);const nodeLayer=document.createElementNS(ns,'g');nodes.forEach((n,i)=>{const g=document.createElementNS(ns,'g');g.style.cursor='grab';const circ=document.createElementNS(ns,'circle');circ.setAttribute('cx',n.x);circ.setAttribute('cy',n.y);circ.setAttribute('r',22);circ.setAttribute('fill','var(--accent2)');circ.setAttribute('opacity','.85');const text=document.createElementNS(ns,'text');text.setAttribute('x',n.x);text.setAttribute('y',n.y+39);text.setAttribute('text-anchor','middle');text.setAttribute('font-size','12');text.setAttribute('fill','var(--ink)');text.setAttribute('font-family','sans-serif');text.textContent=n.name;g.append(circ,text);let dragging=false;g.addEventListener('pointerdown',e=>{dragging=true;g.setPointerCapture(e.pointerId)});g.addEventListener('pointermove',e=>{if(!dragging)return;const rect=svg.getBoundingClientRect();n.x=e.clientX-rect.left;n.y=e.clientY-rect.top;circ.setAttribute('cx',n.x);circ.setAttribute('cy',n.y);text.setAttribute('x',n.x);text.setAttribute('y',n.y+39);edgeLayer.querySelectorAll('line').forEach(line=>{const a=+line.dataset.a,b=+line.dataset.b;if(a===i){line.setAttribute('x1',n.x);line.setAttribute('y1',n.y)}if(b===i){line.setAttribute('x2',n.x);line.setAttribute('y2',n.y)}})});g.addEventListener('pointerup',()=>dragging=false);g.addEventListener('pointercancel',()=>dragging=false);nodeLayer.appendChild(g)});svg.appendChild(nodeLayer);
+  state.webPositions=state.webPositions||{};
+  const w=svg.clientWidth||700,h=svg.clientHeight||420,ns='http://www.w3.org/2000/svg',positions=state.webPositions;
+  const nodes=chars.map(([name,d],i)=>{const angle=i/chars.length*Math.PI*2,radius=Math.min(w,h)*.28,saved=positions[name];return{name,x:saved?Math.min(w-40,Math.max(40,saved.x)):w/2+radius*Math.cos(angle),y:saved?Math.min(h-40,Math.max(40,saved.y)):h/2+radius*Math.sin(angle),sections:d.sections}});
+  const edgeLayer=document.createElementNS(ns,'g');
+  for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++)if([...nodes[i].sections].some(section=>nodes[j].sections.has(section))){const line=document.createElementNS(ns,'line');line.setAttribute('x1',nodes[i].x);line.setAttribute('y1',nodes[i].y);line.setAttribute('x2',nodes[j].x);line.setAttribute('y2',nodes[j].y);line.setAttribute('stroke','var(--line)');line.setAttribute('stroke-width','1.5');line.dataset.from=nodes[i].name;line.dataset.to=nodes[j].name;edgeLayer.appendChild(line)}
+  svg.appendChild(edgeLayer);const nodeLayer=document.createElementNS(ns,'g');
+  nodes.forEach(node=>{const group=document.createElementNS(ns,'g');group.style.cursor='grab';const circle=document.createElementNS(ns,'circle');circle.setAttribute('cx',node.x);circle.setAttribute('cy',node.y);circle.setAttribute('r',26);circle.setAttribute('fill','var(--accent2)');circle.setAttribute('opacity','.88');const text=document.createElementNS(ns,'text');text.setAttribute('x',node.x);text.setAttribute('y',node.y+42);text.setAttribute('text-anchor','middle');text.setAttribute('font-size','12');text.setAttribute('fill','var(--ink)');text.setAttribute('font-family','sans-serif');text.textContent=node.name;group.append(circle,text);let dragging=false;
+    group.addEventListener('pointerdown',event=>{dragging=true;group.setPointerCapture(event.pointerId);group.style.cursor='grabbing'});
+    group.addEventListener('pointermove',event=>{if(!dragging)return;const rect=svg.getBoundingClientRect();node.x=Math.min(rect.width-40,Math.max(40,event.clientX-rect.left));node.y=Math.min(rect.height-40,Math.max(40,event.clientY-rect.top));positions[node.name]={x:node.x,y:node.y};circle.setAttribute('cx',node.x);circle.setAttribute('cy',node.y);text.setAttribute('x',node.x);text.setAttribute('y',node.y+42);edgeLayer.querySelectorAll('line').forEach(line=>{if(line.dataset.from===node.name){line.setAttribute('x1',node.x);line.setAttribute('y1',node.y)}if(line.dataset.to===node.name){line.setAttribute('x2',node.x);line.setAttribute('y2',node.y)}})});
+    group.addEventListener('pointerup',()=>{dragging=false;group.style.cursor='grab';save()});group.addEventListener('pointercancel',()=>{dragging=false;group.style.cursor='grab';save()});nodeLayer.appendChild(group)});
+  svg.appendChild(nodeLayer);
 }
 function renderAI(){const sel=document.getElementById('ai-section');sel.innerHTML='';state.sections.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.title||'Untitled';sel.appendChild(o)});sel.value=state.activeId}
 async function copyPrompt(){const s=state.sections.find(x=>String(x.id)===String(document.getElementById('ai-section').value)),tpl=document.getElementById('ai-template').value,prompt=tpl.replace('{{TEXT}}',s?textOf(s.html):'');try{await navigator.clipboard.writeText(prompt);toast('Prompt copied. Paste it into Claude or ChatGPT.')}catch(e){toast('Clipboard unavailable—select and copy the prompt manually.')}}
