@@ -1,5 +1,5 @@
 /* Increment this cache name when shipped app files change. */
-const CACHE_NAME = 'loomwright-offline-v1';
+const CACHE_NAME = 'loomwright-offline-v2';
 const CACHE_PREFIX = 'loomwright-offline-';
 const ASSET_LIST_URL = new URL('./offline-assets.json', self.registration.scope).href;
 
