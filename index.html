@@ -123,6 +123,8 @@ main{padding:24px 28px 44px}
 .char-card h3{margin:0 0 4px;font-family:Georgia,serif;color:var(--accent)}.char-card .count{font-size:.75rem;color:var(--sub);margin-bottom:8px}
 .char-card textarea{width:100%;min-height:60px;font-size:.82rem;border:1px solid var(--line);border-radius:6px;padding:7px;background:var(--bg);color:var(--ink);font-family:inherit}
 .char-card .chapters{margin-top:8px;font-size:.72rem;color:var(--sub)}
+.del-char-btn{margin-top:10px;width:100%;padding:6px;border:1px solid var(--line);background:none;border-radius:6px;color:var(--danger);font-family:-apple-system,Segoe UI,sans-serif;font-size:.72rem;cursor:pointer}
+.del-char-btn:hover{background:var(--card)}
 .empty{color:var(--sub);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.85rem;padding:22px;text-align:center}
 #webcanvas{width:100%;height:min(60vh,560px);min-height:340px;border:1px solid var(--line);border-radius:12px;background:var(--panel);touch-action:none;display:block}
 .web-hint{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.78rem;color:var(--sub);margin-top:8px}
@@ -361,14 +363,14 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
 
 <script>
 if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,charNotes:{},finaliseChecklist:{}};
+const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,charNotes:{},finaliseChecklist:{},charIgnore:{}};
 const PROJECTS_STORAGE_KEY='loomwright_projects_v1',ACTIVE_PROJECT_KEY='loomwright_active_project_v1',APP_SETTINGS_KEY='loomwright_app_settings_v1';
 const ONLINE_SYNC_ENABLED=false; // Reserved for a later, explicit online-save feature; offline mode is the only active storage.
 const DEFAULT_BOOK={title:'',subtitle:'',author:'',coverStyle:'botanical',trim:'trade',font:'serif',dedication:'',includeToc:true,includeCopyright:true};
 function newProjectId(){return 'project-'+(window.crypto?.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2,9))}
-function newProjectState(){return {...DEFAULT_STATE,sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],charNotes:{},finaliseChecklist:{},book:{...DEFAULT_BOOK}}}
+function newProjectState(){return {...DEFAULT_STATE,sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],charNotes:{},finaliseChecklist:{},charIgnore:{},book:{...DEFAULT_BOOK}}}
 function normalizeSettings(settings){const next={palette:'sage',theme:'light',...(settings||{})};if(!['sage','parchment','slate','forest','ink'].includes(next.palette))next.palette='sage';if(!['auto','light','dark'].includes(next.theme))next.theme='light';if(next.palette==='parchment'&&next.theme==='auto'){next.palette='sage';next.theme='light'}return next}
-function normalizeProjectState(value){const next=value&&typeof value==='object'?value:newProjectState();if(!Array.isArray(next.sections)||!next.sections.length)next.sections=newProjectState().sections;delete next.settings;next.charNotes=next.charNotes||{};next.finaliseChecklist=next.finaliseChecklist||{};next.book={...DEFAULT_BOOK,...(next.book||{})};return next}
+function normalizeProjectState(value){const next=value&&typeof value==='object'?value:newProjectState();if(!Array.isArray(next.sections)||!next.sections.length)next.sections=newProjectState().sections;delete next.settings;next.charNotes=next.charNotes||{};next.finaliseChecklist=next.finaliseChecklist||{};next.charIgnore=next.charIgnore||{};next.book={...DEFAULT_BOOK,...(next.book||{})};return next}
 let legacyState=null,projectStore=null;
 try{legacyState=JSON.parse(localStorage.getItem('loomwright_state')||'null')}catch(e){}
 try{projectStore=JSON.parse(localStorage.getItem(PROJECTS_STORAGE_KEY)||'null')}catch(e){}
@@ -413,7 +415,7 @@ async function initDB(){
     if(doc&&doc.exists&&doc.data&&Array.isArray(doc.data.sections)&&doc.data.sections.length){
       const remoteProject={...doc.data},remoteSettings=remoteProject.settings;delete remoteProject.settings;
       if(remoteSettings&&!appSettingsStoredAtBoot&&!appSettingsTouched){appSettings=normalizeSettings(remoteSettings);persistAppSettings()}
-      state=normalizeProjectState({...DEFAULT_STATE,...remoteProject,charNotes:doc.data.charNotes||{},finaliseChecklist:doc.data.finaliseChecklist||{}});
+      state=normalizeProjectState({...DEFAULT_STATE,...remoteProject,charNotes:doc.data.charNotes||{},finaliseChecklist:doc.data.finaliseChecklist||{},charIgnore:doc.data.charIgnore||{}});
       localStorage.setItem('loomwright_state',JSON.stringify(state));renderSidebar();renderEditor();applyTheme();renderHome();
       if(remoteSettings)await dbRef.doc('data/state').set(state);
     }else{await dbRef.doc('data/state').set(state)}
@@ -521,9 +523,18 @@ document.getElementById('file-input').onchange=async e=>{
 };
 
 const STOPWORDS=new Set(['The','A','An','I','He','She','They','We','It','You','Us','Them','Its','Your','Yours','Yourself','Our','Ours','Ourselves','Themselves','Himself','Herself','Myself','Someone','Somebody','Something','Somewhere','Somehow','Anyone','Anybody','Anything','Anywhere','Everyone','Everybody','Everything','Everywhere','Nothing','Nobody','Nowhere','None','But','And','Or','Nor','So','Yet','If','When','Then','Than','There','Here','This','That','These','Those','His','Her','Their','Because','Although','Though','While','Since','Unless','Until','After','Before','Above','Below','Between','Among','Beyond','Within','Without','Through','Across','Around','Toward','Towards','During','Despite','Perhaps','Suddenly','Meanwhile','However','Instead','Otherwise','Still','Also','Even','Just','Now','Soon','Later','Finally','Eventually','Indeed','Certainly','Probably','Maybe','Well','Oh','Ah','Yes','No','Okay','Alright','Sure','Right','Look','Listen','Wait','Stop','Come','Go','Let','Once','Again','Almost','Already','Always','Never','Every','Each','Both','Few','Many','Most','Some','All','Any','Can','Could','Would','Should','Will','Shall','Must','May','Might','Do','Does','Did','Am','Is','Are','Was','Were','Being','Been','Have','Has','Had','Sorry','Please','Thanks','Thank','Hello','Hi','Hey','Goodbye','Bye','Congratulations','Welcome','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','January','February','March','April','May','June','July','August','September','October','November','December','Chapter','Prologue','Epilogue','Part']);
+const COMMON_ENGLISH=new Set(['the','of','and','a','to','in','is','was','he','for','it','with','as','his','on','be','at','by','i','this','had','not','are','but','from','or','have','an','they','which','one','you','were','her','all','she','there','would','their','we','him','been','has','when','who','will','more','no','if','out','so','said','what','up','its','about','into','than','them','can','only','other','new','some','could','time','these','two','may','then','do','first','any','my','now','such','like','our','over','me','even','most','made','after','also','did','many','before','must','through','back','where','much','your','way','well','down','should','because','each','just','those','how','too','little','very','make','still','own','see','work','long','here','get','both','between','know','while','last','might','us','old','year','come','right','used','take']);
+function sectionLooksNonEnglish(html){
+  const words=(textOf(html).match(/[A-Za-z']+/g)||[]);
+  if(words.length<20)return false; // too short to judge fairly — assume English
+  let hits=0;words.forEach(w=>{if(COMMON_ENGLISH.has(w.toLowerCase()))hits++});
+  return (hits/words.length)<0.08; // English prose is thick with function words; foreign text won't clear this bar
+}
 function detectCharacters(){
-  const lowerSeen=new Set();state.sections.forEach(s=>{const plain=textOf(s.html||'').replace(/\n+/g,'. ');(plain.match(/[A-Za-z']+/g)||[]).forEach(w=>{if(/^[a-z][a-z']{2,}$/.test(w))lowerSeen.add(w)})});
-  const solo={},bigrams={};state.sections.forEach(s=>{const plain=textOf(s.html||'').replace(/\n+/g,'. '),tokens=plain.match(/[A-Za-z']+|[.!?]|["“”:]/g)||[];let atStart=true,prevWord='',prevCand=null;const seenSolo=new Set(),seenBig=new Set();
+  const nonEnglish=new Set();state.sections.forEach(s=>{if(sectionLooksNonEnglish(s.html||''))nonEnglish.add(s.id)});
+  const scanSections=state.sections.filter(s=>!nonEnglish.has(s.id));
+  const lowerSeen=new Set();scanSections.forEach(s=>{const plain=textOf(s.html||'').replace(/\n+/g,'. ');(plain.match(/[A-Za-z']+/g)||[]).forEach(w=>{if(/^[a-z][a-z']{2,}$/.test(w))lowerSeen.add(w)})});
+  const solo={},bigrams={};scanSections.forEach(s=>{const plain=textOf(s.html||'').replace(/\n+/g,'. '),tokens=plain.match(/[A-Za-z']+|[.!?]|["“”:]/g)||[];let atStart=true,prevWord='',prevCand=null;const seenSolo=new Set(),seenBig=new Set();
     tokens.forEach(tok=>{if(tok==='.'||tok==='!'||tok==='?'||tok==='"'||tok==='“'||tok==='”'||tok===':'){atStart=true;prevCand=null;return}
       const isCand=/^[A-Z][a-z]{2,}$/.test(tok)&&!STOPWORDS.has(tok)&&!lowerSeen.has(tok.toLowerCase());
       if(isCand){if(!solo[tok])solo[tok]={count:0,sections:new Set(),midHits:0,afterDeterminer:0};solo[tok].count++;if(!atStart)solo[tok].midHits++;if(prevWord==='the'||prevWord==='a'||prevWord==='an')solo[tok].afterDeterminer++;seenSolo.add(tok);
@@ -536,12 +547,15 @@ function detectCharacters(){
   const used=new Set(),results=[];
   Object.values(bigrams).forEach(b=>{const fc=solo[b.first]?solo[b.first].count:b.count,lc=solo[b.last]?solo[b.last].count:b.count,total=Math.max(fc+lc-b.count,b.count);const sections=new Set(b.sections);if(solo[b.first])solo[b.first].sections.forEach(x=>sections.add(x));if(solo[b.last])solo[b.last].sections.forEach(x=>sections.add(x));results.push([b.first+' '+b.last,{count:total,sections,aliases:[b.first,b.last]}]);used.add(b.first);used.add(b.last)});
   Object.entries(solo).forEach(([w,d])=>{if(used.has(w))return;if(d.count<2||d.midHits<1)return;if(d.afterDeterminer/d.count>.4)return;results.push([w,{count:d.count,sections:d.sections}])});
-  return results.sort((a,b)=>b[1].count-a[1].count);
+  return results.filter(([n])=>!state.charIgnore?.[n]).sort((a,b)=>b[1].count-a[1].count);
 }
+function ignoreCharacter(name){state.charIgnore=state.charIgnore||{};state.charIgnore[name]=true;save();renderCharacters();renderWeb()}
+function restoreIgnoredCharacters(){state.charIgnore={};save();renderCharacters();renderWeb()}
 function renderCharacters(){
-  const grid=document.getElementById('char-grid'),chars=detectCharacters();
-  if(!chars.length){grid.innerHTML='<div class="empty">No recurring characters detected yet. Names mentioned two or more times, including away from sentence starts, will appear here.</div>';return}
-  grid.innerHTML='';chars.forEach(([name,d])=>{const card=document.createElement('div');card.className='char-card';const aliasNote=d.aliases?`<div class="count">Also referred to as: ${d.aliases.map(escapeHtml).join(', ')}</div>`:'';card.innerHTML=`<h3>${escapeHtml(name)}</h3><div class="count">Mentioned ${d.count} times</div>${aliasNote}<textarea aria-label="Notes for ${escapeHtml(name)}" placeholder="Role, notes...">${escapeHtml(state.charNotes[name]||'')}</textarea><div class="chapters">Appears in: ${[...d.sections].map(escapeHtml).join(', ')}</div>`;card.querySelector('textarea').oninput=e=>{state.charNotes[name]=e.target.value;save()};grid.appendChild(card)});
+  const grid=document.getElementById('char-grid'),chars=detectCharacters(),hiddenCount=Object.keys(state.charIgnore||{}).length;
+  if(!chars.length){grid.innerHTML='<div class="empty">No recurring characters detected yet. Names mentioned two or more times, including away from sentence starts, will appear here.</div>'+(hiddenCount?`<div class="empty"><a href="#" id="restore-hidden-link">Restore ${hiddenCount} hidden entr${hiddenCount===1?'y':'ies'}</a></div>`:'');if(hiddenCount)document.getElementById('restore-hidden-link').onclick=e=>{e.preventDefault();restoreIgnoredCharacters()};return}
+  grid.innerHTML='';chars.forEach(([name,d])=>{const card=document.createElement('div');card.className='char-card';const aliasNote=d.aliases?`<div class="count">Also referred to as: ${d.aliases.map(escapeHtml).join(', ')}</div>`:'';card.innerHTML=`<h3>${escapeHtml(name)}</h3><div class="count">Mentioned ${d.count} times</div>${aliasNote}<textarea aria-label="Notes for ${escapeHtml(name)}" placeholder="Role, notes...">${escapeHtml(state.charNotes[name]||'')}</textarea><div class="chapters">Appears in: ${[...d.sections].map(escapeHtml).join(', ')}</div><button type="button" class="del-char-btn">Not a character — remove</button>`;card.querySelector('textarea').oninput=e=>{state.charNotes[name]=e.target.value;save()};card.querySelector('.del-char-btn').onclick=()=>ignoreCharacter(name);grid.appendChild(card)});
+  if(hiddenCount){const note=document.createElement('div');note.className='empty';note.innerHTML=`<a href="#" id="restore-hidden-link">Restore ${hiddenCount} hidden entr${hiddenCount===1?'y':'ies'}</a>`;grid.appendChild(note);document.getElementById('restore-hidden-link').onclick=e=>{e.preventDefault();restoreIgnoredCharacters()}}
 }
 function renderWeb(){
   const svg=document.getElementById('webcanvas'),empty=document.getElementById('web-empty'),chars=detectCharacters().slice(0,15);
