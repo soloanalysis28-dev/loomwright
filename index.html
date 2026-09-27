@@ -123,8 +123,7 @@ main{padding:24px 28px 44px}
 .char-card h3{margin:0 0 4px;font-family:Georgia,serif;color:var(--accent)}.char-card .count{font-size:.75rem;color:var(--sub);margin-bottom:8px}
 .char-card textarea{width:100%;min-height:60px;font-size:.82rem;border:1px solid var(--line);border-radius:6px;padding:7px;background:var(--bg);color:var(--ink);font-family:inherit}
 .char-card .chapters{margin-top:8px;font-size:.72rem;color:var(--sub)}
-.del-char-btn{margin-top:10px;width:100%;padding:6px;border:1px solid var(--line);background:none;border-radius:6px;color:var(--danger);font-family:-apple-system,Segoe UI,sans-serif;font-size:.72rem;cursor:pointer}
-.del-char-btn:hover{background:var(--card)}
+.char-action-select{margin-top:10px;width:100%;padding:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:6px;font-family:-apple-system,Segoe UI,sans-serif;font-size:.72rem;cursor:pointer}
 .empty{color:var(--sub);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.85rem;padding:22px;text-align:center}
 #webcanvas{width:100%;height:min(60vh,560px);min-height:340px;border:1px solid var(--line);border-radius:12px;background:var(--panel);touch-action:none;display:block}
 .web-hint{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.78rem;color:var(--sub);margin-top:8px}
@@ -363,14 +362,14 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
 
 <script>
 if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,charNotes:{},finaliseChecklist:{},charIgnore:{}};
+const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,charNotes:{},finaliseChecklist:{},charIgnore:{},charMerge:{}};
 const PROJECTS_STORAGE_KEY='loomwright_projects_v1',ACTIVE_PROJECT_KEY='loomwright_active_project_v1',APP_SETTINGS_KEY='loomwright_app_settings_v1';
 const ONLINE_SYNC_ENABLED=false; // Reserved for a later, explicit online-save feature; offline mode is the only active storage.
 const DEFAULT_BOOK={title:'',subtitle:'',author:'',coverStyle:'botanical',trim:'trade',font:'serif',dedication:'',includeToc:true,includeCopyright:true};
 function newProjectId(){return 'project-'+(window.crypto?.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2,9))}
-function newProjectState(){return {...DEFAULT_STATE,sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],charNotes:{},finaliseChecklist:{},charIgnore:{},book:{...DEFAULT_BOOK}}}
+function newProjectState(){return {...DEFAULT_STATE,sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],charNotes:{},finaliseChecklist:{},charIgnore:{},charMerge:{},book:{...DEFAULT_BOOK}}}
 function normalizeSettings(settings){const next={palette:'sage',theme:'light',...(settings||{})};if(!['sage','parchment','slate','forest','ink'].includes(next.palette))next.palette='sage';if(!['auto','light','dark'].includes(next.theme))next.theme='light';if(next.palette==='parchment'&&next.theme==='auto'){next.palette='sage';next.theme='light'}return next}
-function normalizeProjectState(value){const next=value&&typeof value==='object'?value:newProjectState();if(!Array.isArray(next.sections)||!next.sections.length)next.sections=newProjectState().sections;delete next.settings;next.charNotes=next.charNotes||{};next.finaliseChecklist=next.finaliseChecklist||{};next.charIgnore=next.charIgnore||{};next.book={...DEFAULT_BOOK,...(next.book||{})};return next}
+function normalizeProjectState(value){const next=value&&typeof value==='object'?value:newProjectState();if(!Array.isArray(next.sections)||!next.sections.length)next.sections=newProjectState().sections;delete next.settings;next.charNotes=next.charNotes||{};next.finaliseChecklist=next.finaliseChecklist||{};next.charIgnore=next.charIgnore||{};next.charMerge=next.charMerge||{};next.book={...DEFAULT_BOOK,...(next.book||{})};return next}
 let legacyState=null,projectStore=null;
 try{legacyState=JSON.parse(localStorage.getItem('loomwright_state')||'null')}catch(e){}
 try{projectStore=JSON.parse(localStorage.getItem(PROJECTS_STORAGE_KEY)||'null')}catch(e){}
@@ -415,7 +414,7 @@ async function initDB(){
     if(doc&&doc.exists&&doc.data&&Array.isArray(doc.data.sections)&&doc.data.sections.length){
       const remoteProject={...doc.data},remoteSettings=remoteProject.settings;delete remoteProject.settings;
       if(remoteSettings&&!appSettingsStoredAtBoot&&!appSettingsTouched){appSettings=normalizeSettings(remoteSettings);persistAppSettings()}
-      state=normalizeProjectState({...DEFAULT_STATE,...remoteProject,charNotes:doc.data.charNotes||{},finaliseChecklist:doc.data.finaliseChecklist||{},charIgnore:doc.data.charIgnore||{}});
+      state=normalizeProjectState({...DEFAULT_STATE,...remoteProject,charNotes:doc.data.charNotes||{},finaliseChecklist:doc.data.finaliseChecklist||{},charIgnore:doc.data.charIgnore||{},charMerge:doc.data.charMerge||{}});
       localStorage.setItem('loomwright_state',JSON.stringify(state));renderSidebar();renderEditor();applyTheme();renderHome();
       if(remoteSettings)await dbRef.doc('data/state').set(state);
     }else{await dbRef.doc('data/state').set(state)}
@@ -547,14 +546,40 @@ function detectCharacters(){
   const used=new Set(),results=[];
   Object.values(bigrams).forEach(b=>{const fc=solo[b.first]?solo[b.first].count:b.count,lc=solo[b.last]?solo[b.last].count:b.count,total=Math.max(fc+lc-b.count,b.count);const sections=new Set(b.sections);if(solo[b.first])solo[b.first].sections.forEach(x=>sections.add(x));if(solo[b.last])solo[b.last].sections.forEach(x=>sections.add(x));results.push([b.first+' '+b.last,{count:total,sections,aliases:[b.first,b.last]}]);used.add(b.first);used.add(b.last)});
   Object.entries(solo).forEach(([w,d])=>{if(used.has(w))return;if(d.count<2||d.midHits<1)return;if(d.afterDeterminer/d.count>.4)return;results.push([w,{count:d.count,sections:d.sections}])});
-  return results.filter(([n])=>!state.charIgnore?.[n]).sort((a,b)=>b[1].count-a[1].count);
+  const merged=applyCharMerges(results.filter(([n])=>!state.charIgnore?.[n]));
+  return merged.sort((a,b)=>b[1].count-a[1].count);
+}
+function resolveMergeTarget(name,map,seen){seen=seen||new Set();if(seen.has(name))return name;seen.add(name);return map[name]?resolveMergeTarget(map[name],map,seen):name}
+function applyCharMerges(results){
+  const map=state.charMerge||{};
+  if(!Object.keys(map).length)return results;
+  const grouped={};
+  results.forEach(([name,d])=>{
+    const canonical=resolveMergeTarget(name,map);
+    if(!grouped[canonical])grouped[canonical]={count:0,sections:new Set(),aliasSet:new Set()};
+    grouped[canonical].count+=d.count;
+    d.sections.forEach(x=>grouped[canonical].sections.add(x));
+    if(name!==canonical)grouped[canonical].aliasSet.add(name);
+    (d.aliases||[]).forEach(a=>grouped[canonical].aliasSet.add(a));
+  });
+  return Object.entries(grouped).map(([name,d])=>[name,{count:d.count,sections:d.sections,aliases:d.aliasSet.size?[...d.aliasSet]:undefined}]);
 }
 function ignoreCharacter(name){state.charIgnore=state.charIgnore||{};state.charIgnore[name]=true;save();renderCharacters();renderWeb()}
 function restoreIgnoredCharacters(){state.charIgnore={};save();renderCharacters();renderWeb()}
+function mergeCharacter(name,target){if(!target||target===name)return;state.charMerge=state.charMerge||{};state.charMerge[name]=target;save();renderCharacters();renderWeb()}
 function renderCharacters(){
   const grid=document.getElementById('char-grid'),chars=detectCharacters(),hiddenCount=Object.keys(state.charIgnore||{}).length;
   if(!chars.length){grid.innerHTML='<div class="empty">No recurring characters detected yet. Names mentioned two or more times, including away from sentence starts, will appear here.</div>'+(hiddenCount?`<div class="empty"><a href="#" id="restore-hidden-link">Restore ${hiddenCount} hidden entr${hiddenCount===1?'y':'ies'}</a></div>`:'');if(hiddenCount)document.getElementById('restore-hidden-link').onclick=e=>{e.preventDefault();restoreIgnoredCharacters()};return}
-  grid.innerHTML='';chars.forEach(([name,d])=>{const card=document.createElement('div');card.className='char-card';const aliasNote=d.aliases?`<div class="count">Also referred to as: ${d.aliases.map(escapeHtml).join(', ')}</div>`:'';card.innerHTML=`<h3>${escapeHtml(name)}</h3><div class="count">Mentioned ${d.count} times</div>${aliasNote}<textarea aria-label="Notes for ${escapeHtml(name)}" placeholder="Role, notes...">${escapeHtml(state.charNotes[name]||'')}</textarea><div class="chapters">Appears in: ${[...d.sections].map(escapeHtml).join(', ')}</div><button type="button" class="del-char-btn">Not a character — remove</button>`;card.querySelector('textarea').oninput=e=>{state.charNotes[name]=e.target.value;save()};card.querySelector('.del-char-btn').onclick=()=>ignoreCharacter(name);grid.appendChild(card)});
+  grid.innerHTML='';chars.forEach(([name,d])=>{
+    const others=chars.filter(([n])=>n!==name).map(([n])=>n);
+    const card=document.createElement('div');card.className='char-card';
+    const aliasNote=d.aliases?`<div class="count">Also referred to as: ${d.aliases.map(escapeHtml).join(', ')}</div>`:'';
+    const mergeOptions=others.map(n=>`<option value="merge:${encodeURIComponent(n)}">${escapeHtml(n)}</option>`).join('');
+    card.innerHTML=`<h3>${escapeHtml(name)}</h3><div class="count">Mentioned ${d.count} times</div>${aliasNote}<textarea aria-label="Notes for ${escapeHtml(name)}" placeholder="Role, notes...">${escapeHtml(state.charNotes[name]||'')}</textarea><div class="chapters">Appears in: ${[...d.sections].map(escapeHtml).join(', ')}</div><select class="char-action-select" aria-label="Actions for ${escapeHtml(name)}"><option value="">Actions ▾</option><option value="__delete">Delete — not a character</option>${others.length?`<optgroup label="Merge into">${mergeOptions}</optgroup>`:''}</select>`;
+    card.querySelector('textarea').oninput=e=>{state.charNotes[name]=e.target.value;save()};
+    card.querySelector('.char-action-select').onchange=e=>{const val=e.target.value;if(val==='__delete')ignoreCharacter(name);else if(val.startsWith('merge:'))mergeCharacter(name,decodeURIComponent(val.slice(6)));};
+    grid.appendChild(card);
+  });
   if(hiddenCount){const note=document.createElement('div');note.className='empty';note.innerHTML=`<a href="#" id="restore-hidden-link">Restore ${hiddenCount} hidden entr${hiddenCount===1?'y':'ies'}</a>`;grid.appendChild(note);document.getElementById('restore-hidden-link').onclick=e=>{e.preventDefault();restoreIgnoredCharacters()}}
 }
 function renderWeb(){
