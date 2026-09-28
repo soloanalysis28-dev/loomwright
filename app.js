@@ -80,20 +80,20 @@ projects=projects.filter(p=>p&&p.id).map(p=>({...p,name:String(p.name||'Untitled
 if(!projects.length){activeProjectId=newProjectId();projects=[{id:activeProjectId,name:'My First Project',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),data:newProjectState()}]}
 if(!projects.some(p=>p.id===activeProjectId))activeProjectId=projects[0].id;
 let state=normalizeProjectState(projects.find(p=>p.id===activeProjectId)?.data||legacyState);
+let renamingProjectId=null;
 let offlineDb=null,offlineSaveTimer=null,offlineStorageReady=false;
 function openOfflineDatabase(){return new Promise((resolve,reject)=>{if(!window.indexedDB){reject(new Error('IndexedDB unavailable'));return}const request=indexedDB.open('loomwright-offline-library',1);request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains('library'))request.result.createObjectStore('library')};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error||new Error('Could not open offline storage'))})}
 function indexedRead(){return new Promise((resolve,reject)=>{const tx=offlineDb.transaction('library','readonly'),request=tx.objectStore('library').get('projects');request.onsuccess=()=>resolve(request.result||null);request.onerror=()=>reject(request.error)})}
 function indexedWrite(record){return new Promise((resolve,reject)=>{if(!offlineDb){resolve();return}const tx=offlineDb.transaction('library','readwrite');tx.objectStore('library').put(record,'projects');tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error||new Error('Offline save failed'))})}
 function currentProjectRecord(){return {version:2,activeProjectId,appSettings,projects,savedAt:Date.now()}}
-function persistProjectStore(){const record=currentProjectRecord(),hasIndexedDB=!!offlineDb,localRecord=hasIndexedDB?{...record,projects:projects.map(({id,name,createdAt,updatedAt})=>({id,name,createdAt,updatedAt}))}:record;try{localStorage.setItem(PROJECTS_STORAGE_KEY,JSON.stringify(localRecord));localStorage.setItem(ACTIVE_PROJECT_KEY,activeProjectId);if(!hasIndexedDB)localStorage.setItem('loomwright_state',JSON.stringify(state))}catch(e){if(hasIndexedDB)toast('Saved in offline storage; browser backup limit reached.');else toast('Browser storage is full. Export a copy from Finalise.')}if(offlineDb){clearTimeout(offlineSaveTimer);offlineSaveTimer=setTimeout(()=>indexedWrite(record).catch(()=>toast('Offline save needs attention; export a copy from Finalise.')),180)}}
+function persistProjectStore(){const record=currentProjectRecord(),hasIndexedDB=!!offlineDb,localRecord=hasIndexedDB?{...record,projects:projects.map(({id,name,createdAt,updatedAt})=>({id,name,createdAt,updatedAt}))}:record;try{localStorage.setItem(PROJECTS_STORAGE_KEY,JSON.stringify(localRecord));localStorage.setItem(ACTIVE_PROJECT_KEY,activeProjectId);if(!hasIndexedDB)localStorage.setItem('loomwright_state',JSON.stringify(state))}catch(e){if(hasIndexedDB)toast('Saved in offline storage; browser backup limit reached.');else{toast('Browser storage is full. Export a copy from Finalise.');return false}}if(offlineDb){clearTimeout(offlineSaveTimer);offlineSaveTimer=setTimeout(()=>indexedWrite(record).catch(()=>toast('Offline save needs attention; export a copy from Finalise.')),180)}return true}
 async function initializeOfflineStorage(){
   try{
     offlineDb=await openOfflineDatabase();let localRecord=null;
     try{localRecord=JSON.parse(localStorage.getItem(PROJECTS_STORAGE_KEY)||'null')}catch(e){}
     const localHasContent=Array.isArray(localRecord?.projects)&&localRecord.projects.some(p=>p.data&&Array.isArray(p.data.sections)),stored=await indexedRead(),storedHasContent=Array.isArray(stored?.projects)&&stored.projects.some(p=>p.data&&Array.isArray(p.data.sections)),useIndexed=storedHasContent&&(!localHasContent||(stored.savedAt||0)>(localRecord?.savedAt||0));
     if(useIndexed&&!appSettingsStoredAtBoot&&!appSettingsTouched){const oldActive=stored.projects.find(p=>p.id===(stored.activeProjectId||activeProjectId)),storedSettings=stored.appSettings||oldActive?.data?.settings;if(storedSettings)appSettings=normalizeSettings(storedSettings)}
-    let loadedIndexed=false;
-    if(useIndexed){projects=stored.projects.filter(p=>p&&p.id).map(p=>({...p,data:normalizeProjectState(p.data)}));if(!projects.length)throw new Error('Offline library is empty');activeProjectId=stored.activeProjectId||projects[0].id;if(!projects.some(p=>p.id===activeProjectId))activeProjectId=projects[0].id;state=projects.find(p=>p.id===activeProjectId).data;loadedIndexed=true}
+    if(useIndexed){projects=stored.projects.filter(p=>p&&p.id).map(p=>({...p,data:normalizeProjectState(p.data)}));if(!projects.length)throw new Error('Offline library is empty');activeProjectId=stored.activeProjectId||projects[0].id;if(!projects.some(p=>p.id===activeProjectId))activeProjectId=projects[0].id;state=projects.find(p=>p.id===activeProjectId).data}
     offlineStorageReady=true;persistAppSettings();persistProjectStore();refreshProjectViews();setSyncStatus('Offline · this device',false);
   }catch(e){offlineDb=null;offlineStorageReady=true;persistAppSettings();if(projects.every(project=>project.data))persistProjectStore();refreshProjectViews();setSyncStatus('Offline · this browser',false)}
 }
@@ -154,9 +154,31 @@ async function initDB(){
 }
 function save(){
   delete state.settings;const project=projects.find(p=>p.id===activeProjectId);if(project){project.data=state;project.updatedAt=new Date().toISOString()}
-  persistProjectStore();
+  const persisted=persistProjectStore();
   if(ONLINE_SYNC_ENABLED&&dbRef){clearTimeout(dbSaveTimer);dbSaveTimer=setTimeout(async()=>{try{await dbRef.doc('data/state').set(state);setSyncStatus('Synced',true)}catch(e){setSyncStatus('Sync failed',false)}},800)}
+  return persisted;
 }
+async function saveWriter(){
+  const persisted=save();clearTimeout(offlineSaveTimer);
+  try{if(offlineDb)await indexedWrite(currentProjectRecord());else if(!persisted)return;toast('Saved on this device.')}catch(_){toast('Save failed. Export a copy from Finalise.')}
+}
+async function copyWriterSelection(){
+  const selection=window.getSelection(),editor=document.getElementById('content-editable');
+  if(!selection||!selection.toString().trim()||!editor?.contains(selection.anchorNode)){toast('Select text in your draft to copy.');return}
+  try{await navigator.clipboard.writeText(selection.toString());toast('Selection copied.')}catch(_){if(document.execCommand('copy'))toast('Selection copied.');else toast('Clipboard access is unavailable. Use Ctrl/Cmd+C.')}
+}
+async function pasteIntoWriter(targetRange=null){
+  try{const text=await navigator.clipboard.readText();if(!text){toast('The clipboard is empty.');return}const editor=document.getElementById('content-editable');if(targetRange){writerContextRange=targetRange;restoreWriterContextRange(editor)}else editor?.focus();if(!editor||!document.execCommand('insertText',false,text)){toast('Paste was unavailable. Use Ctrl/Cmd+V.');return}toast('Pasted from clipboard.')}catch(_){toast('Clipboard access is unavailable. Use Ctrl/Cmd+V to paste.')}
+}
+document.addEventListener('keydown',event=>{
+  if(!(event.ctrlKey||event.metaKey)||event.altKey)return;
+  const workspace=document.getElementById('write-workspace');if(workspace.hidden||!workspace.contains(event.target))return;
+  const key=event.key.toLowerCase();
+  if(key==='s'){event.preventDefault();saveWriter();return}
+  if(event.target!==document.getElementById('content-editable'))return;
+  if(key==='z'||key==='y'){event.preventDefault();cmd(key==='y'||event.shiftKey?'redo':'undo');return}
+  const command={b:'bold',i:'italic',u:'underline'}[key];if(command){event.preventDefault();cmd(command)}
+});
 function persistAppSettings(){try{localStorage.setItem(APP_SETTINGS_KEY,JSON.stringify(appSettings));appSettingsStoredAtBoot=true;return true}catch(e){toast('Appearance settings could not be saved in this browser.');return false}}
 function updateAppSetting(key,value){appSettings[key]=value;appSettingsTouched=true;persistAppSettings();persistProjectStore();applyTheme()}
 function applyTheme(){
@@ -272,12 +294,19 @@ function renderProjects(){
   const grid=document.getElementById('project-grid');grid.innerHTML='';
   projects.forEach(project=>{
     const card=document.createElement('article');card.className='project-card'+(project.id===activeProjectId?' current':'');
-    const title=document.createElement('h3');title.textContent=project.name;card.appendChild(title);
+    if(project.id===renamingProjectId){
+      const form=document.createElement('form');form.className='project-rename-form';
+      const input=document.createElement('input');input.id='project-name-edit';input.type='text';input.value=project.name;input.maxLength=80;input.required=true;input.setAttribute('aria-label','Project name');
+      form.addEventListener('submit',event=>{event.preventDefault();saveProjectRename(project.id,input.value)});
+      const saveName=document.createElement('button');saveName.type='submit';saveName.className='primary-button';saveName.textContent='Save';
+      const cancel=document.createElement('button');cancel.type='button';cancel.className='secondary-button';cancel.textContent='Cancel';cancel.onclick=()=>{renamingProjectId=null;renderProjects()};
+      form.append(input,saveName,cancel);card.appendChild(form);
+    }else{const title=document.createElement('h3');title.textContent=project.name;card.appendChild(title)}
     const meta=document.createElement('div');meta.className='project-card-meta';const projectData=project.data||newProjectState();meta.textContent=`${projectData.sections?.length||0} section${(projectData.sections?.length||0)===1?'':'s'} · ${(projectData.sections||[]).reduce((n,s)=>n+wc(s.html||''),0).toLocaleString()} words · Edited ${formatProjectDate(project.updatedAt)}`;card.appendChild(meta);
     if(project.id===activeProjectId){const badge=document.createElement('span');badge.className='progress-label';badge.textContent='Current project';card.appendChild(badge)}
     const actions=document.createElement('div');actions.className='project-actions';
     const open=document.createElement('button');open.type='button';open.className=project.id===activeProjectId?'primary-button':'secondary-button';open.textContent=project.id===activeProjectId?'Open current':'Open project';open.onclick=()=>activateProject(project.id);actions.appendChild(open);
-    const rename=document.createElement('button');rename.type='button';rename.className='secondary-button';rename.textContent='Rename';rename.onclick=()=>renameProject(project.id);actions.appendChild(rename);
+    if(project.id!==renamingProjectId){const rename=document.createElement('button');rename.type='button';rename.className='secondary-button';rename.textContent='Rename';rename.onclick=()=>renameProject(project.id);actions.appendChild(rename)}
     const remove=document.createElement('button');remove.type='button';remove.className='del';remove.textContent='Delete';remove.disabled=projects.length<2;remove.title=projects.length<2?'Keep at least one project':'Delete this project from this browser';remove.onclick=()=>deleteProject(project.id);actions.appendChild(remove);
     card.appendChild(actions);grid.appendChild(card);
   });
@@ -286,7 +315,8 @@ function renderProjects(){
 function refreshProjectViews(){renderSidebar();renderEditor();applyTheme();renderHome();renderProjects();renderFinalise()}
 function activateProject(id){const project=projects.find(p=>p.id===id);if(!project)return;const changed=id!==activeProjectId;if(changed){save();activeProjectId=id;state=project.data;persistProjectStore();refreshProjectViews()}switchView('write');if(changed)toast('Opened '+project.name+'.')}
 function createProject(name){const clean=String(name||'').trim().slice(0,80);if(!clean){toast('Add a name for the project.');return}save();const now=new Date().toISOString(),project={id:newProjectId(),name:clean,createdAt:now,updatedAt:now,data:newProjectState()};projects.unshift(project);activeProjectId=project.id;state=project.data;persistProjectStore();refreshProjectViews();switchView('home');toast('Created '+clean+'.')}
-function renameProject(id){const project=projects.find(p=>p.id===id);if(!project)return;const value=window.prompt('Rename this project',project.name);if(value===null)return;const clean=value.trim().slice(0,80);if(!clean){toast('Project name cannot be empty.');return}project.name=clean;project.updatedAt=new Date().toISOString();persistProjectStore();renderProjects();renderHome();renderBookPreview();toast('Project renamed.')}
+function renameProject(id){if(!projects.some(project=>project.id===id))return;renamingProjectId=id;renderProjects();const input=document.getElementById('project-name-edit');input?.focus();input?.select()}
+function saveProjectRename(id,value){const project=projects.find(item=>item.id===id);if(!project)return;const clean=String(value||'').trim().slice(0,80);if(!clean){toast('Project name cannot be empty.');document.getElementById('project-name-edit')?.focus();return}project.name=clean;project.updatedAt=new Date().toISOString();renamingProjectId=null;persistProjectStore();renderProjects();renderHome();renderBookPreview();toast('Project renamed.')}
 function deleteProject(id){if(projects.length<2){toast('Keep at least one project in your library.');return}const project=projects.find(p=>p.id===id);if(!project||!window.confirm(`Delete “${project.name}” and its writing from this browser? This cannot be undone.`))return;projects=projects.filter(p=>p.id!==id);if(activeProjectId===id){activeProjectId=projects[0].id;state=projects[0].data}persistProjectStore();refreshProjectViews();switchView('projects');toast('Project deleted from this browser.')}
 function renderSidebar(){
   const sel=document.getElementById('section-select');sel.innerHTML='';
@@ -295,11 +325,104 @@ function renderSidebar(){
   document.getElementById('totalstats').textContent=totalWords().toLocaleString()+' words';
   renderDocumentList();
 }
-function cmd(command,value=null){document.execCommand(command,false,value);document.getElementById('content-editable')?.focus()}
+function cmd(command,value=null){const editor=document.getElementById('content-editable');editor?.focus();document.execCommand(command,false,value);if(editor)dispatchWriterInput(editor)}
 const BOOK_FONTS=[
   {group:'Manuscript standard',fonts:['Times New Roman','Georgia','Garamond','Book Antiqua','Cambria','Courier New','Calibri','Arial']},
   {group:'Book typeset',fonts:['EB Garamond','Libre Baskerville','Lora','Merriweather','Crimson Text','Playfair Display','PT Serif','Bitter']}
 ];
+const RIBBON_ICONS={
+  save:'<path d="M4 3h13l4 4v14H3V3h1Z"/><path d="M7 3v6h10V3M7 21v-8h10v8"/>',
+  copy:'<rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h2"/>',
+  cut:'<circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><path d="m8 8 12 12M8 16 20 4"/>',
+  paste:'<path d="M9 4h6l1 2h3a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l1-2Z"/><path d="M9 4a3 3 0 0 1 6 0M8 11h8M8 15h8"/>',
+  undo:'<path d="m9 14-5-5 5-5M4 9h10a6 6 0 1 1 0 12h-2"/>',
+  redo:'<path d="m15 14 5-5-5-5m5 5H10a6 6 0 1 0 0 12h2"/>',
+  alignLeft:'<path d="M4 5h16M4 9h11M4 13h16M4 17h11M4 21h16"/>',
+  alignCenter:'<path d="M4 5h16M7 9h10M4 13h16M7 17h10M4 21h16"/>',
+  alignRight:'<path d="M4 5h16M9 9h11M4 13h16M9 17h11M4 21h16"/>',
+  alignJustify:'<path d="M4 5h16M4 9h16M4 13h16M4 17h16M4 21h16"/>',
+  bullets:'<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
+  numbers:'<path d="M10 6h10M10 12h10M10 18h10M4 5h2v3M4 11h2l-2 2h2M4 17h2v2H4"/>'
+};
+function ribbonIcon(name){return `<svg class="ribbon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${RIBBON_ICONS[name]}</svg>`}
+const WRITER_THEME_COLORS=['#ffffff','#000000','#e7e6e6','#44546a','#5b9bd5','#ed7d31','#a5a5a5','#ffc000','#4472c4','#70ad47'];
+const WRITER_STANDARD_COLORS=['#c00000','#ff0000','#ffc000','#ffff00','#92d050','#00b050','#00b0f0','#0070c0','#002060','#7030a0'];
+let writerContextRange=null,writerContextPopover=null,writerColorRange=null;
+function tintHex(hex,amount){const value=hex.slice(1),channels=[0,2,4].map(index=>parseInt(value.slice(index,index+2),16));return '#'+channels.map(channel=>Math.round(255-(255-channel)*amount/100).toString(16).padStart(2,'0')).join('')}
+function colorSwatchButton(color,label){return `<button type="button" class="tb-palette-swatch" data-palette-color="${color}" style="--swatch:${color}" aria-label="${label}" title="${label}"></button>`}
+function colorPickerMarkup(id,label,glyph,highlight=false){
+  const theme=WRITER_THEME_COLORS.map(color=>colorSwatchButton(color,`Theme ${color}`)).join('');
+  const shades=[90,75,55,35].map(amount=>WRITER_THEME_COLORS.map(color=>colorSwatchButton(tintHex(color,amount),`Lighter ${color}`)).join('')).join('');
+  const standard=WRITER_STANDARD_COLORS.map(color=>colorSwatchButton(color,`Standard ${color}`)).join('');
+  return `<div class="tb-color-picker" id="${id}" data-color-kind="${highlight?'highlight':'text'}">
+    <button type="button" class="tb-color-trigger" aria-label="${label}" aria-haspopup="dialog" aria-expanded="false" title="${label}"><span class="tb-color-swatch${highlight?' highlight-swatch':''}">${glyph}<i></i></span></button>
+    <div class="tb-color-menu" role="dialog" aria-label="${label} palette" hidden>
+      ${highlight?'<button type="button" class="tb-no-color" data-clear-highlight>No Color</button>':''}
+      <div class="tb-palette-heading">Theme Colors</div><div class="tb-theme-colors">${theme}</div><div class="tb-theme-shades">${shades}</div>
+      <div class="tb-palette-heading tb-standard-heading">Standard Colors</div><div class="tb-standard-colors">${standard}</div>
+      <div class="tb-palette-footer"><button type="button" data-custom-color>More Colors...</button><input type="color" value="${highlight?'#fff59d':'#000000'}" aria-label="Choose custom ${label.toLowerCase()}" tabindex="-1"></div>
+    </div>
+  </div>`
+}
+function restoreWriterContextRange(editor){
+  if(!writerContextRange)return false;
+  editor.focus();const selection=window.getSelection();selection.removeAllRanges();selection.addRange(writerContextRange);return true;
+}
+function closeWriterContextPopover(){if(writerContextPopover)writerContextPopover.hidden=true}
+function dispatchWriterInput(editor){editor.dispatchEvent(new Event('input',{bubbles:true}))}
+function ensureWriterContextPopover(){
+  if(writerContextPopover)return writerContextPopover;
+  const fontOptions=BOOK_FONTS.flatMap(group=>group.fonts).map(font=>`<option value="${escapeHtml(font)}">${escapeHtml(font)}</option>`).join('');
+  const popover=document.createElement('div');popover.id='writer-context-popover';popover.className='writer-context-popover';popover.hidden=true;popover.setAttribute('aria-label','Writing selection tools');
+  popover.innerHTML=`<div class="writer-context-mini" role="toolbar" aria-label="Quick formatting">
+      <button type="button" data-context-command="bold" aria-label="Bold" title="Bold (Ctrl/Cmd+B)"><b>B</b></button><button type="button" data-context-command="italic" aria-label="Italic" title="Italic (Ctrl/Cmd+I)"><i>I</i></button><button type="button" data-context-command="underline" aria-label="Underline" title="Underline (Ctrl/Cmd+U)"><u>U</u></button>
+      <select data-context-font aria-label="Font family"><option value="">Font</option>${fontOptions}</select><select data-context-size aria-label="Font size"><option value="">Size</option>${[10,11,12,14,16,18,20,24,28,32].map(size=>`<option value="${size}">${size}</option>`).join('')}</select>
+      <input type="color" data-context-color aria-label="Text color" title="Text color" value="#26362d">
+    </div><div class="writer-context-menu" role="menu" aria-label="Selection actions">
+      <button type="button" role="menuitem" data-context-action="cut">${ribbonIcon('cut')}<span>Cut</span><kbd>Ctrl+X</kbd></button>
+      <button type="button" role="menuitem" data-context-action="copy">${ribbonIcon('copy')}<span>Copy</span><kbd>Ctrl+C</kbd></button>
+      <button type="button" role="menuitem" data-context-action="paste">${ribbonIcon('paste')}<span>Paste</span><kbd>Ctrl+V</kbd></button>
+      <span class="writer-context-separator"></span>
+      <button type="button" role="menuitem" data-context-action="select-all"><span class="context-menu-symbol">A</span><span>Select all</span><kbd>Ctrl+A</kbd></button>
+      <button type="button" role="menuitem" data-context-command="removeFormat"><span class="context-menu-symbol">Tx</span><span>Clear formatting</span></button>
+      <span class="writer-context-separator"></span>
+      <div class="writer-context-align" role="group" aria-label="Paragraph alignment"><button type="button" data-context-command="justifyLeft" aria-label="Align left" title="Align left">${ribbonIcon('alignLeft')}</button><button type="button" data-context-command="justifyCenter" aria-label="Center" title="Center">${ribbonIcon('alignCenter')}</button><button type="button" data-context-command="justifyRight" aria-label="Align right" title="Align right">${ribbonIcon('alignRight')}</button><button type="button" data-context-command="justifyFull" aria-label="Justify" title="Justify">${ribbonIcon('alignJustify')}</button></div>
+    </div>`;
+  document.body.appendChild(popover);writerContextPopover=popover;
+  popover.addEventListener('pointerdown',event=>{if(event.target.closest('button'))event.preventDefault()});
+  popover.addEventListener('click',async event=>{
+    const commandButton=event.target.closest('[data-context-command]');
+    if(commandButton){const editor=document.getElementById('content-editable');restoreWriterContextRange(editor);document.execCommand(commandButton.dataset.contextCommand,false);dispatchWriterInput(editor);closeWriterContextPopover();return}
+    const actionButton=event.target.closest('[data-context-action]');if(!actionButton)return;
+    const editor=document.getElementById('content-editable'),action=actionButton.dataset.contextAction;
+    if(action==='select-all'){editor.focus();const range=document.createRange();range.selectNodeContents(editor);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);closeWriterContextPopover();return}
+    if(action==='paste'){await pasteIntoWriter(writerContextRange?.cloneRange()||null);closeWriterContextPopover();return}
+    const range=writerContextRange?.cloneRange(),text=range?.toString()||'';if(!range||range.collapsed||!text){toast(`Select text in your draft to ${action}.`);return}
+    try{await navigator.clipboard.writeText(text);if(action==='cut'){restoreWriterContextRange(editor);document.execCommand('delete',false);dispatchWriterInput(editor)}toast(action==='cut'?'Selection cut.':'Selection copied.');closeWriterContextPopover()}catch(_){toast('Clipboard access is unavailable.')}
+  });
+  popover.addEventListener('change',event=>{
+    const editor=document.getElementById('content-editable');restoreWriterContextRange(editor);
+    if(event.target.matches('[data-context-font]'))document.execCommand('fontName',false,event.target.value);
+    else if(event.target.matches('[data-context-size]'))setFontSize(event.target.value);
+    else if(event.target.matches('[data-context-color]'))document.execCommand('foreColor',false,event.target.value);
+    else return;
+    dispatchWriterInput(editor);closeWriterContextPopover();
+  });
+  document.addEventListener('pointerdown',event=>{if(!popover.contains(event.target))closeWriterContextPopover()});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape')closeWriterContextPopover()});
+  window.addEventListener('resize',closeWriterContextPopover);window.addEventListener('scroll',closeWriterContextPopover,true);
+  return popover;
+}
+function showWriterContextPopover(editor,event){
+  const selection=window.getSelection(),range=selection?.rangeCount?selection.getRangeAt(0):null;
+  writerContextRange=range&&editor.contains(range.commonAncestorContainer.nodeType===1?range.commonAncestorContainer:range.commonAncestorContainer.parentNode)?range.cloneRange():null;
+  const popover=ensureWriterContextPopover(),hasSelection=!!(writerContextRange&&!writerContextRange.collapsed&&writerContextRange.toString().trim());
+  popover.querySelector('.writer-context-mini').hidden=!hasSelection;
+  popover.querySelector('[data-context-action="copy"]').disabled=!hasSelection;popover.querySelector('[data-context-action="cut"]').disabled=!hasSelection;
+  popover.hidden=false;popover.style.left='0px';popover.style.top='0px';
+  const bounds=popover.getBoundingClientRect(),left=Math.max(8,Math.min(event.clientX,innerWidth-bounds.width-8)),top=Math.max(8,Math.min(event.clientY+8,innerHeight-bounds.height-8));
+  popover.style.left=`${left}px`;popover.style.top=`${top}px`;
+}
 function setFontSize(px){
   document.execCommand('fontSize',false,'7');
   const editor=document.getElementById('content-editable');
@@ -307,7 +430,15 @@ function setFontSize(px){
   editor.focus();
 }
 function safeLineHeight(value){const n=Number(value);return [1.4,1.6,1.7,1.8,2.2].includes(n)?n:1.7}
-function setHighlight(color){document.execCommand('hiliteColor',false,color)||document.execCommand('backColor',false,color);document.getElementById('content-editable')?.focus()}
+function applyWriterColor(editor,kind,color){
+  if(!editor)return;
+  editor.focus();
+  if(writerColorRange){const selection=window.getSelection();selection.removeAllRanges();selection.addRange(writerColorRange)}
+  const command=kind==='highlight'?'hiliteColor':'foreColor',applied=document.execCommand(command,false,color);
+  if(!applied&&kind==='highlight')document.execCommand('backColor',false,color);
+  dispatchWriterInput(editor);writerColorRange=null;
+}
+function setHighlight(color){applyWriterColor(document.getElementById('content-editable'),'highlight',color)}
 function setLineSpacing(val){const s=state.sections.find(x=>String(x.id)===String(state.activeId));if(!s)return;s.lineHeight=safeLineHeight(val);save();const el=document.getElementById('content-editable');if(el)el.style.lineHeight=s.lineHeight}
 function renderEditor(){
   const s=state.sections.find(x=>String(x.id)===String(state.activeId)),wrap=document.getElementById('editor-wrap');
@@ -315,49 +446,69 @@ function renderEditor(){
   const fontOptions=BOOK_FONTS.map(g=>`<optgroup label="${g.group}">${g.fonts.map(f=>`<option value="${f}" style="font-family:'${f}'">${f}</option>`).join('')}</optgroup>`).join('');
   wrap.innerHTML=`<input type="text" id="title-input" aria-label="Section title" value="${escapeHtml(s.title||'Untitled')}">
     <div class="toolbar" aria-label="Formatting tools">
-      <div class="tb-group">
-        <button type="button" data-cmd="undo" title="Undo">↶</button><button type="button" data-cmd="redo" title="Redo">↷</button>
+      <div class="tb-group" role="group" aria-label="Clipboard">
+        <button type="button" id="writer-save" aria-label="Save" title="Save (Ctrl/Cmd+S)">${ribbonIcon('save')}</button><button type="button" id="writer-copy" aria-label="Copy" title="Copy selected text">${ribbonIcon('copy')}</button><button type="button" id="writer-paste" aria-label="Paste" title="Paste plain text at the cursor">${ribbonIcon('paste')}</button><span class="tb-group-label">Clipboard</span>
       </div>
-      <div class="tb-group">
+      <div class="tb-group" role="group" aria-label="History">
+        <button type="button" data-cmd="undo" aria-label="Undo" title="Undo (Ctrl/Cmd+Z)">${ribbonIcon('undo')}</button><button type="button" data-cmd="redo" aria-label="Redo" title="Redo (Ctrl/Cmd+Y)">${ribbonIcon('redo')}</button><span class="tb-group-label">History</span>
+      </div>
+      <div class="tb-group" role="group" aria-label="Font">
         <select id="tb-font" class="tb-font-select" aria-label="Font family"><option value="">Font ▾</option>${fontOptions}</select>
-        <select id="tb-size" aria-label="Font size"><option value="">Size ▾</option>${[10,11,12,14,16,18,20,24,28,32].map(n=>`<option value="${n}">${n}</option>`).join('')}</select>
+        <select id="tb-size" aria-label="Font size"><option value="">Size ▾</option>${[10,11,12,14,16,18,20,24,28,32].map(n=>`<option value="${n}">${n}</option>`).join('')}</select><span class="tb-group-label">Font</span>
       </div>
-      <div class="tb-group">
-        <button type="button" data-cmd="bold" title="Bold"><b>B</b></button><button type="button" data-cmd="italic" title="Italic"><i>I</i></button><button type="button" data-cmd="underline" title="Underline"><u>U</u></button><button type="button" data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
-        <button type="button" data-cmd="superscript" title="Superscript">x²</button><button type="button" data-cmd="subscript" title="Subscript">x₂</button>
+      <div class="tb-group" role="group" aria-label="Text formatting">
+        <button type="button" data-cmd="bold" title="Bold (Ctrl/Cmd+B)"><b>B</b></button><button type="button" data-cmd="italic" title="Italic (Ctrl/Cmd+I)"><i>I</i></button><button type="button" data-cmd="underline" title="Underline (Ctrl/Cmd+U)"><u>U</u></button><button type="button" data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
+        <button type="button" data-cmd="superscript" title="Superscript">x²</button><button type="button" data-cmd="subscript" title="Subscript">x₂</button><span class="tb-group-label">Text</span>
       </div>
-      <div class="tb-group">
-        <div class="tb-color-wrap" title="Text color"><div class="tb-color-swatch">A</div><input type="color" id="tb-forecolor" value="#000000"></div>
-        <div class="tb-color-wrap" title="Highlight"><div class="tb-color-swatch">🖍</div><input type="color" id="tb-highlight" value="#fff59d"></div>
-        <button type="button" data-cmd="removeFormat" title="Clear formatting">Clear</button>
+      <div class="tb-group" role="group" aria-label="Text color and highlighting">
+        ${colorPickerMarkup('tb-forecolor-picker','Text color','<b>A</b>')}
+        ${colorPickerMarkup('tb-highlight-picker','Highlight color','<b>▰</b>',true)}
+        <button type="button" data-cmd="removeFormat" aria-label="Clear formatting" title="Clear formatting"><span class="clear-format-icon">T<span>x</span></span></button><span class="tb-group-label">Color</span>
       </div>
-      <div class="tb-group">
-        <select id="tb-style" aria-label="Paragraph style"><option value="">Style ▾</option><option value="P">Normal</option><option value="H1">Heading 1</option><option value="H2">Heading 2</option><option value="H3">Heading 3</option><option value="BLOCKQUOTE">Quote</option></select>
+      <div class="tb-group" role="group" aria-label="Paragraph style">
+        <select id="tb-style" aria-label="Paragraph style"><option value="">Style ▾</option><option value="P">Normal</option><option value="H1">Heading 1</option><option value="H2">Heading 2</option><option value="H3">Heading 3</option><option value="BLOCKQUOTE">Quote</option></select><span class="tb-group-label">Styles</span>
       </div>
-      <div class="tb-group">
-        <button type="button" data-cmd="justifyLeft" title="Align left">◧</button><button type="button" data-cmd="justifyCenter" title="Center">▣</button><button type="button" data-cmd="justifyRight" title="Align right">◨</button><button type="button" data-cmd="justifyFull" title="Justify">▦</button>
+      <div class="tb-group" role="group" aria-label="Paragraph alignment">
+        <button type="button" data-cmd="justifyLeft" aria-label="Align left" title="Align left">${ribbonIcon('alignLeft')}</button><button type="button" data-cmd="justifyCenter" aria-label="Center" title="Center">${ribbonIcon('alignCenter')}</button><button type="button" data-cmd="justifyRight" aria-label="Align right" title="Align right">${ribbonIcon('alignRight')}</button><button type="button" data-cmd="justifyFull" aria-label="Justify" title="Justify">${ribbonIcon('alignJustify')}</button><span class="tb-group-label">Paragraph</span>
       </div>
-      <div class="tb-group">
-        <button type="button" data-cmd="insertUnorderedList" title="Bullet list">• List</button><button type="button" data-cmd="insertOrderedList" title="Numbered list">1. List</button>
-        <button type="button" data-cmd="outdent" title="Decrease indent">⇤</button><button type="button" data-cmd="indent" title="Increase indent">⇥</button>
+      <div class="tb-group" role="group" aria-label="Lists and indentation">
+        <button type="button" data-cmd="insertUnorderedList" aria-label="Bulleted list" title="Bulleted list">${ribbonIcon('bullets')}</button><button type="button" data-cmd="insertOrderedList" aria-label="Numbered list" title="Numbered list">${ribbonIcon('numbers')}</button>
+        <button type="button" data-cmd="outdent" aria-label="Decrease indent" title="Decrease indent">⇤</button><button type="button" data-cmd="indent" aria-label="Increase indent" title="Increase indent">⇥</button><span class="tb-group-label">Lists</span>
       </div>
-      <div class="tb-group">
-        <select id="tb-linespacing" aria-label="Line spacing"><option value="1.4">Single</option><option value="1.6">1.15</option><option value="1.8">1.5</option><option value="2.2">Double</option></select>
+      <div class="tb-group" role="group" aria-label="Line spacing">
+        <select id="tb-linespacing" aria-label="Line spacing"><option value="1.4">Single</option><option value="1.6">1.15</option><option value="1.8">1.5</option><option value="2.2">Double</option></select><span class="tb-group-label">Spacing</span>
       </div>
     </div>
     <div contenteditable="true" id="content-editable" role="textbox" aria-multiline="true" aria-label="Manuscript section" style="line-height:${safeLineHeight(s.lineHeight)}">${sanitizeRichHtml(s.html||'<p></p>')}</div>
     <div class="row"><span id="livecount">${wc(s.html||'')} words</span><button class="del" type="button" id="delete-section">Delete section</button></div>`;
   document.getElementById('title-input').oninput=e=>{s.title=e.target.value;save();renderSidebar();renderHome();renderMetrics()};
   const editor=document.getElementById('content-editable');
+  editor.oncontextmenu=event=>{event.preventDefault();showWriterContextPopover(editor,event)};
+  editor.onkeydown=event=>{if(event.key==='ContextMenu'||(event.shiftKey&&event.key==='F10')){event.preventDefault();const range=window.getSelection()?.rangeCount?window.getSelection().getRangeAt(0):null,rect=range?.getBoundingClientRect()||editor.getBoundingClientRect();showWriterContextPopover(editor,{clientX:rect.left,clientY:rect.bottom})}};
   editor.onpaste=e=>{e.preventDefault();const html=e.clipboardData?.getData('text/html')||'';const plain=e.clipboardData?.getData('text/plain')||'';const safe=html?sanitizeRichHtml(html):plain.split(/\n{2,}/).map(p=>`<p>${escapeHtml(p).replace(/\n/g,'<br>')}</p>`).join('');document.execCommand('insertHTML',false,safe||'<p></p>');setImportSafetyStatus('Pasted text was cleaned before it was added.','ok')};
   editor.oninput=e=>{s.html=sanitizeRichHtml(e.target.innerHTML);save();document.getElementById('livecount').textContent=wc(s.html)+' words';document.getElementById('totalstats').textContent=totalWords().toLocaleString()+' words';renderHome();renderDocumentList();renderMetrics()};
   renderMetrics();
+  document.getElementById('writer-save').onclick=saveWriter;
+  const copyButton=document.getElementById('writer-copy'),pasteButton=document.getElementById('writer-paste');
+  copyButton.onmousedown=pasteButton.onmousedown=event=>event.preventDefault();
+  copyButton.onclick=copyWriterSelection;pasteButton.onclick=pasteIntoWriter;
   wrap.querySelectorAll('.toolbar [data-cmd]').forEach(b=>b.addEventListener('click',()=>cmd(b.dataset.cmd,b.dataset.value||null)));
   document.getElementById('tb-font').onchange=e=>{if(e.target.value)cmd('fontName',e.target.value);e.target.value=''};
   document.getElementById('tb-size').onchange=e=>{if(e.target.value)setFontSize(e.target.value);e.target.value=''};
   document.getElementById('tb-style').onchange=e=>{if(e.target.value)cmd('formatBlock',e.target.value);e.target.value=''};
-  document.getElementById('tb-forecolor').oninput=e=>cmd('foreColor',e.target.value);
-  document.getElementById('tb-highlight').oninput=e=>setHighlight(e.target.value);
+  wrap.querySelectorAll('.tb-color-picker').forEach(picker=>{
+    const trigger=picker.querySelector('.tb-color-trigger'),menu=picker.querySelector('.tb-color-menu'),editor=document.getElementById('content-editable');
+    trigger.onpointerdown=event=>{event.preventDefault();const selection=window.getSelection();writerColorRange=selection?.rangeCount?selection.getRangeAt(0).cloneRange():null};
+    trigger.onclick=()=>{wrap.querySelectorAll('.tb-color-menu').forEach(other=>{if(other!==menu){other.hidden=true;other.parentElement.querySelector('.tb-color-trigger').setAttribute('aria-expanded','false')}});menu.hidden=!menu.hidden;trigger.setAttribute('aria-expanded',String(!menu.hidden))};
+    menu.onpointerdown=event=>{if(event.target.closest('button'))event.preventDefault()};
+    menu.onclick=event=>{
+      const colorButton=event.target.closest('[data-palette-color]'),customButton=event.target.closest('[data-custom-color]'),clearButton=event.target.closest('[data-clear-highlight]');
+      if(customButton){menu.querySelector('input[type="color"]').click();return}
+      if(clearButton){applyWriterColor(editor,picker.dataset.colorKind,'transparent');menu.hidden=true;trigger.setAttribute('aria-expanded','false');return}
+      if(colorButton){applyWriterColor(editor,picker.dataset.colorKind,colorButton.dataset.paletteColor);menu.hidden=true;trigger.setAttribute('aria-expanded','false')}
+    };
+    const customInput=menu.querySelector('input[type="color"]');customInput.oninput=()=>{applyWriterColor(editor,picker.dataset.colorKind,customInput.value);menu.hidden=true;trigger.setAttribute('aria-expanded','false')};
+  });
   const lsSelect=document.getElementById('tb-linespacing');lsSelect.value=String(safeLineHeight(s.lineHeight));if(![...lsSelect.options].some(o=>o.value===lsSelect.value))lsSelect.value='1.4';
   lsSelect.onchange=e=>setLineSpacing(e.target.value);
   document.getElementById('delete-section').onclick=()=>delSection(s.id);

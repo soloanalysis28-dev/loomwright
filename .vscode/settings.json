@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^node --input-type=module --check < app\\.js && git diff --check$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
