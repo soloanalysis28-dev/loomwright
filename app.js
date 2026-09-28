@@ -79,7 +79,7 @@ if(!projects.length){activeProjectId=newProjectId();projects=[{id:activeProjectI
 projects=projects.filter(p=>p&&p.id).map(p=>({...p,name:String(p.name||'Untitled Project'),createdAt:p.createdAt||new Date().toISOString(),updatedAt:p.updatedAt||p.createdAt||new Date().toISOString(),data:normalizeProjectState(p.data)}));
 if(!projects.length){activeProjectId=newProjectId();projects=[{id:activeProjectId,name:'My First Project',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),data:newProjectState()}]}
 if(!projects.some(p=>p.id===activeProjectId))activeProjectId=projects[0].id;
-let state=projects.find(p=>p.id===activeProjectId).data;
+let state=normalizeProjectState(projects.find(p=>p.id===activeProjectId)?.data||legacyState);
 let offlineDb=null,offlineSaveTimer=null,offlineStorageReady=false;
 function openOfflineDatabase(){return new Promise((resolve,reject)=>{if(!window.indexedDB){reject(new Error('IndexedDB unavailable'));return}const request=indexedDB.open('loomwright-offline-library',1);request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains('library'))request.result.createObjectStore('library')};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error||new Error('Could not open offline storage'))})}
 function indexedRead(){return new Promise((resolve,reject)=>{const tx=offlineDb.transaction('library','readonly'),request=tx.objectStore('library').get('projects');request.onsuccess=()=>resolve(request.result||null);request.onerror=()=>reject(request.error)})}
@@ -90,12 +90,12 @@ async function initializeOfflineStorage(){
   try{
     offlineDb=await openOfflineDatabase();let localRecord=null;
     try{localRecord=JSON.parse(localStorage.getItem(PROJECTS_STORAGE_KEY)||'null')}catch(e){}
-    const localHasContent=Array.isArray(localRecord?.projects)&&localRecord.projects.some(p=>p.data&&Array.isArray(p.data.sections)),stored=await indexedRead(),useIndexed=stored&&Array.isArray(stored.projects)&&(!localHasContent||(stored.savedAt||0)>(localRecord?.savedAt||0));
+    const localHasContent=Array.isArray(localRecord?.projects)&&localRecord.projects.some(p=>p.data&&Array.isArray(p.data.sections)),stored=await indexedRead(),storedHasContent=Array.isArray(stored?.projects)&&stored.projects.some(p=>p.data&&Array.isArray(p.data.sections)),useIndexed=storedHasContent&&(!localHasContent||(stored.savedAt||0)>(localRecord?.savedAt||0));
     if(useIndexed&&!appSettingsStoredAtBoot&&!appSettingsTouched){const oldActive=stored.projects.find(p=>p.id===(stored.activeProjectId||activeProjectId)),storedSettings=stored.appSettings||oldActive?.data?.settings;if(storedSettings)appSettings=normalizeSettings(storedSettings)}
     let loadedIndexed=false;
     if(useIndexed){projects=stored.projects.filter(p=>p&&p.id).map(p=>({...p,data:normalizeProjectState(p.data)}));if(!projects.length)throw new Error('Offline library is empty');activeProjectId=stored.activeProjectId||projects[0].id;if(!projects.some(p=>p.id===activeProjectId))activeProjectId=projects[0].id;state=projects.find(p=>p.id===activeProjectId).data;loadedIndexed=true}
-    offlineStorageReady=true;persistAppSettings();persistProjectStore();if(loadedIndexed)refreshProjectViews();else applyTheme();setSyncStatus('Offline · this device',false);
-  }catch(e){offlineDb=null;offlineStorageReady=true;persistAppSettings();persistProjectStore();setSyncStatus('Offline · this browser',false)}
+    offlineStorageReady=true;persistAppSettings();persistProjectStore();refreshProjectViews();setSyncStatus('Offline · this device',false);
+  }catch(e){offlineDb=null;offlineStorageReady=true;persistAppSettings();if(projects.every(project=>project.data))persistProjectStore();refreshProjectViews();setSyncStatus('Offline · this browser',false)}
 }
 state.sections.forEach(s=>{if(s.text!==undefined&&!s.html){s.html=s.text.split(/\n\n+/).map(p=>'<p>'+escapeHtml(p)+'</p>').join('');delete s.text}});
 function escapeHtml(value){return String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
@@ -560,4 +560,4 @@ document.getElementById('palette-select').addEventListener('change',e=>updateApp
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(appSettings.theme==='auto')applyTheme()});
 document.getElementById('project-create-form').addEventListener('submit',e=>{e.preventDefault();const input=document.getElementById('new-project-name');createProject(input.value);input.value=''});
 bindBookDesigner();
-renderSidebar();renderEditor();applyTheme();renderHome();renderProjects();initializeOfflineStorage();setupOfflineApp();playIntro();
+setupOfflineApp();initializeOfflineStorage().finally(playIntro);
