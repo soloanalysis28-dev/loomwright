@@ -81,12 +81,12 @@ if(!projects.length){activeProjectId=newProjectId();projects=[{id:activeProjectI
 if(!projects.some(p=>p.id===activeProjectId))activeProjectId=projects[0].id;
 let state=normalizeProjectState(projects.find(p=>p.id===activeProjectId)?.data||legacyState);
 let renamingProjectId=null;
-let offlineDb=null,offlineSaveTimer=null,offlineStorageReady=false;
+let offlineDb=null,offlineSaveTimer=null,offlineStorageReady=false,sharedSyncReady=false,sharedSyncBusy=false,sharedSyncPoll=null,sharedSyncTimer=null,sharedApplyingRecord=false;
 function openOfflineDatabase(){return new Promise((resolve,reject)=>{if(!window.indexedDB){reject(new Error('IndexedDB unavailable'));return}const request=indexedDB.open('loomwright-offline-library',1);request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains('library'))request.result.createObjectStore('library')};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error||new Error('Could not open offline storage'))})}
 function indexedRead(){return new Promise((resolve,reject)=>{const tx=offlineDb.transaction('library','readonly'),request=tx.objectStore('library').get('projects');request.onsuccess=()=>resolve(request.result||null);request.onerror=()=>reject(request.error)})}
 function indexedWrite(record){return new Promise((resolve,reject)=>{if(!offlineDb){resolve();return}const tx=offlineDb.transaction('library','readwrite');tx.objectStore('library').put(record,'projects');tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error||new Error('Offline save failed'))})}
 function currentProjectRecord(){return {version:2,activeProjectId,appSettings,projects,savedAt:Date.now()}}
-function persistProjectStore(){const record=currentProjectRecord(),hasIndexedDB=!!offlineDb,localRecord=hasIndexedDB?{...record,projects:projects.map(({id,name,createdAt,updatedAt})=>({id,name,createdAt,updatedAt}))}:record;try{localStorage.setItem(PROJECTS_STORAGE_KEY,JSON.stringify(localRecord));localStorage.setItem(ACTIVE_PROJECT_KEY,activeProjectId);if(!hasIndexedDB)localStorage.setItem('loomwright_state',JSON.stringify(state))}catch(e){if(hasIndexedDB)toast('Saved in offline storage; browser backup limit reached.');else{toast('Browser storage is full. Export a copy from Finalise.');return false}}if(offlineDb){clearTimeout(offlineSaveTimer);offlineSaveTimer=setTimeout(()=>indexedWrite(record).catch(()=>toast('Offline save needs attention; export a copy from Finalise.')),180)}return true}
+function persistProjectStore(){const record=currentProjectRecord(),hasIndexedDB=!!offlineDb,localRecord=hasIndexedDB?{...record,projects:projects.map(({id,name,createdAt,updatedAt})=>({id,name,createdAt,updatedAt}))}:record;try{localStorage.setItem(PROJECTS_STORAGE_KEY,JSON.stringify(localRecord));localStorage.setItem(ACTIVE_PROJECT_KEY,activeProjectId);if(!hasIndexedDB)localStorage.setItem('loomwright_state',JSON.stringify(state))}catch(e){if(hasIndexedDB)toast('Saved in offline storage; browser backup limit reached.');else{toast('Browser storage is full. Export a copy from Finalise.');return false}}if(offlineDb){clearTimeout(offlineSaveTimer);offlineSaveTimer=setTimeout(()=>indexedWrite(record).catch(()=>toast('Offline save needs attention; export a copy from Finalise.')),180)}if(sharedSyncReady&&!sharedApplyingRecord)scheduleSharedSync();return true}
 async function initializeOfflineStorage(){
   try{
     offlineDb=await openOfflineDatabase();let localRecord=null;
@@ -152,6 +152,68 @@ async function initDB(){
     setSyncStatus('Synced',true);
   }catch(e){setSyncStatus('Local only',false)}
 }
+function sameSharedProjects(first,second){
+  const ordered=record=>(record?.projects||[]).slice().sort((a,b)=>String(a.id).localeCompare(String(b.id)));
+  return JSON.stringify(ordered(first))===JSON.stringify(ordered(second));
+}
+function mergeSharedRecords(local,remote){
+  const merged=new Map((remote?.projects||[]).map(project=>[String(project.id),project]));
+  (local?.projects||[]).forEach(project=>{
+    const id=String(project.id),previous=merged.get(id),localTime=Date.parse(project.updatedAt||project.createdAt||'')||0,remoteTime=Date.parse(previous?.updatedAt||previous?.createdAt||'')||0;
+    if(!previous||localTime>remoteTime)merged.set(id,project);
+  });
+  return {...remote,...local,projects:[...merged.values()],activeProjectId:merged.has(String(local?.activeProjectId))?local.activeProjectId:remote?.activeProjectId};
+}
+function applySharedRecord(record){
+  const nextProjects=(record.projects||[]).filter(project=>project&&project.id).map(project=>({...project,name:String(project.name||'Untitled Project'),data:normalizeProjectState(project.data)}));
+  if(!nextProjects.length)return;
+  const currentId=projects.some(project=>String(project.id)===String(activeProjectId))?activeProjectId:record.activeProjectId;
+  projects=nextProjects;activeProjectId=projects.some(project=>String(project.id)===String(currentId))?currentId:projects[0].id;
+  state=projects.find(project=>String(project.id)===String(activeProjectId)).data;
+  sharedApplyingRecord=true;
+  try{persistProjectStore();refreshProjectViews()}finally{sharedApplyingRecord=false}
+}
+function writerHasFocus(){
+  const workspace=document.getElementById('write-workspace'),active=document.activeElement;
+  return !workspace.hidden&&workspace.contains(active)&&active.matches('input,textarea,[contenteditable="true"]');
+}
+async function requestSharedStore(method='GET',payload=null){
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),4000);
+  try{return await fetch(new URL('./api/sync',import.meta.url),{method,cache:'no-store',headers:payload?{'Content-Type':'application/json'}:undefined,body:payload?JSON.stringify(payload):undefined,signal:controller.signal})}
+  finally{clearTimeout(timeout)}
+}
+async function syncSharedProjects(){
+  if(sharedSyncBusy||writerHasFocus())return;
+  sharedSyncBusy=true;
+  try{
+    let response=await requestSharedStore(),snapshot;
+    if(!response.ok)throw new Error('Shared store unavailable.');
+    snapshot=await response.json();
+    for(let attempt=0;attempt<5;attempt++){
+      const local=currentProjectRecord(),merged=snapshot.record?mergeSharedRecords(local,snapshot.record):local;
+      if(!sameSharedProjects(local,merged))applySharedRecord(merged);
+      const current=currentProjectRecord();
+      if(snapshot.record&&sameSharedProjects(current,snapshot.record)){
+        sharedSyncReady=true;setSyncStatus('Shared · this workspace',true);return;
+      }
+      response=await requestSharedStore('PUT',{expectedRevision:snapshot.revision,record:current});
+      snapshot=await response.json();
+      if(response.status===409)continue;
+      if(!response.ok)throw new Error('Shared save failed.');
+      sharedSyncReady=true;setSyncStatus('Shared · this workspace',true);return;
+    }
+    throw new Error('Shared data changed repeatedly.');
+  }catch(error){setSyncStatus(sharedSyncReady?'Shared · reconnecting':'Local only · sync unavailable',false)}
+  finally{sharedSyncBusy=false}
+}
+function startSharedSync(){
+  if(!sharedSyncPoll)sharedSyncPoll=setInterval(syncSharedProjects,5000);
+  return syncSharedProjects();
+}
+function scheduleSharedSync(){
+  clearTimeout(sharedSyncTimer);
+  sharedSyncTimer=setTimeout(syncSharedProjects,700);
+}
 function save(){
   delete state.settings;const project=projects.find(p=>p.id===activeProjectId);if(project){project.data=state;project.updatedAt=new Date().toISOString()}
   const persisted=persistProjectStore();
@@ -196,8 +258,16 @@ function textOf(html){
 function wc(html){const t=textOf(html).trim();return t?t.split(/\s+/).length:0}
 function totalWords(){return state.sections.reduce((n,s)=>n+wc(s.html||''),0)}
 function totalCharacters(){return detectCharacters().length}
+function updateWriterStatus(){
+  const index=state.sections.findIndex(s=>String(s.id)===String(state.activeId)),section=state.sections[index];
+  const editor=document.getElementById('content-editable');
+  document.getElementById('writer-status-section').textContent=`Section ${Math.max(index+1,1)} of ${state.sections.length}`;
+  document.getElementById('writer-status-words').textContent=wc(editor?.innerHTML||section?.html||'').toLocaleString()+' words';
+  document.getElementById('writer-status-total').textContent=totalWords().toLocaleString()+' words total';
+}
 
 function switchView(name){
+  if(name!=='write'){document.body.classList.remove('writer-focus');document.getElementById('writer-statusbar').hidden=true}
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));
   if(name==='home')renderHome();if(name==='projects')renderProjects();if(name==='write')showWriteLibrary();if(name==='metrics')renderMetrics();if(name==='characters')renderCharacters();if(name==='web')renderWeb();if(name==='ai')renderAI();if(name==='finalise')renderFinalise();if(name==='settings')applyTheme();
@@ -231,6 +301,8 @@ function renderDocumentList(){
   });
 }
 function showWriteLibrary(){
+  document.body.classList.remove('writer-focus');
+  document.getElementById('writer-statusbar').hidden=true;
   document.getElementById('write-library').hidden=false;
   document.getElementById('write-workspace').hidden=true;
   renderDocumentList();
@@ -238,6 +310,7 @@ function showWriteLibrary(){
 function showWriteWorkspace(){
   document.getElementById('write-library').hidden=true;
   document.getElementById('write-workspace').hidden=false;
+  document.getElementById('writer-statusbar').hidden=false;
   renderSidebar();
   renderEditor();
 }
@@ -364,6 +437,9 @@ function colorPickerMarkup(id,label,glyph,highlight=false){
     </div>
   </div>`
 }
+function closeWriterColorMenus(){document.querySelectorAll('.tb-color-menu:not([hidden])').forEach(menu=>{menu.hidden=true;menu.closest('.tb-color-picker')?.querySelector('.tb-color-trigger')?.setAttribute('aria-expanded','false')})}
+document.addEventListener('pointerdown',event=>{if(!event.target.closest('.tb-color-picker'))closeWriterColorMenus()});
+document.addEventListener('keydown',event=>{if(event.key==='Escape')closeWriterColorMenus()});
 function restoreWriterContextRange(editor){
   if(!writerContextRange)return false;
   editor.focus();const selection=window.getSelection();selection.removeAllRanges();selection.addRange(writerContextRange);return true;
@@ -436,6 +512,7 @@ function applyWriterColor(editor,kind,color){
   if(writerColorRange){const selection=window.getSelection();selection.removeAllRanges();selection.addRange(writerColorRange)}
   const command=kind==='highlight'?'hiliteColor':'foreColor',applied=document.execCommand(command,false,color);
   if(!applied&&kind==='highlight')document.execCommand('backColor',false,color);
+  document.querySelector(`#tb-${kind==='highlight'?'highlight':'forecolor'}-picker .tb-color-swatch`)?.style.setProperty('--picked-color',color);
   dispatchWriterInput(editor);writerColorRange=null;
 }
 function setHighlight(color){applyWriterColor(document.getElementById('content-editable'),'highlight',color)}
@@ -479,16 +556,18 @@ function renderEditor(){
         <select id="tb-linespacing" aria-label="Line spacing"><option value="1.4">Single</option><option value="1.6">1.15</option><option value="1.8">1.5</option><option value="2.2">Double</option></select><span class="tb-group-label">Spacing</span>
       </div>
     </div>
-    <div contenteditable="true" id="content-editable" role="textbox" aria-multiline="true" aria-label="Manuscript section" style="line-height:${safeLineHeight(s.lineHeight)}">${sanitizeRichHtml(s.html||'<p></p>')}</div>
-    <div class="row"><span id="livecount">${wc(s.html||'')} words</span><button class="del" type="button" id="delete-section">Delete section</button></div>`;
+    <div contenteditable="true" id="content-editable" role="textbox" aria-multiline="true" aria-label="Manuscript section" style="line-height:${safeLineHeight(s.lineHeight)}">${sanitizeRichHtml(s.html||'<p></p>')}</div>`;
   document.getElementById('title-input').oninput=e=>{s.title=e.target.value;save();renderSidebar();renderHome();renderMetrics()};
   const editor=document.getElementById('content-editable');
   editor.oncontextmenu=event=>{event.preventDefault();showWriterContextPopover(editor,event)};
   editor.onkeydown=event=>{if(event.key==='ContextMenu'||(event.shiftKey&&event.key==='F10')){event.preventDefault();const range=window.getSelection()?.rangeCount?window.getSelection().getRangeAt(0):null,rect=range?.getBoundingClientRect()||editor.getBoundingClientRect();showWriterContextPopover(editor,{clientX:rect.left,clientY:rect.bottom})}};
   editor.onpaste=e=>{e.preventDefault();const html=e.clipboardData?.getData('text/html')||'';const plain=e.clipboardData?.getData('text/plain')||'';const safe=html?sanitizeRichHtml(html):plain.split(/\n{2,}/).map(p=>`<p>${escapeHtml(p).replace(/\n/g,'<br>')}</p>`).join('');document.execCommand('insertHTML',false,safe||'<p></p>');setImportSafetyStatus('Pasted text was cleaned before it was added.','ok')};
-  editor.oninput=e=>{s.html=sanitizeRichHtml(e.target.innerHTML);save();document.getElementById('livecount').textContent=wc(s.html)+' words';document.getElementById('totalstats').textContent=totalWords().toLocaleString()+' words';renderHome();renderDocumentList();renderMetrics()};
+  editor.oninput=e=>{s.html=sanitizeRichHtml(e.target.innerHTML);save();updateWriterStatus();document.getElementById('totalstats').textContent=totalWords().toLocaleString()+' words';renderHome();renderDocumentList();renderMetrics()};
+  updateWriterStatus();
   renderMetrics();
   document.getElementById('writer-save').onclick=saveWriter;
+  document.getElementById('writer-status-save').onclick=saveWriter;
+  const focusToggle=document.getElementById('writer-focus-toggle');focusToggle.setAttribute('aria-pressed',String(document.body.classList.contains('writer-focus')));focusToggle.onclick=()=>{const focused=document.body.classList.toggle('writer-focus');focusToggle.setAttribute('aria-pressed',String(focused))};
   const copyButton=document.getElementById('writer-copy'),pasteButton=document.getElementById('writer-paste');
   copyButton.onmousedown=pasteButton.onmousedown=event=>event.preventDefault();
   copyButton.onclick=copyWriterSelection;pasteButton.onclick=pasteIntoWriter;
@@ -711,4 +790,4 @@ document.getElementById('palette-select').addEventListener('change',e=>updateApp
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(appSettings.theme==='auto')applyTheme()});
 document.getElementById('project-create-form').addEventListener('submit',e=>{e.preventDefault();const input=document.getElementById('new-project-name');createProject(input.value);input.value=''});
 bindBookDesigner();
-setupOfflineApp();initializeOfflineStorage().finally(playIntro);
+setupOfflineApp();initializeOfflineStorage().then(startSharedSync).finally(playIntro);
