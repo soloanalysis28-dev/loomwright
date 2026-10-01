@@ -18,7 +18,8 @@ class LoomwrightHandler(SimpleHTTPRequestHandler):
     server: "LoomwrightServer"
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=str(self.server.root), **kwargs)
+        server = args[2]
+        super().__init__(*args, directory=str(server.root), **kwargs)
 
     def end_headers(self):
         self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
@@ -71,6 +72,7 @@ class LoomwrightHandler(SimpleHTTPRequestHandler):
             self.send_error(400, "Invalid project record.")
             return
 
+        connection = None
         try:
             connection = self.server.connect()
             connection.execute("BEGIN IMMEDIATE")
@@ -84,10 +86,12 @@ class LoomwrightHandler(SimpleHTTPRequestHandler):
                 self.server.write_backup(current)
             self.server.write_snapshot(updated, connection)
             connection.commit()
-            connection.close()
         except (OSError, sqlite3.Error):
             self.send_error(503, "The shared project store could not be saved.")
             return
+        finally:
+            if connection is not None:
+                connection.close()
         self.send_json(200, updated)
 
     def same_origin_write(self):
@@ -127,9 +131,13 @@ class LoomwrightServer(ThreadingHTTPServer):
             pass
         self.database_path = self.data_dir / "projects.sqlite3"
         self.backup_path = self.data_dir / "projects.json.bak"
-        with self.connect() as connection:
+        connection = self.connect()
+        try:
             connection.execute("CREATE TABLE IF NOT EXISTS shared_state (id INTEGER PRIMARY KEY CHECK (id = 1), revision INTEGER NOT NULL, record TEXT)")
             connection.execute("INSERT OR IGNORE INTO shared_state (id, revision, record) VALUES (1, 0, NULL)")
+            connection.commit()
+        finally:
+            connection.close()
         try:
             os.chmod(self.database_path, 0o600)
         except OSError:
