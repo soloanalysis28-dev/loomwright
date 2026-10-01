@@ -14,7 +14,13 @@ These checks catch some unsafe or malformed file structures; they **cannot relia
 
 Loomwright is an installable web app. It needs to be opened once from a secure website address while connected. Choose **Settings → Prepare offline** to save the app, fonts, import tools, icons, and PDF text resources in the browser cache. The button reports how many app files were saved. After that, use the same installed app or website address while offline. Manuscripts remain in the browser’s local project storage; installing the app does not upload them.
 
-A published app needs a stable HTTPS website address for browser installation. Opening `index.html` as a bare file does not allow secure offline installation. The cache version is in `sw.js`; update that version and rebuild `offline-assets.json` when changing app files.
+A published app needs a stable HTTPS website address for browser installation. Opening `index.html` as a bare file does not allow secure offline installation. The cache version is in `sw.js`; update that version and rebuild `offline-assets.json` when changing runtime assets.
+
+## Shared browser projects
+
+The local development server exposes a same-origin sync API on ports 8000 and 8001. It stores a revisioned project snapshot in the git-ignored `.loomwright-data` folder and keeps browser-local storage as a recovery copy. Both browser sessions must use one of those ports while connected to the same running Codespace. The server does not send manuscripts to a third-party cloud service. Keep the forwarded Codespace port private; anyone with access to the app can access its project store. A previous store snapshot is retained as `.loomwright-data/projects.json.bak`.
+
+If the sync server is unavailable, Loomwright continues using that browser's local copy and shows a local-only status. Reconnect through either supported port to sync. Do not delete `.loomwright-data` if you need the shared server copy. For a backup outside the Codespace, export your writing from Finalise.
 
 ## Local libraries
 
