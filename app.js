@@ -8,7 +8,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdfjs/build/pdf.worker.
 const PDF_CMAP_URL=new URL('./vendor/pdfjs/cmaps/',import.meta.url).href;
 const PDF_STANDARD_FONT_URL=new URL('./vendor/pdfjs/standard_fonts/',import.meta.url).href;
 
-const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,charNotes:{},charStatus:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webPositions:{},webNodes:[]};
+const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,charNotes:{},charStatus:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webPositions:{},webNodes:[],webLinks:[],templates:[]};
 const PROJECTS_STORAGE_KEY='loomwright_projects_v1',ACTIVE_PROJECT_KEY='loomwright_active_project_v1',APP_SETTINGS_KEY='loomwright_app_settings_v1';
 const ONLINE_SYNC_ENABLED=false; // Reserved for a later, explicit online-save feature; offline mode is the only active storage.
 const DEFAULT_BOOK={title:'',subtitle:'',author:'',coverStyle:'botanical',trim:'trade',font:'serif',dedication:'',includeToc:true,includeCopyright:true};
@@ -20,6 +20,7 @@ function sanitizeInlineStyle(value){const source=document.createElement('span');
 DOMPurify.addHook('uponSanitizeAttribute',(_node,data)=>{if(data.attrName==='style'){data.attrValue=sanitizeInlineStyle(data.attrValue);if(!data.attrValue)data.keepAttr=false}});
 function sanitizeRichHtml(value){try{return DOMPurify.sanitize(String(value??''),{ALLOWED_TAGS:SAFE_RICH_TAGS,ALLOWED_ATTR:SAFE_RICH_ATTRS,ALLOW_DATA_ATTR:false,ALLOW_ARIA_ATTR:false,RETURN_TRUSTED_TYPE:false,FORBID_TAGS:['script','style','iframe','object','embed','svg','math','video','audio','form','input','button'],FORBID_ATTR:['src','srcset','href','xlink:href','action','formaction']})}catch(_){return escapeHtml(value)}}
 const MAX_IMPORT_BYTES=20*1024*1024;
+const MAX_PROJECT_TEMPLATES=40,MAX_TEMPLATE_HTML_CHARS=2000000;
 function setImportSafetyStatus(message,state='ok'){const el=document.getElementById('import-safety-status');if(el){el.textContent=message;el.dataset.state=state}}
 function asciiFromBytes(bytes){return new TextDecoder('latin1').decode(bytes)}
 async function screenImportFile(file){
@@ -63,9 +64,9 @@ async function screenImportFile(file){
   return {ext,bytes,notes};
 }
 function newProjectId(){return 'project-'+(window.crypto?.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2,9))}
-function newProjectState(){return {...DEFAULT_STATE,sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],charNotes:{},charStatus:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webNodes:[],book:{...DEFAULT_BOOK}}}
+function newProjectState(){return {...DEFAULT_STATE,sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],charNotes:{},charStatus:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webNodes:[],webLinks:[],templates:[],book:{...DEFAULT_BOOK}}}
 function normalizeSettings(settings){const next={palette:'sage',theme:'light',bgEffect:'none',...(settings||{})};if(!['sage','parchment','slate','forest','ink'].includes(next.palette))next.palette='sage';if(!['auto','light','dark'].includes(next.theme))next.theme='light';if(!['none','rain','clouds'].includes(next.bgEffect))next.bgEffect='none';if(next.palette==='parchment'&&next.theme==='auto'){next.palette='sage';next.theme='light'}return next}
-function normalizeProjectState(value){const next=value&&typeof value==='object'?value:newProjectState();if(!Array.isArray(next.sections)||!next.sections.length)next.sections=newProjectState().sections;next.sections=next.sections.filter(s=>s&&typeof s==='object').map(s=>({...s,html:sanitizeRichHtml(s.html||'')}));if(!next.sections.length)next.sections=newProjectState().sections;delete next.settings;next.charNotes=next.charNotes||{};next.charStatus=next.charStatus||{};next.finaliseChecklist=next.finaliseChecklist||{};next.charIgnore=next.charIgnore||{};next.charMerge=next.charMerge||{};next.webPositions=next.webPositions||{};next.webNodes=Array.isArray(next.webNodes)?next.webNodes.filter(node=>node&&['place','event','object','thread'].includes(node.type)&&String(node.label||'').trim()).map(node=>({id:String(node.id||newProjectId()),type:node.type,label:String(node.label).trim().slice(0,80)})):[];next.book={...DEFAULT_BOOK,...(next.book||{})};return next}
+function normalizeProjectState(value){const next=value&&typeof value==='object'?value:newProjectState();if(!Array.isArray(next.sections)||!next.sections.length)next.sections=newProjectState().sections;next.sections=next.sections.filter(s=>s&&typeof s==='object').map(s=>({...s,html:sanitizeRichHtml(s.html||'')}));if(!next.sections.length)next.sections=newProjectState().sections;delete next.settings;next.charNotes=next.charNotes||{};next.charStatus=next.charStatus||{};next.finaliseChecklist=next.finaliseChecklist||{};next.charIgnore=next.charIgnore||{};next.charMerge=next.charMerge||{};next.webPositions=next.webPositions||{};next.webNodes=Array.isArray(next.webNodes)?next.webNodes.filter(node=>node&&['place','event','object','thread'].includes(node.type)&&String(node.label||'').trim()).map(node=>({id:String(node.id||newProjectId()),type:node.type,label:String(node.label).trim().slice(0,80)})):[];next.webLinks=Array.isArray(next.webLinks)?next.webLinks.filter(link=>link&&typeof link.from==='string'&&typeof link.to==='string'):[];next.templates=Array.isArray(next.templates)?next.templates.filter(template=>template&&String(template.title||'').trim()&&typeof template.html==='string'&&template.html.length<=MAX_TEMPLATE_HTML_CHARS).slice(0,MAX_PROJECT_TEMPLATES).map(template=>({id:String(template.id||newProjectId()),title:String(template.title).trim().slice(0,120),html:sanitizeRichHtml(template.html),createdAt:template.createdAt||new Date().toISOString()})):[];next.book={...DEFAULT_BOOK,...(next.book||{})};return next}
 let legacyState=null,projectStore=null;
 try{legacyState=JSON.parse(localStorage.getItem('loomwright_state')||'null')}catch(e){}
 try{projectStore=JSON.parse(localStorage.getItem(PROJECTS_STORAGE_KEY)||'null')}catch(e){}
@@ -289,7 +290,7 @@ function renderDocumentList(){
   if(!list)return;
   list.innerHTML='';
   const count=document.getElementById('write-document-count');
-  if(count)count.textContent=`${state.sections.length} ${state.sections.length===1?'document':'documents'}`;
+  if(count)count.textContent=`${state.sections.length} ${state.sections.length===1?'chapter':'chapters'}`;
   state.sections.forEach(section=>{
     const item=document.createElement('button');
     item.type='button';
@@ -298,6 +299,26 @@ function renderDocumentList(){
     item.innerHTML=`<div class="doc-thumb">${escapeHtml((section.title||'Untitled').trim().slice(0,1).toUpperCase()||'U')}</div><div class="doc-meta"><span class="doc-title">${escapeHtml(section.title||'Untitled')}</span><span class="doc-subtle">${wc(section.html||'')} words</span></div>`;
     item.addEventListener('click',()=>openSection(section.id));
     list.appendChild(item);
+  });
+  renderTemplateLibrary();
+}
+function renderTemplateLibrary(){
+  const grid=document.getElementById('template-grid'),count=document.getElementById('template-count');
+  if(!grid)return;
+  const templates=Array.isArray(state.templates)?state.templates:[];
+  if(count)count.textContent=`${templates.length} ${templates.length===1?'template':'templates'}`;
+  grid.innerHTML='';
+  if(!templates.length){
+    grid.innerHTML='<div class="template-empty"><span class="template-empty-mark" aria-hidden="true">＋</span><div><strong>Your templates will appear here</strong><span>Upload a .txt or .docx template to start a new chapter from it.</span></div></div>';
+    return;
+  }
+  templates.forEach(template=>{
+    const card=document.createElement('article');card.className='template-card';
+    const preview=textOf(template.html).replace(/\s+/g,' ').trim().slice(0,120)||'Blank writing template';
+    card.innerHTML=`<button class="template-use" type="button" data-template-id="${escapeHtml(template.id)}" aria-label="Create a chapter from ${escapeHtml(template.title)}"><span class="template-card-top"><span class="template-mark" aria-hidden="true">T</span><span class="template-name">${escapeHtml(template.title)}</span></span><span class="template-preview">${escapeHtml(preview)}</span><span class="template-card-footer"><span>${wc(template.html).toLocaleString()} words</span><span>Use template →</span></span></button><button class="template-delete" type="button" data-delete-template="${escapeHtml(template.id)}" aria-label="Remove ${escapeHtml(template.title)} template" title="Remove template">×</button>`;
+    card.querySelector('[data-template-id]').addEventListener('click',()=>createSectionFromTemplate(template.id));
+    card.querySelector('[data-delete-template]').addEventListener('click',event=>{event.stopPropagation();if(!window.confirm(`Remove the “${template.title}” template? Existing chapters created from it will not change.`))return;state.templates=state.templates.filter(item=>item.id!==template.id);save();renderTemplateLibrary()});
+    grid.appendChild(card);
   });
 }
 function showWriteLibrary(){
@@ -321,6 +342,11 @@ function openSection(id){
   save();
   showWriteWorkspace();
 }
+function createSectionFromTemplate(templateId){
+  const template=state.templates.find(item=>String(item.id)===String(templateId));if(!template)return;
+  const id=Date.now()+Math.floor(Math.random()*1000);
+  state.sections.push({id,title:template.title,html:sanitizeRichHtml(template.html)});state.activeId=id;save();renderHome();showWriteWorkspace();document.getElementById('title-input')?.focus();
+}
 function createBlankDocument(){
   addSection();
   showWriteWorkspace();
@@ -335,32 +361,40 @@ function getChapterMetrics(){
       const matches=text.match(new RegExp(`\\b${escaped}\\b`,'gi'));
       if(matches)characterMentions[name]=matches.length;
     });
-    return {title:section.title||'Untitled',words,pageEstimate:Math.ceil(words/250),characterMentions,characterCount:Object.keys(characterMentions).length};
+    return {id:section.id,title:section.title||'Untitled',words,pageEstimate:Math.ceil(words/250),characterMentions,characterCount:Object.keys(characterMentions).length};
   });
 }
+let metricMode='words',selectedMetricChapterId=null,metricCharacterFilter='';
 function renderMetrics(){
   const shell=document.getElementById('metrics-shell');
   if(!shell)return;
   const chapters=getChapterMetrics(),totalWords=chapters.reduce((sum,item)=>sum+item.words,0),totalPages=chapters.reduce((sum,item)=>sum+item.pageEstimate,0);
-  const maxWords=Math.max(...chapters.map(item=>item.words),0),maxPages=Math.max(...chapters.map(item=>item.pageEstimate),0);
-  const avgWords=chapters.length?Math.round(totalWords/chapters.length):0;
-  const characters=detectCharacters().slice(0,8),mostActive=characters[0];
-  const barRows=(items,max)=>items.map(item=>`<div class="bar-row"><span>${escapeHtml(item.title)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(0,max?item.value/max*100:0)}%"></div></div><span class="bar-value">${item.value}</span></div>`).join('');
+  const averageWords=chapters.length?Math.round(totalWords/chapters.length):0,characters=detectCharacters(),mostActive=characters[0];
+  const colors=['#65a886','#d59b55','#6d9ac5','#d4745c','#8d83bf','#4da8a1','#bf718d','#b0a951'];
+  if(!chapters.some(chapter=>String(chapter.id)===String(selectedMetricChapterId)))selectedMetricChapterId=String(state.activeId??chapters[0]?.id??'');
+  const selectedChapter=chapters.find(chapter=>String(chapter.id)===String(selectedMetricChapterId))||chapters[0];
+  const metricOptions={words:{label:'Words',unit:'words',value:chapter=>chapter.words},pages:{label:'Pages',unit:'pages',value:chapter=>chapter.pageEstimate},characters:{label:'Characters',unit:'characters',value:chapter=>chapter.characterCount}};
+  const currentMetric=metricOptions[metricMode]||metricOptions.words,maxMetric=Math.max(...chapters.map(currentMetric.value),0);
+  const chapterRows=chapters.map((chapter,index)=>{const value=currentMetric.value(chapter),width=maxMetric?Math.max(value?2:0,value/maxMetric*100):0;return `<button class="metric-chart-row" type="button" data-metric-chapter="${escapeHtml(String(chapter.id))}" aria-pressed="${String(chapter.id)===String(selectedMetricChapterId)}" style="--metric-color:${colors[index%colors.length]}"><span class="metric-chart-label" title="${escapeHtml(chapter.title)}">${escapeHtml(chapter.title)}</span><span class="metric-track" aria-hidden="true"><span class="metric-bar" style="display:block;width:${width}%"></span></span><span class="metric-chart-value">${value.toLocaleString()}</span></button>`}).join('');
+  const highestWordChapter=chapters.reduce((top,item)=>item.words>(top?.words??-1)?item:top,null),highestCharacterChapter=chapters.reduce((top,item)=>item.characterCount>(top?.characterCount??-1)?item:top,null);
   const chapterHeaders=chapters.map(chapter=>`<th scope="col">${escapeHtml(chapter.title)}</th>`).join('');
   const characterRows=characters.map(([name])=>`<tr><th scope="row">${escapeHtml(name)}</th>${chapters.map(chapter=>`<td>${chapter.characterMentions[name]||'—'}</td>`).join('')}</tr>`).join('');
   shell.innerHTML=`<div class="metrics-summary">
-      <div class="metric-pill"><span class="label">Drafted</span><span class="value">${totalWords.toLocaleString()}</span><span class="detail">Words</span></div>
-      <div class="metric-pill"><span class="label">Layout</span><span class="value">${totalPages}</span><span class="detail">Estimated pages at 250 words per page</span></div>
-      <div class="metric-pill"><span class="label">Average</span><span class="value">${avgWords.toLocaleString()}</span><span class="detail">Words per chapter</span></div>
-      <div class="metric-pill"><span class="label">Lead</span><span class="value">${mostActive?escapeHtml(mostActive[0]):'—'}</span><span class="detail">${mostActive?`${mostActive[1].count} mentions`:'No active names yet'}</span></div>
+      <div class="metric-pill" style="--metric-accent:#65a886"><span class="label">Drafted</span><span class="value">${totalWords.toLocaleString()}</span><span class="detail">Words across ${chapters.length} chapters</span></div>
+      <div class="metric-pill" style="--metric-accent:#6d9ac5"><span class="label">Estimated length</span><span class="value">${totalPages.toLocaleString()}</span><span class="detail">Pages at 250 words per page</span></div>
+      <div class="metric-pill" style="--metric-accent:#d59b55"><span class="label">Chapter average</span><span class="value">${averageWords.toLocaleString()}</span><span class="detail">Words per chapter</span></div>
+      <div class="metric-pill" style="--metric-accent:#d4745c"><span class="label">Most mentioned</span><span class="value">${mostActive?escapeHtml(mostActive[0]):'—'}</span><span class="detail">${mostActive?`${mostActive[1].count.toLocaleString()} mentions`:'No recurring characters yet'}</span></div>
     </div>
     <div class="metric-grid">
-      <article class="metric-card"><h3>Word count per chapter</h3><div class="bar-chart">${barRows(chapters.map(chapter=>({title:chapter.title,value:chapter.words})),maxWords)}</div></article>
-      <article class="metric-card"><h3>Distinct characters per chapter</h3><div class="bar-chart">${barRows(chapters.map(chapter=>({title:chapter.title,value:chapter.characterCount})),Math.max(...chapters.map(chapter=>chapter.characterCount),0))}</div></article>
-      <article class="metric-card"><h3>Estimated pages per chapter</h3><div class="bar-chart">${barRows(chapters.map(chapter=>({title:chapter.title,value:chapter.pageEstimate})),maxPages)}</div></article>
-      <article class="metric-card"><h3>Character mentions by chapter</h3><div class="metric-table-wrap"><table class="metric-table"><thead><tr><th scope="col">Character</th>${chapterHeaders}</tr></thead><tbody>${characterRows||`<tr><td colspan="${chapters.length+1}">Recurring characters will appear here as your draft develops.</td></tr>`}</tbody></table></div></article>
-      <article class="metric-card"><h3>Story rhythm</h3><div class="bar-chart">${barRows([{title:'Longest chapter',value:maxWords},{title:'Sections',value:chapters.length},{title:'Recurring characters',value:characters.length}],Math.max(maxWords,chapters.length,characters.length,1))}</div></article>
+      <article class="metric-card"><div class="metric-card-header"><div><h3>Chapter comparison</h3><p>Choose a measure to compare chapter by chapter.</p></div><div class="metric-mode" role="group" aria-label="Compare chapters by">${Object.entries(metricOptions).map(([key,option])=>`<button type="button" data-metric-mode="${key}" aria-pressed="${key===metricMode}">${option.label}</button>`).join('')}</div></div><div class="metric-chart">${chapterRows||'<p class="empty">Add a chapter to start comparing your draft.</p>'}</div><div class="metric-chapter-detail"><div><strong>${selectedChapter?escapeHtml(selectedChapter.title):'No chapter selected'}</strong><span>${selectedChapter?`${selectedChapter.words.toLocaleString()} words · ${selectedChapter.pageEstimate} estimated pages · ${selectedChapter.characterCount} recurring characters`:''}</span></div>${selectedChapter?'<button class="metric-chapter-open" type="button" data-open-metric-chapter>Open chapter</button>':''}</div></article>
+      <article class="metric-card"><div class="metric-card-header"><div><h3>Highlights</h3><p>Quick manuscript signals.</p></div></div><div class="metric-milestones"><div class="metric-milestone"><span>Longest chapter</span><strong>${highestWordChapter?escapeHtml(highestWordChapter.title):'—'}</strong></div><div class="metric-milestone"><span>Most characters</span><strong>${highestCharacterChapter?escapeHtml(highestCharacterChapter.title):'—'}</strong></div><div class="metric-milestone"><span>Recurring characters</span><strong>${characters.length.toLocaleString()}</strong></div><div class="metric-milestone"><span>Sections</span><strong>${chapters.length.toLocaleString()}</strong></div></div></article>
+      <article class="metric-card metric-character-card"><div class="metric-card-header"><div><h3>Character mentions</h3><p>Mentions by chapter across your recurring cast.</p></div><div class="metric-character-tools"><input id="metric-character-filter" type="search" placeholder="Find a character" aria-label="Find a character"><span class="template-count" id="metric-character-count"></span></div></div><div class="metric-table-wrap"><table class="metric-table"><thead><tr><th scope="col">Character</th>${chapterHeaders}</tr></thead><tbody>${characterRows||`<tr><td colspan="${chapters.length+1}">Recurring characters will appear here as your draft develops.</td></tr>`}</tbody></table></div></article>
     </div>`;
+  shell.querySelectorAll('[data-metric-mode]').forEach(button=>button.addEventListener('click',()=>{metricMode=button.dataset.metricMode;renderMetrics()}));
+  shell.querySelectorAll('[data-metric-chapter]').forEach(button=>button.addEventListener('click',()=>{selectedMetricChapterId=button.dataset.metricChapter;renderMetrics()}));
+  shell.querySelector('[data-open-metric-chapter]')?.addEventListener('click',()=>{const chapter=state.sections.find(item=>String(item.id)===String(selectedMetricChapterId));if(chapter){switchView('write');openSection(chapter.id)}});
+  const filter=shell.querySelector('#metric-character-filter'),count=shell.querySelector('#metric-character-count');
+  if(filter){filter.value=metricCharacterFilter;const updateFilter=()=>{metricCharacterFilter=filter.value.trim().toLocaleLowerCase();let visible=0;shell.querySelectorAll('.metric-table tbody tr').forEach(row=>{row.hidden=!!metricCharacterFilter&&!row.textContent.toLocaleLowerCase().includes(metricCharacterFilter);if(!row.hidden)visible++});count.textContent=`${visible} ${visible===1?'character':'characters'}`};filter.addEventListener('input',updateFilter);updateFilter()}
 }
 function formatProjectDate(value){const date=new Date(value||Date.now());return Number.isNaN(date.getTime())?'Recently edited':date.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'})}
 function renderProjects(){
@@ -614,6 +648,24 @@ document.getElementById('file-input').onchange=async e=>{
   }catch(err){const message=err?.message||'Could not safely check this file.';setImportSafetyStatus(`${file.name}: not imported. ${message}`,'error');toast('Import stopped: '+message);console.warn('Import safety check stopped a file:',file.name,message)}}
   if(imported){save();renderSidebar();renderEditor();renderHome();showWriteWorkspace();toast(`${imported} file${imported===1?'':'s'} safely imported.`)}e.target.value='';
 };
+document.getElementById('template-file-input').onchange=async e=>{
+  let added=0;const files=[...e.target.files].slice(0,12);
+  for(const file of files){
+    try{
+      if(state.templates.length>=MAX_PROJECT_TEMPLATES)throw new Error(`A project can hold up to ${MAX_PROJECT_TEMPLATES} templates.`);
+      const check=await screenImportFile(file);let html='',title=file.name.replace(/\.(docx|txt)$/i,'').trim().slice(0,120)||'Untitled template';
+      if(check.ext==='docx'){
+        if(!mammoth)throw new Error('Word importer unavailable.');
+        const result=await mammoth.convertToHtml({arrayBuffer:check.bytes.buffer},{externalFileAccess:false});html=result.value||'<p></p>';
+      }else html=new TextDecoder('utf-8',{fatal:true}).decode(check.bytes).split(/\n\s*\n+/).map(paragraph=>`<p>${escapeHtml(paragraph).replace(/\n/g,'<br>')}</p>`).join('');
+      html=sanitizeRichHtml(html);
+      if(html.length>MAX_TEMPLATE_HTML_CHARS)throw new Error('This template expands beyond the 2 MB template limit.');
+      state.templates.push({id:newProjectId(),title,html,createdAt:new Date().toISOString()});added++;
+    }catch(error){toast(`${file.name}: ${error?.message||'Could not safely add this template.'}`)}
+  }
+  if(added){save();renderTemplateLibrary();toast(`${added} template${added===1?'':'s'} added to this project.`)}
+  e.target.value='';
+};
 
 const STOPWORDS=new Set(['The','A','An','I','He','She','They','We','It','You','Us','Them','Its','Your','Yours','Yourself','Our','Ours','Ourselves','Themselves','Himself','Herself','Myself','Someone','Somebody','Something','Somewhere','Somehow','Anyone','Anybody','Anything','Anywhere','Everyone','Everybody','Everything','Everywhere','Nothing','Nobody','Nowhere','None','But','And','Or','Nor','So','Yet','If','When','Then','Than','There','Here','This','That','These','Those','His','Her','Their','Because','Although','Though','While','Since','Unless','Until','After','Before','Above','Below','Between','Among','Beyond','Within','Without','Through','Across','Around','Toward','Towards','During','Despite','Perhaps','Suddenly','Meanwhile','Normally','However','Instead','Otherwise','Still','Also','Even','Just','Now','Soon','Later','Finally','Eventually','Indeed','Certainly','Probably','Maybe','Well','Oh','Ah','Yes','No','Okay','Alright','Sure','Right','Look','Listen','Wait','Stop','Come','Go','Let','Once','Again','Almost','Already','Always','Never','Every','Each','Both','Few','Many','Most','Some','All','Any','Can','Could','Would','Should','Will','Shall','Must','May','Might','Do','Does','Did','Am','Is','Are','Was','Were','Being','Been','Have','Has','Had','Sorry','Please','Thanks','Thank','Hello','Hi','Hey','Goodbye','Bye','Congratulations','Welcome','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','January','February','March','April','May','June','July','August','September','October','November','December','Chapter','Prologue','Epilogue','Part']);
 const COMMON_ENGLISH=new Set(['the','of','and','a','to','in','is','was','he','for','it','with','as','his','on','be','at','by','i','this','had','not','are','but','from','or','have','an','they','which','one','you','were','her','all','she','there','would','their','we','him','been','has','when','who','will','more','no','if','out','so','said','what','up','its','about','into','than','them','can','only','other','new','some','could','time','these','two','may','then','do','first','any','my','now','such','like','our','over','me','even','most','made','after','also','did','many','before','must','through','back','where','much','your','way','well','down','should','because','each','just','those','how','too','little','very','make','still','own','see','work','long','here','get','both','between','know','while','last','might','us','old','year','come','right','used','take']);
@@ -819,6 +871,20 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 function revealApp(){clearTimeout(introTimer);const splash=document.getElementById('splash'),shell=document.getElementById('app-shell');splash.classList.add('leaving');shell.classList.add('is-ready');setTimeout(()=>{splash.hidden=true},360)}
 function playIntro(){const splash=document.getElementById('splash'),shell=document.getElementById('app-shell');splash.hidden=false;splash.classList.remove('leaving');shell.classList.remove('is-ready');const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;introTimer=setTimeout(revealApp,reduced?220:1380)}
 document.getElementById('skip-intro').addEventListener('click',revealApp);document.getElementById('replay-intro').addEventListener('click',()=>{switchView('home');playIntro()});
+const settingsTabs=[...document.querySelectorAll('.settings-nav-btn[role="tab"]')];
+function activateSettingsTab(tab,moveFocus=false){
+  settingsTabs.forEach(item=>{const selected=item===tab;item.setAttribute('aria-selected',String(selected));item.tabIndex=selected?0:-1;document.getElementById(item.dataset.settingsPanel).hidden=!selected});
+  if(moveFocus)tab.focus();
+}
+settingsTabs.forEach((tab,index)=>{
+  tab.addEventListener('click',()=>activateSettingsTab(tab));
+  tab.addEventListener('keydown',event=>{
+    const direction=event.key==='ArrowRight'||event.key==='ArrowDown'?1:event.key==='ArrowLeft'||event.key==='ArrowUp'?-1:0;
+    if(event.key==='Home'){event.preventDefault();activateSettingsTab(settingsTabs[0],true);return}
+    if(event.key==='End'){event.preventDefault();activateSettingsTab(settingsTabs[settingsTabs.length-1],true);return}
+    if(direction){event.preventDefault();activateSettingsTab(settingsTabs[(index+direction+settingsTabs.length)%settingsTabs.length],true)}
+  });
+});
 document.getElementById('palette-select').addEventListener('change',e=>updateAppSetting('palette',e.target.value));document.getElementById('theme-select').addEventListener('change',e=>updateAppSetting('theme',e.target.value));document.getElementById('bg-effect-select').addEventListener('change',e=>updateAppSetting('bgEffect',e.target.value));
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(appSettings.theme==='auto')applyTheme()});
 document.getElementById('project-create-form').addEventListener('submit',e=>{e.preventDefault();const input=document.getElementById('new-project-name');createProject(input.value);input.value=''});
