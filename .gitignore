@@ -1,1 +1,4 @@
+node_modules/
 .loomwright-data/
+.env
+.env.local

@@ -1,0 +1,7 @@
+{
+  "name": "Loomwright — Your writing desk",
+  "description": "An offline-capable writing desk with project synchronization, manuscript editing, and formatting tools.",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
