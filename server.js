@@ -23,7 +23,7 @@ function getAIClient() {
 }
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT || 3000);
 const HOST = '0.0.0.0';
 
 const DATA_DIR = path.join(__dirname, '.loomwright-data');
