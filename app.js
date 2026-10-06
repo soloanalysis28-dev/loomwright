@@ -7,7 +7,7 @@ window.pdfjsLib=pdfjsLib;
 pdfjsLib.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdfjs/build/pdf.worker.min.mjs',import.meta.url).href;
 const PDF_CMAP_URL=new URL('./vendor/pdfjs/cmaps/',import.meta.url).href;
 const PDF_STANDARD_FONT_URL=new URL('./vendor/pdfjs/standard_fonts/',import.meta.url).href;
-const APP_VERSION='1.3.2';
+const APP_VERSION='1.3.3';
 const PROJECT_RECORD_VERSION=3;
 const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,charNotes:{},charStatus:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webPositions:{},webNodes:[],webLinks:[],templates:[]};
 const PROJECTS_STORAGE_KEY='loomwright_projects_v1',ACTIVE_PROJECT_KEY='loomwright_active_project_v1',APP_SETTINGS_KEY='loomwright_app_settings_v1',DELETED_PROJECTS_STORAGE_KEY='loomwright_deleted_projects_v1';
@@ -112,6 +112,8 @@ function setSyncStatus(msg,ok){const el=document.getElementById('sync-status');e
 let deferredInstallPrompt=null;
 function setOfflineAppStatus(message){const el=document.getElementById('offline-app-status');if(el)el.textContent=message}
 function renderAppVersion(){const el=document.getElementById('app-version-settings');if(el)el.textContent=`v${APP_VERSION}`}
+function compareVersions(a,b){const left=String(a||'0').replace(/^v/i,'').split('.').map(Number),right=String(b||'0').replace(/^v/i,'').split('.').map(Number);for(let i=0;i<Math.max(left.length,right.length);i++){const delta=(left[i]||0)-(right[i]||0);if(delta)return delta}return 0}
+async function checkForAppUpdate(){const status=document.getElementById('about-update-status'),badge=document.getElementById('about-version-status'),button=document.getElementById('check-for-updates');if(!status)return;status.textContent='Checking for updates…';if(button)button.disabled=true;try{const response=await fetch(new URL('./api/app-status',import.meta.url),{cache:'no-store'});if(!response.ok)throw new Error('Update status is unavailable.');const server=await response.json(),serverVersion=String(server.version||'unknown'),comparison=compareVersions(serverVersion,APP_VERSION);if(comparison>0){status.textContent=`Version ${serverVersion} is ready on the server · refresh to load it.`;if(badge){badge.textContent='Update available';badge.classList.add('is-update')}}else{status.textContent=`You are up to date · checked just now.`;if(badge){badge.textContent='Up to date';badge.classList.remove('is-update')}}const registration=await navigator.serviceWorker?.getRegistration?.();if(registration)await registration.update()}catch(error){status.textContent=error?.message||'Could not check for updates.'}finally{if(button)button.disabled=false}}
 async function offlineCacheCount(){const names=(await caches.keys()).filter(name=>name.startsWith('loomwright-offline-'));let count=0;for(const name of names)count+=(await (await caches.open(name)).keys()).length;return count}
 function updateInstallButton(){const button=document.getElementById('install-app');if(button)button.hidden=!deferredInstallPrompt}
 async function prepareOfflineApp(){
@@ -129,13 +131,14 @@ async function prepareOfflineApp(){
 }
 function setupOfflineApp(){
   const prepare=document.getElementById('prepare-offline'),install=document.getElementById('install-app');
+  document.getElementById('check-for-updates')?.addEventListener('click',checkForAppUpdate);checkForAppUpdate();setInterval(checkForAppUpdate,60000);
   prepare?.addEventListener('click',prepareOfflineApp);
   install?.addEventListener('click',async()=>{if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;updateInstallButton()});
   window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;updateInstallButton()});
   window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;updateInstallButton();setOfflineAppStatus('Loomwright is installed. Use “Prepare offline” once while connected to save all app files.')});
   if(isLocalPreview()){setOfflineAppStatus('Local preview · refresh this tab after app files change.');clearOfflinePreviewCache();return}
   if(!('serviceWorker'in navigator)||!window.isSecureContext){setOfflineAppStatus('Offline installation needs a secure website address. Open Loomwright once while connected, then prepare the offline copy.');return}
-  if('caches'in window){caches.keys().then(names=>names.filter(n=>n.startsWith('loomwright-offline-')&&n!=='loomwright-offline-v20').forEach(n=>caches.delete(n))).catch(()=>{});}
+  if('caches'in window){caches.keys().then(names=>names.filter(n=>n.startsWith('loomwright-offline-')&&n!=='loomwright-offline-v21').forEach(n=>caches.delete(n))).catch(()=>{});}
   navigator.serviceWorker.register(new URL('./sw.js',import.meta.url),{scope:new URL('./',import.meta.url).pathname}).then(async registration=>{
     try{await registration.update()}catch(_){}
     await navigator.serviceWorker.ready;

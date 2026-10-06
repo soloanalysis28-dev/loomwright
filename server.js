@@ -52,6 +52,16 @@ try {
 
 app.use(express.json({ limit: '64mb' }));
 
+app.get('/api/app-status', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  try {
+    const packageInfo = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf-8'));
+    res.json({ name: packageInfo.name || 'loomwright', version: packageInfo.version || 'unknown' });
+  } catch (error) {
+    res.status(500).json({ error: 'Could not read the installed app version.' });
+  }
+});
+
 // Shared project store API
 app.get('/api/sync', (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
