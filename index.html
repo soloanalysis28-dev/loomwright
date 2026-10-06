@@ -558,7 +558,7 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
     <button class="tab" data-view="ai" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg>AI Assist</button>
     <button class="tab" data-view="finalise" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m5 12 4 4L19 6"/><path d="M20 12a8 8 0 1 1-4-6.9"/></svg>Finalise</button>
     <button class="tab" data-view="settings" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 3.1-.2-.1a1.7 1.7 0 0 0-1.8-.2 1.7 1.7 0 0 0-1 1.5v.2h-3.6v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.2l-.2.1-1.8-3.1.1-.1A1.7 1.7 0 0 0 7 15a1.7 1.7 0 0 0-1.5-1H5.3v-3.6h.2A1.7 1.7 0 0 0 7 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-3.1.2.1a1.7 1.7 0 0 0 1.8.2 1.7 1.7 0 0 0 1-1.5v-.2H15v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.2l.2-.1 1.8 3.1-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.2v3.6h-.2a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</button>
-    <div class="nav-meta" aria-label="App status"><div class="stats status-pill" id="sync-status" title="Where your work is saved">○ Offline · this device</div><div class="stats" id="totalstats">0 words</div></div>
+    <div class="nav-meta" aria-label="App status"><div class="stats status-pill" id="sync-status" title="Where your work is saved">○ Offline · this device</div><div class="stats" id="totalstats">0 words</div><div class="stats" id="app-version" title="Loomwright version">v—</div></div>
   </nav>
   <main>
     <section class="view active" id="view-home" aria-labelledby="home-title">
@@ -812,6 +812,7 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
             </div>
             <div class="settings-block"><h4 class="settings-block-title">Project data</h4>
               <p class="settings-footnote" id="storage-note">Projects are saved in this browser and synced to this Codespace when its shared app server is available. Both supported app ports use the same private workspace store.</p>
+              <p class="settings-footnote">Application version: <strong id="app-version-settings">v—</strong></p>
               <div class="setting-row"><div class="setting-copy"><strong>Shared browser data</strong><small>Browser sessions using either app port share projects through this Codespace. Keep the forwarded port private.</small></div><button class="secondary-button" type="button" disabled aria-disabled="true">Workspace store</button></div>
             </div>
           </section>

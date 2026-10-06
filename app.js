@@ -7,7 +7,8 @@ window.pdfjsLib=pdfjsLib;
 pdfjsLib.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdfjs/build/pdf.worker.min.mjs',import.meta.url).href;
 const PDF_CMAP_URL=new URL('./vendor/pdfjs/cmaps/',import.meta.url).href;
 const PDF_STANDARD_FONT_URL=new URL('./vendor/pdfjs/standard_fonts/',import.meta.url).href;
-
+const APP_VERSION='1.3.0';
+const PROJECT_RECORD_VERSION=3;
 const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,charNotes:{},charStatus:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webPositions:{},webNodes:[],webLinks:[],templates:[]};
 const PROJECTS_STORAGE_KEY='loomwright_projects_v1',ACTIVE_PROJECT_KEY='loomwright_active_project_v1',APP_SETTINGS_KEY='loomwright_app_settings_v1';
 const ONLINE_SYNC_ENABLED=false; // Reserved for a later, explicit online-save feature; offline mode is the only active storage.
@@ -82,19 +83,21 @@ if(!projects.length){activeProjectId=newProjectId();projects=[{id:activeProjectI
 if(!projects.some(p=>p.id===activeProjectId))activeProjectId=projects[0].id;
 let state=normalizeProjectState(projects.find(p=>p.id===activeProjectId)?.data||legacyState);
 let renamingProjectId=null;
-let offlineDb=null,offlineSaveTimer=null,offlineStorageReady=false,sharedSyncReady=false,sharedSyncBusy=false,sharedSyncPoll=null,sharedSyncTimer=null,sharedApplyingRecord=false;
+let offlineDb=null,offlineSaveTimer=null,offlineWriteQueue=Promise.resolve(),offlineStorageReady=false,sharedSyncReady=false,sharedSyncBusy=false,sharedSyncPoll=null,sharedSyncTimer=null,sharedApplyingRecord=false;
 function openOfflineDatabase(){return new Promise((resolve,reject)=>{if(!window.indexedDB){reject(new Error('IndexedDB unavailable'));return}const request=indexedDB.open('loomwright-offline-library',1);request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains('library'))request.result.createObjectStore('library')};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error||new Error('Could not open offline storage'))})}
 function indexedRead(){return new Promise((resolve,reject)=>{const tx=offlineDb.transaction('library','readonly'),request=tx.objectStore('library').get('projects');request.onsuccess=()=>resolve(request.result||null);request.onerror=()=>reject(request.error)})}
 function indexedWrite(record){return new Promise((resolve,reject)=>{if(!offlineDb){resolve();return}const tx=offlineDb.transaction('library','readwrite');tx.objectStore('library').put(record,'projects');tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error||new Error('Offline save failed'))})}
-function currentProjectRecord(){return {version:2,activeProjectId,appSettings,projects,savedAt:Date.now()}}
-function persistProjectStore(){const record=currentProjectRecord(),hasIndexedDB=!!offlineDb,localRecord=hasIndexedDB?{...record,projects:projects.map(({id,name,createdAt,updatedAt})=>({id,name,createdAt,updatedAt}))}:record;try{localStorage.setItem(PROJECTS_STORAGE_KEY,JSON.stringify(localRecord));localStorage.setItem(ACTIVE_PROJECT_KEY,activeProjectId);if(!hasIndexedDB)localStorage.setItem('loomwright_state',JSON.stringify(state))}catch(e){if(hasIndexedDB)toast('Saved in offline storage; browser backup limit reached.');else{toast('Browser storage is full. Export a copy from Finalise.');return false}}if(offlineDb){clearTimeout(offlineSaveTimer);offlineSaveTimer=setTimeout(()=>indexedWrite(record).catch(()=>toast('Offline save needs attention; export a copy from Finalise.')),180)}if(sharedSyncReady&&!sharedApplyingRecord)scheduleSharedSync();return true}
+function currentProjectRecord(){return {version:PROJECT_RECORD_VERSION,activeProjectId,appSettings,projects,savedAt:Date.now()}}
+function queueIndexedWrite(record){offlineWriteQueue=offlineWriteQueue.catch(()=>{}).then(()=>indexedWrite(record));return offlineWriteQueue}
+function flushOfflineSave(){clearTimeout(offlineSaveTimer);return offlineDb?queueIndexedWrite(currentProjectRecord()):Promise.resolve()}
+function persistProjectStore(){const record=currentProjectRecord(),hasIndexedDB=!!offlineDb,localRecord=hasIndexedDB?{...record,projects:projects.map(({id,name,createdAt,updatedAt})=>({id,name,createdAt,updatedAt}))}:record;try{localStorage.setItem(PROJECTS_STORAGE_KEY,JSON.stringify(localRecord));localStorage.setItem(ACTIVE_PROJECT_KEY,activeProjectId);if(!hasIndexedDB)localStorage.setItem('loomwright_state',JSON.stringify(state))}catch(e){if(hasIndexedDB)toast('Saved in offline storage; browser backup limit reached.');else{toast('Browser storage is full. Export a copy from Finalise.');return false}}if(offlineDb){clearTimeout(offlineSaveTimer);offlineSaveTimer=setTimeout(()=>queueIndexedWrite(record).catch(()=>toast('Offline save needs attention; export a copy from Finalise.')),180)}if(sharedSyncReady&&!sharedApplyingRecord)scheduleSharedSync();return true}
 async function initializeOfflineStorage(){
   try{
     offlineDb=await openOfflineDatabase();let localRecord=null;
     try{localRecord=JSON.parse(localStorage.getItem(PROJECTS_STORAGE_KEY)||'null')}catch(e){}
-    const localHasContent=Array.isArray(localRecord?.projects)&&localRecord.projects.some(p=>p.data&&Array.isArray(p.data.sections)),stored=await indexedRead(),storedHasContent=Array.isArray(stored?.projects)&&stored.projects.some(p=>p.data&&Array.isArray(p.data.sections)),useIndexed=storedHasContent&&(!localHasContent||(stored.savedAt||0)>(localRecord?.savedAt||0));
+    const localHasContent=Array.isArray(localRecord?.projects)&&localRecord.projects.some(p=>p.data&&Array.isArray(p.data.sections)),stored=await indexedRead(),storedHasContent=Array.isArray(stored?.projects)&&stored.projects.some(p=>p.data&&Array.isArray(p.data.sections)),localHasMetadata=Array.isArray(localRecord?.projects)&&localRecord.projects.length>0&&!localHasContent,useIndexed=storedHasContent&&(localHasMetadata||!localHasContent||(stored.savedAt||0)>(localRecord?.savedAt||0));
     if(useIndexed&&!appSettingsStoredAtBoot&&!appSettingsTouched){const oldActive=stored.projects.find(p=>p.id===(stored.activeProjectId||activeProjectId)),storedSettings=stored.appSettings||oldActive?.data?.settings;if(storedSettings)appSettings=normalizeSettings(storedSettings)}
-    if(useIndexed){projects=stored.projects.filter(p=>p&&p.id).map(p=>({...p,data:normalizeProjectState(p.data)}));if(!projects.length)throw new Error('Offline library is empty');activeProjectId=stored.activeProjectId||projects[0].id;if(!projects.some(p=>p.id===activeProjectId))activeProjectId=projects[0].id;state=projects.find(p=>p.id===activeProjectId).data}
+    if(useIndexed){const localMeta=new Map((localRecord?.projects||[]).filter(p=>p&&p.id).map(p=>[String(p.id),p]));const storedIds=new Set(stored.projects.filter(p=>p&&p.id).map(p=>String(p.id)));projects=stored.projects.filter(p=>p&&p.id&&(!localHasMetadata||localMeta.has(String(p.id)))).map(p=>({...p,...(localMeta.get(String(p.id))||{}),data:normalizeProjectState(p.data)}));if(localHasMetadata)(localRecord.projects||[]).filter(p=>p&&p.id&&!storedIds.has(String(p.id))).forEach(p=>projects.push({...p,data:newProjectState()}));if(!projects.length)throw new Error('Offline library is empty');activeProjectId=localRecord?.activeProjectId||stored.activeProjectId||projects[0].id;if(!projects.some(p=>p.id===activeProjectId))activeProjectId=projects[0].id;state=projects.find(p=>p.id===activeProjectId).data}
     offlineStorageReady=true;persistAppSettings();persistProjectStore();refreshProjectViews();setSyncStatus('Offline · this device',false);
   }catch(e){offlineDb=null;offlineStorageReady=true;persistAppSettings();if(projects.every(project=>project.data))persistProjectStore();refreshProjectViews();setSyncStatus('Offline · this browser',false)}
 }
@@ -105,6 +108,7 @@ let dbRef=null,dbSaveTimer=null,introTimer=null;
 function setSyncStatus(msg,ok){const el=document.getElementById('sync-status');el.textContent=(ok?'● ':'○ ')+msg}
 let deferredInstallPrompt=null;
 function setOfflineAppStatus(message){const el=document.getElementById('offline-app-status');if(el)el.textContent=message}
+function renderAppVersion(){document.querySelectorAll('#app-version,#app-version-settings').forEach(el=>{el.textContent=`v${APP_VERSION}`})}
 async function offlineCacheCount(){const names=(await caches.keys()).filter(name=>name.startsWith('loomwright-offline-'));let count=0;for(const name of names)count+=(await (await caches.open(name)).keys()).length;return count}
 function updateInstallButton(){const button=document.getElementById('install-app');if(button)button.hidden=!deferredInstallPrompt}
 async function prepareOfflineApp(){
@@ -128,7 +132,7 @@ function setupOfflineApp(){
   window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;updateInstallButton();setOfflineAppStatus('Loomwright is installed. Use “Prepare offline” once while connected to save all app files.')});
   if(isLocalPreview()){setOfflineAppStatus('Local preview · refresh this tab after app files change.');clearOfflinePreviewCache();return}
   if(!('serviceWorker'in navigator)||!window.isSecureContext){setOfflineAppStatus('Offline installation needs a secure website address. Open Loomwright once while connected, then prepare the offline copy.');return}
-  if('caches'in window){caches.keys().then(names=>names.filter(n=>n.startsWith('loomwright-offline-')&&n!=='loomwright-offline-v17').forEach(n=>caches.delete(n))).catch(()=>{});}
+  if('caches'in window){caches.keys().then(names=>names.filter(n=>n.startsWith('loomwright-offline-')&&n!=='loomwright-offline-v18').forEach(n=>caches.delete(n))).catch(()=>{});}
   navigator.serviceWorker.register(new URL('./sw.js',import.meta.url),{scope:new URL('./',import.meta.url).pathname}).then(async registration=>{
     try{await registration.update()}catch(_){}
     await navigator.serviceWorker.ready;
@@ -230,7 +234,7 @@ function save(){
 }
 async function saveWriter(){
   const persisted=save();clearTimeout(offlineSaveTimer);
-  try{if(offlineDb)await indexedWrite(currentProjectRecord());else if(!persisted)return;toast('Saved on this device.')}catch(_){toast('Save failed. Export a copy from Finalise.')}
+  try{if(offlineDb)await flushOfflineSave();else if(!persisted)return;toast('Saved on this device.')}catch(_){toast('Save failed. Export a copy from Finalise.')}
 }
 async function copyWriterSelection(){
   const selection=window.getSelection(),editor=document.getElementById('content-editable');
@@ -583,7 +587,7 @@ function activateProject(id){const project=projects.find(p=>p.id===id);if(!proje
 function createProject(name){const clean=String(name||'').trim().slice(0,80);if(!clean){toast('Add a name for the project.');return}save();const now=new Date().toISOString(),project={id:newProjectId(),name:clean,createdAt:now,updatedAt:now,data:newProjectState()};projects.unshift(project);activeProjectId=project.id;state=project.data;persistProjectStore();refreshProjectViews();switchView('home');toast('Created '+clean+'.')}
 function renameProject(id){if(!projects.some(project=>project.id===id))return;renamingProjectId=id;renderProjects();const input=document.getElementById('project-name-edit');input?.focus();input?.select()}
 function saveProjectRename(id,value){const project=projects.find(item=>item.id===id);if(!project)return;const clean=String(value||'').trim().slice(0,80);if(!clean){toast('Project name cannot be empty.');document.getElementById('project-name-edit')?.focus();return}project.name=clean;project.updatedAt=new Date().toISOString();renamingProjectId=null;persistProjectStore();renderProjects();renderHome();renderBookPreview();toast('Project renamed.')}
-function deleteProject(id){if(projects.length<2){toast('Keep at least one project in your library.');return}const project=projects.find(p=>p.id===id);if(!project||!window.confirm(`Delete “${project.name}” and its writing from this browser? This cannot be undone.`))return;projects=projects.filter(p=>p.id!==id);if(activeProjectId===id){activeProjectId=projects[0].id;state=projects[0].data}persistProjectStore();refreshProjectViews();switchView('projects');toast('Project deleted from this browser.')}
+function deleteProject(id){if(projects.length<2){toast('Keep at least one project in your library.');return}const project=projects.find(p=>p.id===id);if(!project||!window.confirm(`Delete “${project.name}” and its writing from this browser? This cannot be undone.`))return;projects=projects.filter(p=>p.id!==id);if(activeProjectId===id){activeProjectId=projects[0].id;state=projects[0].data}persistProjectStore();void flushOfflineSave().catch(()=>toast('Project deleted here, but the offline save needs attention.'));refreshProjectViews();switchView('projects');toast('Project deleted from this browser.')}
 function renderSidebar(){
   const sel=document.getElementById('section-select');sel.innerHTML='';
   state.sections.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=`${s.title||'Untitled'} (${wc(s.html||'')}w)`;sel.appendChild(o)});
@@ -829,7 +833,7 @@ function renderEditor(){
   document.getElementById('delete-section').onclick=()=>delSection(s.id);
 }
 function addSection(){flushWriterSave();const id=Date.now();state.sections.push({id,title:'New Section',html:'<p></p>'});state.activeId=id;save();renderSidebar();renderEditor();renderHome();document.getElementById('title-input')?.focus()}
-function delSection(id){flushWriterSave();if(state.sections.length===1){toast("You can’t delete your only section.");return}state.sections=state.sections.filter(s=>s.id!==id);state.activeId=state.sections[0].id;save();renderSidebar();renderEditor();renderHome()}
+function delSection(id){flushWriterSave();if(state.sections.length===1){toast("You can’t delete your only section.");return}state.sections=state.sections.filter(s=>s.id!==id);state.activeId=state.sections[0].id;save();void flushOfflineSave().catch(()=>toast('Chapter deleted here, but the offline save needs attention.'));renderSidebar();renderEditor();renderHome()}
 
 document.getElementById('add-section').addEventListener('click',addSection);
 document.getElementById('create-blank-doc').addEventListener('click',createBlankDocument);
@@ -1739,6 +1743,7 @@ function setupWriteDragDrop(){
 }
 
 bindBookDesigner();
+renderAppVersion();
 setupAIEntityScanner();
 setupAIWritingAssistant();
 setupAIStoryWebEnhancement();
