@@ -65,7 +65,7 @@ async function screenImportFile(file){
 }
 function newProjectId(){return 'project-'+(window.crypto?.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2,9))}
 function newProjectState(){return {...DEFAULT_STATE,sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],charNotes:{},charStatus:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webNodes:[],webLinks:[],templates:[],book:{...DEFAULT_BOOK}}}
-function normalizeSettings(settings){const next={palette:'sage',theme:'light',bgEffect:'none',...(settings||{})};if(!['sage','parchment','slate','forest','ink'].includes(next.palette))next.palette='sage';if(!['auto','light','dark'].includes(next.theme))next.theme='light';if(!['none','rain','clouds'].includes(next.bgEffect))next.bgEffect='none';if(next.palette==='parchment'&&next.theme==='auto'){next.palette='sage';next.theme='light'}return next}
+function normalizeSettings(settings){const next={palette:'sage',theme:'light',bgEffect:'none',...(settings||{})};if(!['sage','parchment','slate','forest','ink'].includes(next.palette))next.palette='sage';if(!['auto','light','dark'].includes(next.theme))next.theme='light';if(!['none','rain','clouds','snow'].includes(next.bgEffect))next.bgEffect='none';if(next.palette==='parchment'&&next.theme==='auto'){next.palette='sage';next.theme='light'}return next}
 function normalizeProjectState(value){const next=value&&typeof value==='object'?value:newProjectState();if(!Array.isArray(next.sections)||!next.sections.length)next.sections=newProjectState().sections;next.sections=next.sections.filter(s=>s&&typeof s==='object').map(s=>({...s,html:sanitizeRichHtml(s.html||'')}));if(!next.sections.length)next.sections=newProjectState().sections;delete next.settings;next.charNotes=next.charNotes||{};next.charStatus=next.charStatus||{};next.finaliseChecklist=next.finaliseChecklist||{};next.charIgnore=next.charIgnore||{};next.charMerge=next.charMerge||{};next.webPositions=next.webPositions||{};next.webNodes=Array.isArray(next.webNodes)?next.webNodes.filter(node=>node&&['place','event','object','thread'].includes(node.type)&&String(node.label||'').trim()).map(node=>({id:String(node.id||newProjectId()),type:node.type,label:String(node.label).trim().slice(0,80)})):[];next.webLinks=Array.isArray(next.webLinks)?next.webLinks.filter(link=>link&&typeof link.from==='string'&&typeof link.to==='string'):[];next.templates=Array.isArray(next.templates)?next.templates.filter(template=>template&&String(template.title||'').trim()&&typeof template.html==='string'&&template.html.length<=MAX_TEMPLATE_HTML_CHARS).slice(0,MAX_PROJECT_TEMPLATES).map(template=>({id:String(template.id||newProjectId()),title:String(template.title).trim().slice(0,120),html:sanitizeRichHtml(template.html),createdAt:template.createdAt||new Date().toISOString()})):[];next.book={...DEFAULT_BOOK,...(next.book||{})};return next}
 let legacyState=null,projectStore=null;
 try{legacyState=JSON.parse(localStorage.getItem('loomwright_state')||'null')}catch(e){}
@@ -128,7 +128,14 @@ function setupOfflineApp(){
   window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;updateInstallButton();setOfflineAppStatus('Loomwright is installed. Use “Prepare offline” once while connected to save all app files.')});
   if(isLocalPreview()){setOfflineAppStatus('Local preview · refresh this tab after app files change.');clearOfflinePreviewCache();return}
   if(!('serviceWorker'in navigator)||!window.isSecureContext){setOfflineAppStatus('Offline installation needs a secure website address. Open Loomwright once while connected, then prepare the offline copy.');return}
-  navigator.serviceWorker.register(new URL('./sw.js',import.meta.url),{scope:new URL('./',import.meta.url).pathname}).then(async()=>{await navigator.serviceWorker.ready;const count=await offlineCacheCount();if(count>=10)setOfflineAppStatus(`Offline copy ready · ${count} app files saved on this device.`);else setOfflineAppStatus('The app can be prepared for offline use from this setting.');}).catch(()=>setOfflineAppStatus('Offline preparation could not start. Reopen Loomwright while connected and try again.'));
+  if('caches'in window){caches.keys().then(names=>names.filter(n=>n.startsWith('loomwright-offline-')&&n!=='loomwright-offline-v17').forEach(n=>caches.delete(n))).catch(()=>{});}
+  navigator.serviceWorker.register(new URL('./sw.js',import.meta.url),{scope:new URL('./',import.meta.url).pathname}).then(async registration=>{
+    try{await registration.update()}catch(_){}
+    await navigator.serviceWorker.ready;
+    const count=await offlineCacheCount();
+    if(count>=10)setOfflineAppStatus(`Offline copy ready · ${count} app files saved on this device.`);
+    else setOfflineAppStatus('The app can be prepared for offline use from this setting.');
+  }).catch(()=>setOfflineAppStatus('Offline preparation could not start. Reopen Loomwright while connected and try again.'));
 }
 function isLocalPreview(){return ['localhost','127.0.0.1','::1'].includes(location.hostname)}
 async function clearOfflinePreviewCache(){
@@ -249,25 +256,175 @@ function applyTheme(){
   if(resolved==='auto')resolved=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
   document.documentElement.setAttribute('data-theme',resolved);document.documentElement.setAttribute('data-palette',appSettings.palette);document.documentElement.setAttribute('data-bg-effect',appSettings.bgEffect||'none');
   const palette=document.getElementById('palette-select'),theme=document.getElementById('theme-select'),bgfx=document.getElementById('bg-effect-select');
-  if(palette)palette.value=appSettings.palette;if(theme)theme.value=appSettings.theme;if(bgfx)bgfx.value=appSettings.bgEffect||'none';
+  if(palette)palette.value=appSettings.palette;if(theme)theme.value=appSettings.theme;
+  if(bgfx){
+    const rainOpt=bgfx.querySelector('option[value="rain"]');
+    if(rainOpt)rainOpt.textContent='Water ripples';
+    if(!bgfx.querySelector('option[value="snow"]')){
+      const opt=document.createElement('option');opt.value='snow';opt.textContent='Snow';bgfx.appendChild(opt);
+    }
+    bgfx.value=appSettings.bgEffect||'none';
+  }
+}
+const ROMAN_NUMERAL_MAP = { i: 1, v: 5, x: 10, l: 50, c: 100, d: 500, m: 1000 };
+function parseRomanNumeral(str) {
+  if (!str || !/^[ivxlcdm]+$/i.test(str)) return null;
+  const s = str.toLowerCase();
+  let val = 0;
+  for (let i = 0; i < s.length; i++) {
+    const cur = ROMAN_NUMERAL_MAP[s[i]];
+    const next = ROMAN_NUMERAL_MAP[s[i+1]];
+    if (next && cur < next) { val += (next - cur); i++; } else { val += cur; }
+  }
+  return val > 0 ? val : null;
+}
+const WORD_NUMBER_MAP = {
+  zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+  eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19,
+  twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90, hundred: 100
+};
+function parseWordNumber(str) {
+  if (!str) return null;
+  const parts = str.toLowerCase().replace(/-/g, ' ').split(/\s+/).filter(Boolean);
+  let total = 0, current = 0, matched = false;
+  for (const p of parts) {
+    if (WORD_NUMBER_MAP[p] !== undefined) {
+      matched = true;
+      const n = WORD_NUMBER_MAP[p];
+      if (n === 100) current = (current || 1) * 100;
+      else current += n;
+    } else return null;
+  }
+  total += current;
+  return matched ? total : null;
+}
+function getChapterRank(title) {
+  if (!title) return { rank: 500000, text: '' };
+  const raw = String(title).trim().replace(/\.(docx|pdf|txt)$/i, '');
+  const clean = raw.toLowerCase();
+  if (/^(foreword|preface|introduction|intro|prelude)\b/.test(clean)) return { rank: -1000, text: raw };
+  if (/^prologue\b/.test(clean)) return { rank: -900, text: raw };
+  if (/^epilogue\b/.test(clean)) return { rank: 1000000, text: raw };
+  if (/^(afterword|postscript|conclusion|outro|appendix|notes)\b/.test(clean)) return { rank: 1000100, text: raw };
+
+  const partMatch = clean.match(/(?:part|book|act|volume|vol\.?)\s*([0-9ivxlcdm]+|\w+)/i);
+  let partNum = 0;
+  if (partMatch) {
+    const pStr = partMatch[1];
+    if (/^\d+$/.test(pStr)) partNum = parseInt(pStr, 10);
+    else if (parseRomanNumeral(pStr)) partNum = parseRomanNumeral(pStr);
+    else if (parseWordNumber(pStr)) partNum = parseWordNumber(pStr);
+  }
+
+  const numMatch = clean.match(/(?:chapter|ch\.?|chap\.?|section|sec\.?)\s*(\d+)/i) ||
+                   clean.match(/^(\d+)[\s._\-:]/i) ||
+                   clean.match(/(\d+)/);
+  if (numMatch) {
+    return { rank: (partNum * 10000) + parseInt(numMatch[1], 10), text: raw };
+  }
+  const romanMatch = clean.match(/(?:chapter|ch\.?|chap\.?)\s+([ivxlcdm]+)\b/i);
+  if (romanMatch) {
+    const val = parseRomanNumeral(romanMatch[1]);
+    if (val !== null) return { rank: (partNum * 10000) + val, text: raw };
+  }
+  const wordMatch = clean.match(/(?:chapter|ch\.?|chap\.?)\s+([a-z\s\-]+)/i);
+  if (wordMatch) {
+    const val = parseWordNumber(wordMatch[1]);
+    if (val !== null) return { rank: (partNum * 10000) + val, text: raw };
+  }
+  return { rank: (partNum ? partNum * 10000 : 500000), text: raw };
+}
+function compareChapterTitles(a, b) {
+  const rankA = getChapterRank(a);
+  const rankB = getChapterRank(b);
+  if (rankA.rank !== rankB.rank) return rankA.rank - rankB.rank;
+  return String(a || '').localeCompare(String(b || ''), undefined, { numeric: true, sensitivity: 'base' });
+}
+function naturalCompare(a, b) {
+  return compareChapterTitles(a, b);
 }
 function textOf(html){
+  if(!html)return '';
   const d=document.createElement('div');d.innerHTML=sanitizeRichHtml(html);
   d.querySelectorAll('p,div,li,h1,h2,br').forEach(el=>el.insertAdjacentText('afterend','\n'));
   return d.textContent||'';
 }
-function wc(html){const t=textOf(html).trim();return t?t.split(/\s+/).length:0}
-function totalWords(){return state.sections.reduce((n,s)=>n+wc(s.html||''),0)}
+function countWordsFast(text) {
+  if (!text) return 0;
+  const matches = text.match(/\S+/g);
+  return matches ? matches.length : 0;
+}
+function wc(html){
+  if (!html) return 0;
+  const clean = html.replace(/<[^>]*>/g, ' ');
+  return countWordsFast(clean);
+}
+function totalWords(){
+  return state.sections.reduce((n,s)=>{
+    if (s._wc === undefined) s._wc = wc(s.html||'');
+    return n + s._wc;
+  }, 0);
+}
 function totalCharacters(){return detectCharacters().length}
+
+let writerDirty = false;
+let writerDebounceTimer = null;
+let writerStatusTimer = null;
+
+function flushWriterSave() {
+  const editor = document.getElementById('content-editable');
+  if (writerDirty && editor) {
+    const s = state.sections.find(x => String(x.id) === String(state.activeId));
+    if (s) {
+      s.html = editor.innerHTML;
+      s._wc = countWordsFast(editor.textContent);
+    }
+    writerDirty = false;
+  }
+  if (writerDebounceTimer) {
+    clearTimeout(writerDebounceTimer);
+    writerDebounceTimer = null;
+  }
+  if (writerStatusTimer) {
+    clearTimeout(writerStatusTimer);
+    writerStatusTimer = null;
+  }
+  save();
+  const totalEl = document.getElementById('totalstats');
+  if (totalEl) totalEl.textContent = totalWords().toLocaleString() + ' words';
+}
+
+function updateWriterStatusFast(editor) {
+  const index = state.sections.findIndex(s => String(s.id) === String(state.activeId));
+  const section = state.sections[index];
+  if (!section) return;
+
+  let currentWords;
+  if (editor) {
+    currentWords = countWordsFast(editor.textContent);
+  } else if (section._wc !== undefined) {
+    currentWords = section._wc;
+  } else {
+    currentWords = section._wc = wc(section.html || '');
+  }
+  section._wc = currentWords;
+
+  const statusSec = document.getElementById('writer-status-section');
+  const statusWords = document.getElementById('writer-status-words');
+  const statusTotal = document.getElementById('writer-status-total');
+
+  if (statusSec) statusSec.textContent = `Section ${Math.max(index + 1, 1)} of ${state.sections.length}`;
+  if (statusWords) statusWords.textContent = currentWords.toLocaleString() + ' words';
+  if (statusTotal) statusTotal.textContent = totalWords().toLocaleString() + ' words total';
+}
+
 function updateWriterStatus(){
-  const index=state.sections.findIndex(s=>String(s.id)===String(state.activeId)),section=state.sections[index];
-  const editor=document.getElementById('content-editable');
-  document.getElementById('writer-status-section').textContent=`Section ${Math.max(index+1,1)} of ${state.sections.length}`;
-  document.getElementById('writer-status-words').textContent=wc(editor?.innerHTML||section?.html||'').toLocaleString()+' words';
-  document.getElementById('writer-status-total').textContent=totalWords().toLocaleString()+' words total';
+  const editor = document.getElementById('content-editable');
+  updateWriterStatusFast(editor);
 }
 
 function switchView(name){
+  flushWriterSave();
   if(name!=='write'){document.body.classList.remove('writer-focus');document.getElementById('writer-statusbar').hidden=true}
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));
@@ -322,6 +479,7 @@ function renderTemplateLibrary(){
   });
 }
 function showWriteLibrary(){
+  flushWriterSave();
   document.body.classList.remove('writer-focus');
   document.getElementById('writer-statusbar').hidden=true;
   document.getElementById('write-library').hidden=false;
@@ -336,6 +494,7 @@ function showWriteWorkspace(){
   renderEditor();
 }
 function openSection(id){
+  flushWriterSave();
   const section=state.sections.find(item=>String(item.id)===String(id));
   if(!section)return;
   state.activeId=section.id;
@@ -591,12 +750,55 @@ function renderEditor(){
       </div>
     </div>
     <div contenteditable="true" id="content-editable" role="textbox" aria-multiline="true" aria-label="Manuscript section" style="line-height:${safeLineHeight(s.lineHeight)}">${sanitizeRichHtml(s.html||'<p></p>')}</div>`;
-  document.getElementById('title-input').oninput=e=>{s.title=e.target.value;save();renderSidebar();renderHome();renderMetrics()};
+  const titleInput = document.getElementById('title-input');
+  let titleTimer = null;
+  if(titleInput){
+    titleInput.oninput = e => {
+      s.title = e.target.value;
+      const sel = document.getElementById('section-select');
+      const opt = sel?.querySelector(`option[value="${s.id}"]`);
+      if (opt) opt.textContent = `${s.title || 'Untitled'} (${s._wc !== undefined ? s._wc : (s._wc = wc(s.html || ''))}w)`;
+      clearTimeout(titleTimer);
+      titleTimer = setTimeout(() => {
+        save();
+        renderDocumentList();
+      }, 500);
+    };
+    titleInput.onblur = () => {
+      clearTimeout(titleTimer);
+      save();
+      renderSidebar();
+    };
+  }
   const editor=document.getElementById('content-editable');
   editor.oncontextmenu=event=>{event.preventDefault();showWriterContextPopover(editor,event)};
   editor.onkeydown=event=>{if(event.key==='ContextMenu'||(event.shiftKey&&event.key==='F10')){event.preventDefault();const range=window.getSelection()?.rangeCount?window.getSelection().getRangeAt(0):null,rect=range?.getBoundingClientRect()||editor.getBoundingClientRect();showWriterContextPopover(editor,{clientX:rect.left,clientY:rect.bottom})}};
-  editor.onpaste=e=>{e.preventDefault();const html=e.clipboardData?.getData('text/html')||'';const plain=e.clipboardData?.getData('text/plain')||'';const safe=html?sanitizeRichHtml(html):plain.split(/\n{2,}/).map(p=>`<p>${escapeHtml(p).replace(/\n/g,'<br>')}</p>`).join('');document.execCommand('insertHTML',false,safe||'<p></p>');setImportSafetyStatus('Pasted text was cleaned before it was added.','ok')};
-  editor.oninput=e=>{s.html=sanitizeRichHtml(e.target.innerHTML);save();updateWriterStatus();document.getElementById('totalstats').textContent=totalWords().toLocaleString()+' words';renderHome();renderDocumentList();renderMetrics()};
+  editor.onpaste=e=>{
+    e.preventDefault();
+    const html=e.clipboardData?.getData('text/html')||'';
+    const plain=e.clipboardData?.getData('text/plain')||'';
+    const safe=html?sanitizeRichHtml(html):plain.split(/\n{2,}/).map(p=>`<p>${escapeHtml(p).replace(/\n/g,'<br>')}</p>`).join('');
+    document.execCommand('insertHTML',false,safe||'<p></p>');
+    setImportSafetyStatus('Pasted text was cleaned before it was added.','ok');
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+  editor.oninput=()=>{
+    writerDirty = true;
+    if (!writerStatusTimer) {
+      writerStatusTimer = setTimeout(() => {
+        writerStatusTimer = null;
+        updateWriterStatusFast(editor);
+      }, 350);
+    }
+    clearTimeout(writerDebounceTimer);
+    writerDebounceTimer = setTimeout(() => {
+      writerDebounceTimer = null;
+      flushWriterSave();
+    }, 1500);
+  };
+  editor.onblur=()=>{
+    flushWriterSave();
+  };
   updateWriterStatus();
   renderMetrics();
   document.getElementById('writer-save').onclick=saveWriter;
@@ -626,14 +828,35 @@ function renderEditor(){
   lsSelect.onchange=e=>setLineSpacing(e.target.value);
   document.getElementById('delete-section').onclick=()=>delSection(s.id);
 }
-function addSection(){const id=Date.now();state.sections.push({id,title:'New Section',html:'<p></p>'});state.activeId=id;save();renderSidebar();renderEditor();renderHome();document.getElementById('title-input')?.focus()}
-function delSection(id){if(state.sections.length===1){toast("You can’t delete your only section.");return}state.sections=state.sections.filter(s=>s.id!==id);state.activeId=state.sections[0].id;save();renderSidebar();renderEditor();renderHome()}
+function addSection(){flushWriterSave();const id=Date.now();state.sections.push({id,title:'New Section',html:'<p></p>'});state.activeId=id;save();renderSidebar();renderEditor();renderHome();document.getElementById('title-input')?.focus()}
+function delSection(id){flushWriterSave();if(state.sections.length===1){toast("You can’t delete your only section.");return}state.sections=state.sections.filter(s=>s.id!==id);state.activeId=state.sections[0].id;save();renderSidebar();renderEditor();renderHome()}
 
 document.getElementById('add-section').addEventListener('click',addSection);
 document.getElementById('create-blank-doc').addEventListener('click',createBlankDocument);
 document.getElementById('write-back').addEventListener('click',showWriteLibrary);
-document.getElementById('file-input').onchange=async e=>{
-  const files=[...e.target.files].slice(0,12);if(e.target.files.length>12)toast('Choose up to 12 files at a time.');let imported=0;
+function sortSectionsByTitle(){
+  flushWriterSave();
+  if(state.sections.length<=1){
+    toast('At least 2 chapters are required to sort.');
+    return;
+  }
+  state.sections.sort((a,b)=>compareChapterTitles(a.title||'',b.title||''));
+  save();
+  renderSidebar();
+  renderDocumentList();
+  renderEditor();
+  toast('Chapters ordered in sequence by title.');
+}
+document.getElementById('sort-chapters-btn')?.addEventListener('click',sortSectionsByTitle);
+document.getElementById('writer-sort-chapters-btn')?.addEventListener('click',sortSectionsByTitle);
+
+async function importChapterFiles(rawFileList){
+  const rawFiles=[...(rawFileList||[])];
+  if(!rawFiles.length) return;
+  if(rawFiles.length>50)toast('Choose up to 50 files at a time.');
+  const files=rawFiles.sort((a,b)=>compareChapterTitles(a.name,b.name)).slice(0,50);
+  let imported=0;
+  const newSections=[];
   for(const file of files){try{
     const check=await screenImportFile(file);let html='';const name=file.name.replace(/\.(docx|pdf|txt)$/i,'').slice(0,120);
     if(check.ext==='docx'){if(!mammoth)throw new Error('Word importer unavailable.');const result=await mammoth.convertToHtml({arrayBuffer:check.bytes.buffer},{externalFileAccess:false});html=result.value||'<p></p>';if(result.messages?.some(m=>m.type==='warning'))check.notes.push('The document contains Word features that were skipped during import.')}
@@ -643,10 +866,29 @@ document.getElementById('file-input').onchange=async e=>{
       try{for(let i=1;i<=doc.numPages;i++){const page=await doc.getPage(i),content=await page.getTextContent(),text=content.items.map(it=>it.str).join(' ');charTotal+=text.length;if(charTotal>3000000)throw new Error('This PDF has too much extracted text for one import. Split it into smaller parts.');paras.push('<p>'+escapeHtml(text)+'</p>')}}finally{await pdfTask.destroy()}
       html=paras.join('');check.notes.push('PDFs are imported as plain text; PDF scripts, links, forms, and attachments are not run or imported.');
     }else html=new TextDecoder('utf-8',{fatal:true}).decode(check.bytes).split(/\n\s*\n+/).map(p=>'<p>'+escapeHtml(p).replace(/\n/g,'<br>')+'</p>').join('');
-    html=sanitizeRichHtml(html);const id=Date.now()+Math.floor(Math.random()*1000);state.sections.push({id,title:name,html});state.activeId=id;imported++;
+    html=sanitizeRichHtml(html);const id=Date.now()+Math.floor(Math.random()*1000)+newSections.length;
+    newSections.push({id,title:name,html,_wc:wc(html)});imported++;
     setImportSafetyStatus(`${file.name}: local checks passed. Unsafe formatting and active links were removed.${check.notes.length?' '+check.notes.join(' '):''}`,check.notes.length?'warning':'ok');
   }catch(err){const message=err?.message||'Could not safely check this file.';setImportSafetyStatus(`${file.name}: not imported. ${message}`,'error');toast('Import stopped: '+message);console.warn('Import safety check stopped a file:',file.name,message)}}
-  if(imported){save();renderSidebar();renderEditor();renderHome();showWriteWorkspace();toast(`${imported} file${imported===1?'':'s'} safely imported.`)}e.target.value='';
+
+  if(newSections.length){
+    newSections.sort((a,b)=>compareChapterTitles(a.title,b.title));
+    const isSingleEmpty=state.sections.length===1&&!textOf(state.sections[0].html||'').trim()&&(state.sections[0].title==='Untitled'||!state.sections[0].title);
+    if(isSingleEmpty){
+      state.sections=newSections;
+    }else{
+      state.sections.push(...newSections);
+      state.sections.sort((a,b)=>compareChapterTitles(a.title,b.title));
+    }
+    state.activeId=newSections[0].id;
+    save();renderSidebar();renderEditor();renderHome();showWriteWorkspace();
+    toast(`${imported} chapter${imported===1?'':'s'} ordered in sequence by title.`);
+  }
+}
+
+document.getElementById('file-input').onchange=async e=>{
+  await importChapterFiles(e.target.files);
+  e.target.value='';
 };
 document.getElementById('template-file-input').onchange=async e=>{
   let added=0;const files=[...e.target.files].slice(0,12);
@@ -815,10 +1057,591 @@ function renderWeb(){
   document.getElementById('web-map-count').textContent=`${visible.length} nodes · ${uniqueLinks.length} links`;
   if(migratedLayout)save();
 }
-function renderAI(){const sel=document.getElementById('ai-section');sel.innerHTML='';state.sections.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.title||'Untitled';sel.appendChild(o)});sel.value=state.activeId}
-async function copyPrompt(){const s=state.sections.find(x=>String(x.id)===String(document.getElementById('ai-section').value)),tpl=document.getElementById('ai-template').value,prompt=tpl.replace('{{TEXT}}',s?textOf(s.html):'');try{await navigator.clipboard.writeText(prompt);toast('Prompt copied. Paste it into Claude or ChatGPT.')}catch(e){toast('Clipboard unavailable—select and copy the prompt manually.')}}
-function insertResponse(){const resp=document.getElementById('ai-response').value,s=state.sections.find(x=>String(x.id)===String(state.activeId));if(!s||!resp.trim()){toast('Nothing to insert.');return}s.html=(s.html||'')+'<p>'+escapeHtml(resp)+'</p>';save();renderEditor();renderSidebar();renderHome();toast('Added to '+(s.title||'your section')+'.')}
-document.getElementById('copy-prompt').addEventListener('click',copyPrompt);document.getElementById('insert-response').addEventListener('click',insertResponse);
+async function callAIEndpoint(endpoint, payload) {
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || `Server returned error (${res.status})`);
+  }
+  return await res.json();
+}
+
+function addStoryWebNode(type, label) {
+  const clean = String(label || '').trim().slice(0, 80);
+  if (!clean) return;
+  state.webNodes = state.webNodes || [];
+  const exists = state.webNodes.some(n => n.label.toLowerCase() === clean.toLowerCase() && n.type === type);
+  if (!exists) {
+    state.webNodes.push({ id: newProjectId(), type, label: clean });
+    save();
+    toast(`Added "${clean}" to Story Web.`);
+  }
+}
+
+function setupAIEntityScanner() {
+  const scanBtn = document.getElementById('btn-ai-scan-entities');
+  const panel = document.getElementById('ai-entities-panel');
+  if (!scanBtn || !panel) return;
+
+  scanBtn.addEventListener('click', async () => {
+    if (scanBtn.disabled) return;
+    const nonBlank = state.sections.filter(s => textOf(s.html || '').trim().length > 0);
+    if (!nonBlank.length) {
+      toast('Add some writing to your chapters before scanning.');
+      return;
+    }
+    const origHtml = scanBtn.innerHTML;
+    scanBtn.disabled = true;
+    scanBtn.innerHTML = `<span class="ai-loading-spinner"></span> Scanning manuscript…`;
+    try {
+      const payload = {
+        sections: nonBlank.map(s => ({ id: s.id, title: s.title || 'Untitled', text: textOf(s.html || '') }))
+      };
+      const data = await callAIEndpoint('/api/ai/scan-entities', payload);
+      renderAIEntityResults(data);
+      toast(`AI discovered ${data.characters?.length || 0} characters, ${data.places?.length || 0} places, ${data.events?.length || 0} events.`);
+    } catch (err) {
+      console.error(err);
+      toast('Entity scan failed: ' + err.message);
+    } finally {
+      scanBtn.disabled = false;
+      scanBtn.innerHTML = origHtml;
+    }
+  });
+
+  function renderAIEntityResults(data) {
+    const chars = data.characters || [];
+    const places = data.places || [];
+    const events = data.events || [];
+    const objects = data.objects || [];
+    const threads = data.threads || [];
+
+    panel.hidden = false;
+    panel.innerHTML = `
+      <div class="ai-entities-header">
+        <strong style="font-size:1rem;display:flex;align-items:center;gap:6px">
+          <svg class="ai-spark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z"/></svg>
+          Manuscript Entities Discovered
+        </strong>
+        <button class="secondary-button" id="close-ai-entities" type="button" style="padding:4px 8px;font-size:.72rem">Close</button>
+      </div>
+      <div class="ai-entities-tabs" role="tablist">
+        <button class="ai-tab-btn active" data-tab="chars" type="button">Characters (${chars.length})</button>
+        <button class="ai-tab-btn" data-tab="places" type="button">Places &amp; Settings (${places.length})</button>
+        <button class="ai-tab-btn" data-tab="events" type="button">Events &amp; Beats (${events.length})</button>
+        <button class="ai-tab-btn" data-tab="threads" type="button">Objects &amp; Threads (${objects.length + threads.length})</button>
+      </div>
+      <div id="ai-tab-content-chars" class="ai-tab-pane">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-size:.75rem;color:var(--sub)">Distinct characters identified with narrative role.</span>
+          ${chars.length ? `<button class="secondary-button" id="ai-add-all-chars" type="button" style="padding:4px 8px;font-size:.72rem">Add all to Character notes</button>` : ''}
+        </div>
+        <div class="ai-entities-list">
+          ${chars.map(c => `
+            <div class="ai-entity-card">
+              <h4>${escapeHtml(c.name)} <span class="ai-entity-badge">${escapeHtml(c.role || 'Character')}</span></h4>
+              <div class="ai-entity-desc">${escapeHtml(c.description || '')}</div>
+              ${c.traits?.length ? `<div style="font-size:.7rem;color:var(--sub)">Traits: ${escapeHtml(c.traits.join(', '))}</div>` : ''}
+              <button class="secondary-button btn-add-single-char" type="button" data-name="${escapeHtml(c.name)}" data-role="${escapeHtml(c.role || '')}" data-desc="${escapeHtml(c.description || '')}" style="margin-top:auto;padding:5px 8px;font-size:.72rem">Save to Notes</button>
+            </div>
+          `).join('') || '<div class="empty">No distinct characters found.</div>'}
+        </div>
+      </div>
+      <div id="ai-tab-content-places" class="ai-tab-pane" hidden>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-size:.75rem;color:var(--sub)">Locations and settings found in the manuscript.</span>
+          ${places.length ? `<button class="secondary-button" id="ai-add-all-places" type="button" style="padding:4px 8px;font-size:.72rem">Add all Places to Story Web</button>` : ''}
+        </div>
+        <div class="ai-entities-list">
+          ${places.map(p => `
+            <div class="ai-entity-card">
+              <h4>${escapeHtml(p.name)} <span class="ai-entity-badge" style="background:#345d7a;color:#fff">Place</span></h4>
+              <div class="ai-entity-desc">${escapeHtml(p.description || p.significance || '')}</div>
+              <button class="secondary-button btn-add-single-place" type="button" data-name="${escapeHtml(p.name)}" style="margin-top:auto;padding:5px 8px;font-size:.72rem">Add to Story Web</button>
+            </div>
+          `).join('') || '<div class="empty">No distinct places found.</div>'}
+        </div>
+      </div>
+      <div id="ai-tab-content-events" class="ai-tab-pane" hidden>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-size:.75rem;color:var(--sub)">Scenes, turning points, and narrative events.</span>
+          ${events.length ? `<button class="secondary-button" id="ai-add-all-events" type="button" style="padding:4px 8px;font-size:.72rem">Add all Events to Story Web</button>` : ''}
+        </div>
+        <div class="ai-entities-list">
+          ${events.map(e => `
+            <div class="ai-entity-card">
+              <h4>${escapeHtml(e.name)} <span class="ai-entity-badge" style="background:#a2703f;color:#fff">Event</span></h4>
+              <div class="ai-entity-desc">${escapeHtml(e.description || '')}</div>
+              <button class="secondary-button btn-add-single-event" type="button" data-name="${escapeHtml(e.name)}" style="margin-top:auto;padding:5px 8px;font-size:.72rem">Add to Story Web</button>
+            </div>
+          `).join('') || '<div class="empty">No major events identified.</div>'}
+        </div>
+      </div>
+      <div id="ai-tab-content-threads" class="ai-tab-pane" hidden>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-size:.75rem;color:var(--sub)">Narrative threads, motifs, and key objects.</span>
+        </div>
+        <div class="ai-entities-list">
+          ${[...objects.map(o => ({ ...o, type: 'object' })), ...threads.map(t => ({ ...t, type: 'thread' }))].map(item => `
+            <div class="ai-entity-card">
+              <h4>${escapeHtml(item.name)} <span class="ai-entity-badge" style="background:#5e5e5e;color:#fff">${item.type}</span></h4>
+              <div class="ai-entity-desc">${escapeHtml(item.description || '')}</div>
+              <button class="secondary-button btn-add-single-thread" type="button" data-type="${item.type}" data-name="${escapeHtml(item.name)}" style="margin-top:auto;padding:5px 8px;font-size:.72rem">Add to Story Web</button>
+            </div>
+          `).join('') || '<div class="empty">No items or threads identified.</div>'}
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-ai-entities').onclick = () => { panel.hidden = true; };
+
+    panel.querySelectorAll('.ai-tab-btn').forEach(btn => {
+      btn.onclick = () => {
+        panel.querySelectorAll('.ai-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const target = btn.dataset.tab;
+        panel.querySelectorAll('.ai-tab-pane').forEach(p => { p.hidden = true; });
+        const pane = document.getElementById('ai-tab-content-' + target);
+        if (pane) pane.hidden = false;
+      };
+    });
+
+    panel.querySelectorAll('.btn-add-single-char').forEach(btn => {
+      btn.onclick = () => {
+        const name = btn.dataset.name, role = btn.dataset.role, desc = btn.dataset.desc;
+        state.charNotes[name] = [role ? `[${role}]` : '', desc].filter(Boolean).join(' ');
+        if (state.charIgnore) delete state.charIgnore[name];
+        save(); renderCharacters();
+        btn.textContent = 'Saved ✓'; btn.disabled = true;
+        toast(`Updated notes for ${name}.`);
+      };
+    });
+
+    const addAllCharsBtn = document.getElementById('ai-add-all-chars');
+    if (addAllCharsBtn) {
+      addAllCharsBtn.onclick = () => {
+        chars.forEach(c => {
+          state.charNotes[c.name] = [c.role ? `[${c.role}]` : '', c.description].filter(Boolean).join(' ');
+          if (state.charIgnore) delete state.charIgnore[c.name];
+        });
+        save(); renderCharacters();
+        addAllCharsBtn.textContent = 'All characters saved ✓'; addAllCharsBtn.disabled = true;
+        toast(`Added details for ${chars.length} characters.`);
+      };
+    }
+
+    panel.querySelectorAll('.btn-add-single-place').forEach(btn => {
+      btn.onclick = () => {
+        const name = btn.dataset.name;
+        addStoryWebNode('place', name);
+        btn.textContent = 'Added ✓'; btn.disabled = true;
+      };
+    });
+
+    const addAllPlacesBtn = document.getElementById('ai-add-all-places');
+    if (addAllPlacesBtn) {
+      addAllPlacesBtn.onclick = () => {
+        places.forEach(p => addStoryWebNode('place', p.name));
+        addAllPlacesBtn.textContent = 'All places added ✓'; addAllPlacesBtn.disabled = true;
+      };
+    }
+
+    panel.querySelectorAll('.btn-add-single-event').forEach(btn => {
+      btn.onclick = () => {
+        const name = btn.dataset.name;
+        addStoryWebNode('event', name);
+        btn.textContent = 'Added ✓'; btn.disabled = true;
+      };
+    });
+
+    const addAllEventsBtn = document.getElementById('ai-add-all-events');
+    if (addAllEventsBtn) {
+      addAllEventsBtn.onclick = () => {
+        events.forEach(e => addStoryWebNode('event', e.name));
+        addAllEventsBtn.textContent = 'All events added ✓'; addAllEventsBtn.disabled = true;
+      };
+    }
+
+    panel.querySelectorAll('.btn-add-single-thread').forEach(btn => {
+      btn.onclick = () => {
+        const type = btn.dataset.type, name = btn.dataset.name;
+        addStoryWebNode(type, name);
+        btn.textContent = 'Added ✓'; btn.disabled = true;
+      };
+    });
+  }
+}
+
+function setupAIWritingAssistant() {
+  const toggleBtn = document.getElementById('btn-write-ai-toggle');
+  const drawer = document.getElementById('write-ai-drawer');
+  const closeBtn = document.getElementById('write-ai-close');
+  const outputWrap = document.getElementById('write-ai-output-wrap');
+  const outputEl = document.getElementById('write-ai-output');
+  const customInput = document.getElementById('write-ai-custom-input');
+  const customSubmit = document.getElementById('write-ai-custom-submit');
+  const insertBtn = document.getElementById('write-ai-insert');
+  const replaceBtn = document.getElementById('write-ai-replace');
+  const copyBtn = document.getElementById('write-ai-copy');
+
+  if (!toggleBtn || !drawer) return;
+
+  toggleBtn.addEventListener('click', () => {
+    drawer.hidden = !drawer.hidden;
+  });
+  closeBtn?.addEventListener('click', () => {
+    drawer.hidden = true;
+  });
+
+  drawer.querySelectorAll('.ai-craft-preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => runCraftAction(btn.dataset.action));
+  });
+
+  customSubmit?.addEventListener('click', () => {
+    const text = customInput?.value.trim();
+    if (!text) {
+      toast('Please enter a craft instruction.');
+      return;
+    }
+    runCraftAction('custom', text);
+  });
+
+  async function runCraftAction(action, customInstruction = '') {
+    const editor = document.getElementById('content-editable');
+    const selection = window.getSelection();
+    let targetText = '';
+    if (selection && selection.toString().trim() && editor?.contains(selection.anchorNode)) {
+      targetText = selection.toString().trim();
+    } else {
+      targetText = textOf(editor?.innerHTML || '');
+    }
+
+    if (!targetText && action !== 'continue' && !customInstruction) {
+      toast('Start writing in your chapter first.');
+      return;
+    }
+
+    const currentSection = state.sections.find(s => String(s.id) === String(state.activeId));
+    outputWrap.hidden = false;
+    outputEl.textContent = 'Consulting AI editor…';
+
+    try {
+      const payload = {
+        action,
+        text: targetText.slice(-3500),
+        chapterTitle: currentSection?.title || 'Chapter',
+        instruction: customInstruction,
+        characters: Object.keys(state.charNotes || {})
+      };
+      const data = await callAIEndpoint('/api/ai/write-assist', payload);
+      outputEl.textContent = data.result || 'No response generated.';
+      toast('AI suggestions ready.');
+    } catch (err) {
+      console.error(err);
+      outputEl.textContent = 'AI assistance failed: ' + err.message;
+    }
+  }
+
+  insertBtn?.addEventListener('click', () => {
+    const editor = document.getElementById('content-editable');
+    const text = outputEl.textContent.trim();
+    if (!editor || !text) return;
+    const formatted = text.split('\n\n').map(p => `<p>${escapeHtml(p)}</p>`).join('');
+    editor.innerHTML = (editor.innerHTML || '') + formatted;
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+    drawer.hidden = true;
+    toast('Inserted into chapter.');
+  });
+
+  replaceBtn?.addEventListener('click', () => {
+    const editor = document.getElementById('content-editable');
+    const text = outputEl.textContent.trim();
+    if (!editor || !text) return;
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0 && editor.contains(selection.anchorNode)) {
+      const range = selection.getRangeAt(0);
+      range.deleteContents();
+      const temp = document.createElement('div');
+      temp.innerHTML = text.split('\n\n').map(p => `<p>${escapeHtml(p)}</p>`).join('');
+      while (temp.firstChild) range.insertNode(temp.firstChild);
+      editor.dispatchEvent(new Event('input', { bubbles: true }));
+      drawer.hidden = true;
+      toast('Selection replaced.');
+    } else {
+      insertBtn.click();
+    }
+  });
+
+  copyBtn?.addEventListener('click', async () => {
+    const text = outputEl.textContent.trim();
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast('Copied to clipboard.');
+    } catch (_) {
+      toast('Unable to access clipboard.');
+    }
+  });
+}
+
+function setupAIStoryWebEnhancement() {
+  const btn = document.getElementById('btn-ai-enhance-web');
+  const panel = document.getElementById('ai-web-panel');
+  if (!btn || !panel) return;
+
+  btn.addEventListener('click', async () => {
+    if (btn.disabled) return;
+    const origHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="ai-loading-spinner"></span> Analyzing story…`;
+    try {
+      const payload = {
+        nodes: state.webNodes || [],
+        links: state.webLinks || [],
+        sections: state.sections.map(s => ({ title: s.title || 'Untitled', text: textOf(s.html || '') })),
+        characters: detectCharacters().map(([n]) => ({ name: n, role: state.charNotes[n] || '' }))
+      };
+      const data = await callAIEndpoint('/api/ai/story-web-enhance', payload);
+      renderStoryWebSuggestions(data);
+    } catch (err) {
+      console.error(err);
+      toast('Story Web enhancement failed: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
+    }
+  });
+
+  function renderStoryWebSuggestions(data) {
+    const nodes = data.suggestedNodes || [];
+    const links = data.suggestedLinks || [];
+    panel.hidden = false;
+    panel.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <strong style="font-size:.88rem;display:flex;align-items:center;gap:6px">
+          <svg class="ai-spark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z"/></svg>
+          Story Web Architectural Insights
+        </strong>
+        <button class="secondary-button" id="close-ai-web" type="button" style="padding:3px 8px;font-size:.72rem">Close</button>
+      </div>
+      <p style="font-size:.78rem;color:var(--sub);margin:0 0 10px">${escapeHtml(data.architectureInsight || '')}</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-bottom:12px">
+        <div style="background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:9px">
+          <strong style="font-size:.74rem;display:block;margin-bottom:4px">Suggested New Nodes (${nodes.length})</strong>
+          <ul style="margin:0;padding-left:16px;font-size:.72rem;color:var(--ink)">
+            ${nodes.map(n => `<li><strong>[${escapeHtml(n.type)}]</strong> ${escapeHtml(n.label)}</li>`).join('') || '<li>None</li>'}
+          </ul>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:9px">
+          <strong style="font-size:.74rem;display:block;margin-bottom:4px">Suggested Narrative Connections (${links.length})</strong>
+          <ul style="margin:0;padding-left:16px;font-size:.72rem;color:var(--ink)">
+            ${links.map(l => `<li>${escapeHtml(l.from)} → <em>${escapeHtml(l.relationship || '')}</em> → ${escapeHtml(l.to)}</li>`).join('') || '<li>None</li>'}
+          </ul>
+        </div>
+      </div>
+      <div class="btnrow">
+        <button class="primary" id="btn-apply-web-ai" type="button">Apply Suggestions to Story Map</button>
+      </div>
+    `;
+
+    document.getElementById('close-ai-web').onclick = () => { panel.hidden = true; };
+    document.getElementById('btn-apply-web-ai').onclick = () => {
+      state.webNodes = state.webNodes || [];
+      state.webLinks = state.webLinks || [];
+      const nodeMap = new Map();
+      state.webNodes.forEach(n => nodeMap.set(n.label.toLowerCase(), n.id));
+
+      nodes.forEach(n => {
+        if (!nodeMap.has(n.label.toLowerCase())) {
+          const id = newProjectId();
+          state.webNodes.push({ id, type: n.type, label: n.label });
+          nodeMap.set(n.label.toLowerCase(), id);
+        }
+      });
+
+      links.forEach(l => {
+        const fromId = nodeMap.get(l.from.toLowerCase()) || l.from;
+        const toId = nodeMap.get(l.to.toLowerCase()) || l.to;
+        if (fromId && toId && fromId !== toId) {
+          const exists = state.webLinks.some(k => k.from === fromId && k.to === toId);
+          if (!exists) {
+            state.webLinks.push({ from: fromId, to: toId });
+          }
+        }
+      });
+
+      save();
+      renderWeb();
+      panel.hidden = true;
+      toast('Story Web updated with AI suggestions.');
+    };
+  }
+}
+
+function setupAIMetricsCritique() {
+  const btn = document.getElementById('btn-generate-critique');
+  const container = document.getElementById('ai-critique-content');
+  if (!btn || !container) return;
+
+  btn.addEventListener('click', async () => {
+    if (btn.disabled) return;
+    const origHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="ai-loading-spinner"></span> Reviewing manuscript…`;
+    try {
+      const payload = {
+        sections: state.sections.map(s => ({
+          title: s.title || 'Untitled',
+          wordCount: wc(s.html || ''),
+          text: textOf(s.html || '')
+        })),
+        stats: {
+          totalWords: totalWords(),
+          readTime: `${Math.ceil(totalWords() / 200)} min read`
+        }
+      };
+      const data = await callAIEndpoint('/api/ai/metrics-critique', payload);
+      renderCritiqueReport(data);
+      toast('Editorial critique ready.');
+    } catch (err) {
+      console.error(err);
+      toast('Critique generation failed: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Regenerate Critique';
+    }
+  });
+
+  function renderCritiqueReport(data) {
+    container.hidden = false;
+    container.innerHTML = `
+      <div style="background:var(--bg);border-left:4px solid var(--accent);border-radius:4px;padding:12px 16px;margin-bottom:14px;font-style:italic;font-size:.85rem;color:var(--ink)">
+        "${escapeHtml(data.overallAssessment || '')}"
+      </div>
+      <div class="ai-critique-grid">
+        <div class="ai-critique-box">
+          <h4>Narrative Pacing &amp; Momentum</h4>
+          <p>${escapeHtml(data.pacingAnalysis || '')}</p>
+        </div>
+        <div class="ai-critique-box">
+          <h4>Character Presence &amp; Spotlight</h4>
+          <p>${escapeHtml(data.characterBalance || '')}</p>
+        </div>
+        <div class="ai-critique-box">
+          <h4>Tone &amp; Atmospheric Continuity</h4>
+          <p>${escapeHtml(data.toneAtmosphere || '')}</p>
+        </div>
+      </div>
+      ${data.recommendations?.length ? `
+        <div style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:14px;margin-top:12px">
+          <strong style="font-size:.8rem;color:var(--accent2);display:block">Editorial Craft Recommendations for Revision:</strong>
+          <ol class="ai-recs-list">
+            ${data.recommendations.map(r => `<li>${escapeHtml(r)}</li>`).join('')}
+          </ol>
+        </div>
+      ` : ''}
+    `;
+  }
+}
+
+function setupAIAssistStudio() {
+  const sectionSel = document.getElementById('ai-section');
+  const modeSel = document.getElementById('ai-mode-select');
+  const customWrap = document.getElementById('ai-custom-prompt-wrap');
+  const customInput = document.getElementById('ai-custom-prompt');
+  const runBtn = document.getElementById('btn-run-ai-direct');
+  const outWrap = document.getElementById('ai-direct-output-wrap');
+  const outEl = document.getElementById('ai-direct-output');
+  const insertBtn = document.getElementById('ai-insert-direct');
+  const copyBtn = document.getElementById('ai-copy-direct');
+
+  if (!sectionSel || !runBtn) return;
+
+  modeSel?.addEventListener('change', () => {
+    if (customWrap) customWrap.hidden = modeSel.value !== 'custom';
+  });
+
+  runBtn.addEventListener('click', async () => {
+    const s = state.sections.find(x => String(x.id) === String(sectionSel.value));
+    const text = s ? textOf(s.html || '') : '';
+    if (!text) {
+      toast('The selected chapter has no text yet.');
+      return;
+    }
+    const origHtml = runBtn.innerHTML;
+    runBtn.disabled = true;
+    runBtn.innerHTML = `<span class="ai-loading-spinner"></span> Running analysis…`;
+    outWrap.hidden = false;
+    outEl.textContent = 'Generating craft feedback with Gemini…';
+
+    try {
+      const mode = modeSel?.value || 'polish';
+      const customPrompt = customInput?.value.trim() || '';
+      const payload = {
+        action: mode,
+        text,
+        chapterTitle: s.title || 'Chapter',
+        instruction: customPrompt,
+        characters: Object.keys(state.charNotes || {})
+      };
+      const data = await callAIEndpoint('/api/ai/write-assist', payload);
+      outEl.textContent = data.result || 'No output.';
+      if (data.explanation) {
+        outEl.textContent += `\n\n--- Craft Notes ---\n${data.explanation}`;
+      }
+      toast('Analysis complete.');
+    } catch (err) {
+      console.error(err);
+      outEl.textContent = 'Error: ' + err.message;
+    } finally {
+      runBtn.disabled = false;
+      runBtn.innerHTML = origHtml;
+    }
+  });
+
+  insertBtn?.addEventListener('click', () => {
+    const s = state.sections.find(x => String(x.id) === String(sectionSel.value));
+    const raw = outEl.textContent.split('--- Craft Notes ---')[0].trim();
+    if (!s || !raw) {
+      toast('Nothing to insert.');
+      return;
+    }
+    s.html = (s.html || '') + raw.split('\n\n').map(p => `<p>${escapeHtml(p)}</p>`).join('');
+    save();
+    renderEditor();
+    renderSidebar();
+    renderHome();
+    toast(`Inserted into ${s.title || 'chapter'}.`);
+  });
+
+  copyBtn?.addEventListener('click', async () => {
+    const raw = outEl.textContent.split('--- Craft Notes ---')[0].trim();
+    if (!raw) return;
+    try {
+      await navigator.clipboard.writeText(raw);
+      toast('Copied to clipboard.');
+    } catch (_) {
+      toast('Clipboard unavailable.');
+    }
+  });
+}
+
+function renderAI() {
+  const sel = document.getElementById('ai-section');
+  if (!sel) return;
+  sel.innerHTML = '';
+  state.sections.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.id;
+    o.textContent = s.title || 'Untitled';
+    sel.appendChild(o);
+  });
+  if (state.activeId) sel.value = state.activeId;
+}
 
 const FINALISE_ITEMS=[
   {id:'section-order',title:'Sections are titled and in the intended order.',hint:'Review your section list and confirm the sequence reads the way you want.'},
@@ -888,5 +1711,39 @@ settingsTabs.forEach((tab,index)=>{
 document.getElementById('palette-select').addEventListener('change',e=>updateAppSetting('palette',e.target.value));document.getElementById('theme-select').addEventListener('change',e=>updateAppSetting('theme',e.target.value));document.getElementById('bg-effect-select').addEventListener('change',e=>updateAppSetting('bgEffect',e.target.value));
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(appSettings.theme==='auto')applyTheme()});
 document.getElementById('project-create-form').addEventListener('submit',e=>{e.preventDefault();const input=document.getElementById('new-project-name');createProject(input.value);input.value=''});
+function setupWriteDragDrop(){
+  const writeView = document.getElementById('view-write');
+  if(!writeView) return;
+  ['dragenter','dragover'].forEach(name=>{
+    writeView.addEventListener(name, e=>{
+      if(e.dataTransfer?.types?.includes('Files')){
+        e.preventDefault();
+        writeView.classList.add('write-drag-over');
+      }
+    });
+  });
+  ['dragleave','dragend'].forEach(name=>{
+    writeView.addEventListener(name, e=>{
+      if(!writeView.contains(e.relatedTarget)){
+        writeView.classList.remove('write-drag-over');
+      }
+    });
+  });
+  writeView.addEventListener('drop', async e=>{
+    if(e.dataTransfer?.files?.length){
+      e.preventDefault();
+      writeView.classList.remove('write-drag-over');
+      await importChapterFiles(e.dataTransfer.files);
+    }
+  });
+}
+
 bindBookDesigner();
+setupAIEntityScanner();
+setupAIWritingAssistant();
+setupAIStoryWebEnhancement();
+setupAIMetricsCritique();
+setupAIAssistStudio();
+setupWriteDragDrop();
+window.addEventListener('beforeunload', () => { flushWriterSave(); });
 setupOfflineApp();initializeOfflineStorage().then(startSharedSync).finally(playIntro);

@@ -14,7 +14,8 @@
 <link rel="icon" type="image/svg+xml" href="./app-icon.svg">
 <link rel="stylesheet" href="./fonts.css">
 <style>
-:root{--danger:#c15540;--primary-text:#fff;--ease-out:cubic-bezier(.23,1,.32,1);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root{--danger:#c15540;--primary-text:#fff;--ease-out:cubic-bezier(.23,1,.32,1);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--effect-ripple:color-mix(in srgb,var(--accent2) 65%,var(--ink));--effect-ripple-glow:color-mix(in srgb,var(--accent) 30%,transparent);--effect-snow:color-mix(in srgb,var(--accent) 45%,var(--ink));--effect-cloud:color-mix(in srgb,var(--accent) 40%,var(--sub));--ripple-peak-op:0.62;--snow-opacity-mult:1.6;--cloud-opacity:0.18}
+[data-theme="dark"]{--effect-ripple:color-mix(in srgb,var(--accent) 65%,#ffffff);--effect-ripple-glow:color-mix(in srgb,var(--accent) 40%,transparent);--effect-snow:#ffffff;--effect-cloud:color-mix(in srgb,var(--ink) 80%,var(--accent));--ripple-peak-op:0.75;--snow-opacity-mult:2.4;--cloud-opacity:0.15}
 [data-palette="sage"][data-theme="light"]{--bg:#fbfcfa;--panel:#fff;--ink:#26362d;--sub:#68776e;--line:#e3eae4;--accent:#91a997;--accent2:#718b78;--card:#f1f5f1;--card-strong:#e7eee8;--primary-text:#1e3527}
 [data-palette="sage"][data-theme="dark"]{--bg:#151a16;--panel:#1c241e;--ink:#e7eee8;--sub:#a5b1a8;--line:#313a33;--accent:#9bb39f;--accent2:#8eaa94;--card:#222a24;--card-strong:#2b352e;--primary-text:#17231a}
 [data-palette="parchment"][data-theme="light"]{--bg:#faf8f4;--panel:#fff;--ink:#1f1c18;--sub:#6b645a;--line:#e8e2d8;--accent:#8a5a44;--accent2:#4a6b5a;--card:#f3efe6;--card-strong:#ece4d7}
@@ -25,20 +26,70 @@
 [data-palette="forest"][data-theme="dark"]{--bg:#141712;--panel:#1b1f17;--ink:#e6ecdd;--sub:#93a086;--line:#2c3325;--accent:#8bb377;--accent2:#d19a63;--card:#20261b;--card-strong:#2a3224}
 [data-palette="ink"][data-theme="light"]{--bg:#fafafa;--panel:#fff;--ink:#161616;--sub:#6e6e6e;--line:#e2e2e2;--accent:#8a6a3f;--accent2:#5e5e5e;--card:#f1f1f1;--card-strong:#e8e8e8}
 [data-palette="ink"][data-theme="dark"]{--bg:#121212;--panel:#191919;--ink:#ededed;--sub:#9a9a9a;--line:#2c2c2c;--accent:#c9a06b;--accent2:#a8a8a8;--card:#1f1f1f;--card-strong:#292929}
-*{box-sizing:border-box}
+*{box-sizing:border-box;scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--ink) 24%,transparent) transparent}
+[data-theme="dark"]{scrollbar-color:color-mix(in srgb,var(--ink) 30%,transparent) transparent}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--ink) 20%,transparent);border-radius:9999px;border:1.5px solid transparent;background-clip:padding-box;transition:background-color .18s ease}
+::-webkit-scrollbar-thumb:hover{background:color-mix(in srgb,var(--accent) 75%,var(--ink))}
+::-webkit-scrollbar-thumb:active{background:var(--accent)}
+[data-theme="dark"] ::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--ink) 25%,transparent)}
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+::-webkit-scrollbar-corner,::-webkit-scrollbar-button{display:none!important;width:0!important;height:0!important;background:transparent}
 html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,'Iowan Old Style',serif;min-height:100vh;transition:background .2s,color .2s}
-#bg-effect{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+#bg-effect{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;contain:strict;isolation:isolate;transform:translateZ(0)}
 .bg-layer{position:absolute;inset:0;display:none}
 html[data-bg-effect="rain"] .bg-rain{display:block}
 html[data-bg-effect="clouds"] .bg-clouds{display:block}
-.bg-rain{position:absolute;inset:0 0 -100vh;color:var(--ink);opacity:.16;background-image:repeating-linear-gradient(112deg,transparent 0 7px,currentColor 7px 8px,transparent 8px 38px);background-size:100% 100vh;animation:bgRainFall 8s linear infinite;will-change:transform}
-@keyframes bgRainFall{from{transform:translateY(0)}to{transform:translateY(-50%)}}
-.bg-clouds .cloud{position:absolute;border-radius:50%;background:var(--ink);filter:blur(28px);opacity:.1}
+html[data-bg-effect="snow"] .bg-snow{display:block}
+.bg-rain{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.ripple{position:absolute;width:104px;height:78px;margin-left:-52px;margin-top:-39px}
+.ripple::before,.ripple::after{content:"";position:absolute;inset:0;border-radius:50%;border:1.5px solid var(--effect-ripple);background:radial-gradient(ellipse at center,var(--effect-ripple-glow) 0%,transparent 65%);box-shadow:0 0 5px var(--effect-ripple-glow);opacity:0;will-change:transform,opacity;animation:bgRippleExpand 4.6s cubic-bezier(.12,.5,.22,1) infinite}
+.ripple::after{animation-delay:.42s;border-width:1px}
+@keyframes bgRippleExpand{0%{transform:scale(.06);opacity:0}14%{opacity:var(--ripple-peak-op)}100%{transform:scale(1.22);opacity:0}}
+.rip1{top:17%;left:22%;animation-delay:-.5s}
+.rip2{top:64%;left:15%;animation-delay:-2.1s;transform:scale(.85)}
+.rip3{top:32%;left:80%;animation-delay:-3.6s;transform:scale(1.1)}
+.rip4{top:78%;left:64%;animation-delay:-1.2s;transform:scale(.92)}
+.rip5{top:14%;left:72%;animation-delay:-2.8s;transform:scale(1.05)}
+.rip6{top:48%;left:36%;animation-delay:-.1s;transform:scale(.96)}
+.rip7{top:86%;left:26%;animation-delay:-3.2s;transform:scale(.8)}
+.rip8{top:24%;left:46%;animation-delay:-1.8s;transform:scale(1.16)}
+.rip9{top:60%;left:86%;animation-delay:-.7s;transform:scale(.88)}
+.rip10{top:44%;left:8%;animation-delay:-3.5s;transform:scale(1)}
+.rip11{top:72%;left:44%;animation-delay:-2.5s;transform:scale(1.08)}
+.rip12{top:12%;left:90%;animation-delay:-1.5s;transform:scale(.84)}
+.bg-clouds .cloud{position:absolute;border-radius:50%;background:var(--effect-cloud);filter:blur(32px);opacity:var(--cloud-opacity)}
 .bg-clouds .c1{width:38vw;height:14vw;top:6%;left:-25%;animation:bgCloudDrift 46s linear infinite}
 .bg-clouds .c2{width:26vw;height:10vw;top:16%;left:-30%;animation:bgCloudDrift 62s linear infinite;animation-delay:-14s;opacity:.07}
 .bg-clouds .c3{width:44vw;height:16vw;top:2%;left:-20%;animation:bgCloudDrift 80s linear infinite;animation-delay:-30s;opacity:.06}
 @keyframes bgCloudDrift{from{transform:translateX(0)}to{transform:translateX(160vw)}}
+.bg-snow{position:absolute;inset:0;color:var(--effect-snow);pointer-events:none;overflow:hidden}
+.bg-snow .flake{position:absolute;top:-20px;border-radius:50%;background:currentColor;box-shadow:0 0 3px color-mix(in srgb,currentColor 50%,transparent);will-change:transform}
+.bg-snow .f1{left:4%;width:3.5px;height:3.5px;opacity:calc(.22*var(--snow-opacity-mult));animation:bgSnowFall1 22s linear infinite -4s}
+.bg-snow .f2{left:9%;width:4.5px;height:4.5px;opacity:calc(.26*var(--snow-opacity-mult));animation:bgSnowFall2 18s linear infinite -11s}
+.bg-snow .f3{left:15%;width:2.5px;height:2.5px;opacity:calc(.18*var(--snow-opacity-mult));animation:bgSnowFall3 27s linear infinite -7s}
+.bg-snow .f4{left:21%;width:3.5px;height:3.5px;opacity:calc(.24*var(--snow-opacity-mult));animation:bgSnowFall1 20s linear infinite -16s}
+.bg-snow .f5{left:27%;width:5.5px;height:5.5px;opacity:calc(.19*var(--snow-opacity-mult));filter:blur(.5px);animation:bgSnowFall2 24s linear infinite -3s}
+.bg-snow .f6{left:33%;width:2.5px;height:2.5px;opacity:calc(.16*var(--snow-opacity-mult));animation:bgSnowFall3 31s linear infinite -19s}
+.bg-snow .f7{left:38%;width:4.5px;height:4.5px;opacity:calc(.28*var(--snow-opacity-mult));animation:bgSnowFall1 19s linear infinite -13s}
+.bg-snow .f8{left:44%;width:3.5px;height:3.5px;opacity:calc(.22*var(--snow-opacity-mult));animation:bgSnowFall2 25s linear infinite -9s}
+.bg-snow .f9{left:50%;width:2.5px;height:2.5px;opacity:calc(.18*var(--snow-opacity-mult));animation:bgSnowFall3 28s linear infinite -22s}
+.bg-snow .f10{left:56%;width:5px;height:5px;opacity:calc(.24*var(--snow-opacity-mult));animation:bgSnowFall1 21s linear infinite -2s}
+.bg-snow .f11{left:62%;width:3.5px;height:3.5px;opacity:calc(.2*var(--snow-opacity-mult));animation:bgSnowFall2 26s linear infinite -15s}
+.bg-snow .f12{left:67%;width:2.5px;height:2.5px;opacity:calc(.17*var(--snow-opacity-mult));animation:bgSnowFall3 33s linear infinite -8s}
+.bg-snow .f13{left:73%;width:4.5px;height:4.5px;opacity:calc(.26*var(--snow-opacity-mult));animation:bgSnowFall1 17s linear infinite -12s}
+.bg-snow .f14{left:78%;width:3.5px;height:3.5px;opacity:calc(.22*var(--snow-opacity-mult));animation:bgSnowFall2 23s linear infinite -5s}
+.bg-snow .f15{left:84%;width:5.5px;height:5.5px;opacity:calc(.18*var(--snow-opacity-mult));filter:blur(.5px);animation:bgSnowFall3 29s linear infinite -18s}
+.bg-snow .f16{left:89%;width:3px;height:3px;opacity:calc(.19*var(--snow-opacity-mult));animation:bgSnowFall1 25s linear infinite -10s}
+.bg-snow .f17{left:94%;width:4px;height:4px;opacity:calc(.25*var(--snow-opacity-mult));animation:bgSnowFall2 20s linear infinite -1s}
+.bg-snow .f18{left:98%;width:2.5px;height:2.5px;opacity:calc(.16*var(--snow-opacity-mult));animation:bgSnowFall3 30s linear infinite -14s}
+.bg-snow .f19{left:12%;width:3.5px;height:3.5px;opacity:calc(.22*var(--snow-opacity-mult));animation:bgSnowFall2 23s linear infinite -17s}
+.bg-snow .f20{left:81%;width:3.5px;height:3.5px;opacity:calc(.23*var(--snow-opacity-mult));animation:bgSnowFall1 22s linear infinite -6s}
+@keyframes bgSnowFall1{0%{transform:translate3d(0,0,0)}50%{transform:translate3d(14px,56vh,0)}100%{transform:translate3d(-4px,112vh,0)}}
+@keyframes bgSnowFall2{0%{transform:translate3d(0,0,0)}45%{transform:translate3d(-16px,50vh,0)}100%{transform:translate3d(10px,112vh,0)}}
+@keyframes bgSnowFall3{0%{transform:translate3d(0,0,0)}55%{transform:translate3d(18px,62vh,0)}100%{transform:translate3d(6px,112vh,0)}}
 @media(prefers-reduced-motion: reduce){#bg-effect{display:none}}
 button,input,select,textarea{font:inherit}
 button{color:inherit}
@@ -54,7 +105,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .status-pill{border:1px solid var(--line);border-radius:999px;padding:6px 10px;background:var(--panel)}
 .home-shortcut{border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:7px 11px;font:500 .78rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer;transition:background .16s,transform .16s}
 .home-shortcut:hover{background:var(--card)}
-.app-nav{display:flex;gap:5px;padding:10px 22px 0;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:thin}
+.app-nav{display:flex;gap:5px;padding:10px 22px 0;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.app-nav::-webkit-scrollbar{display:none}
 .tab{display:inline-flex;align-items:center;gap:7px;flex:none;font:500 .83rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:transparent;border:0;border-bottom:2px solid transparent;padding:10px 12px 11px;cursor:pointer;color:var(--sub);white-space:nowrap;transition:color .16s,border-color .16s,background .16s}
 .nav-meta{display:flex;align-items:center;gap:10px;flex:none;margin-left:auto;padding:0 2px 10px 12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 .nav-meta .status-pill{display:inline-flex;padding:4px 8px}
@@ -197,6 +249,42 @@ body.writer-focus #view-write .write-workspace{max-width:none}
 .btnrow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 button.primary{background:var(--accent);color:var(--primary-text);border:0;padding:9px 15px;border-radius:7px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.82rem;cursor:pointer}
 button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink);padding:9px 15px;border-radius:7px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.82rem;cursor:pointer}
+/* AI Features Styling */
+.ai-action-btn{display:inline-flex;align-items:center;gap:6px;font-weight:600;transition:transform .15s,filter .15s;cursor:pointer}
+.ai-action-btn:hover{filter:brightness(1.05);transform:translateY(-1px)}
+.ai-spark-icon{width:15px;height:15px;color:var(--accent);flex:none}
+.char-actions-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:0 0 16px;padding:12px 16px;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.char-actions-note{font-size:.76rem;color:var(--sub)}
+.ai-entities-panel{background:var(--panel);border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line));border-radius:12px;padding:18px;margin-bottom:20px;box-shadow:0 6px 20px #18201912}
+.ai-entities-panel[hidden]{display:none}
+.ai-entities-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.ai-entities-tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:14px;overflow-x:auto}
+.ai-tab-btn{background:transparent;border:0;border-bottom:2px solid transparent;padding:8px 12px;font:600 .78rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer;color:var(--sub)}
+.ai-tab-btn.active{color:var(--ink);border-color:var(--accent)}
+.ai-entities-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.ai-entity-card{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.ai-entity-card h4{margin:0;font-size:.88rem;display:flex;align-items:center;justify-content:space-between}
+.ai-entity-badge{font-size:.65rem;text-transform:uppercase;padding:2px 6px;border-radius:4px;background:color-mix(in srgb,var(--accent) 25%,var(--panel));color:var(--ink);font-weight:600}
+.ai-entity-desc{font-size:.74rem/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub)}
+.ai-craft-drawer{background:var(--panel);border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line));border-radius:10px;padding:16px;margin:10px 0 16px;box-shadow:0 6px 20px #18201912}
+.ai-craft-drawer[hidden]{display:none}
+.ai-craft-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ai-craft-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.ai-craft-preset-btn{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 11px;font:500 .75rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer;color:var(--ink)}
+.ai-craft-preset-btn:hover{background:var(--card-strong);border-color:var(--accent)}
+.ai-craft-input-row{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.ai-craft-input-row input{flex:1;padding:8px 10px;font-size:.82rem;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+.ai-craft-result{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:14px;font:.88rem/1.6 Georgia,serif;color:var(--ink);white-space:pre-wrap;max-height:260px;overflow-y:auto;margin-top:10px}
+.ai-critique-shell{background:var(--panel);border:1px solid color-mix(in srgb,var(--accent2) 38%,var(--line));border-radius:12px;padding:18px;margin-bottom:18px}
+.ai-critique-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:14px}
+.ai-critique-box{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:14px}
+.ai-critique-box h4{margin:0 0 6px;font:650 .82rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--accent2)}
+.ai-critique-box p{margin:0;font:.76rem/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--ink)}
+.ai-recs-list{margin:6px 0 0;padding-left:18px;font:.76rem/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--ink)}
+.ai-web-panel{background:var(--panel);border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line));border-radius:10px;padding:14px;margin-bottom:12px}
+.ai-web-panel[hidden]{display:none}
+.ai-loading-spinner{display:inline-block;width:14px;height:14px;border:2px solid color-mix(in srgb,var(--accent) 30%,transparent);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
 /* Finalise */
 .finalise-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(250px,.8fr);gap:15px;align-items:start}
 .checklist{display:grid;gap:9px;margin-top:15px}
@@ -339,7 +427,8 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
 .writer-back{flex:none;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink);font:600 .78rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer}
 .writer-command-bar select{min-width:160px;max-width:min(38vw,340px);padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink);font: .82rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 .write-workspace .toolbar{position:sticky;top:6px;z-index:5;background:var(--panel)}
-.write-workspace [contenteditable]{display:block;box-sizing:border-box;width:min(100%,816px);min-height:1056px;margin:18px auto 0;border:1px solid var(--line);border-radius:2px;padding:84px 82px;background:var(--panel);box-shadow:0 2px 16px #00000012;overflow:visible}
+.write-workspace [contenteditable]{display:block;box-sizing:border-box;width:min(100%,816px);min-height:1056px;margin:18px auto 0;border:1px solid var(--line);border-radius:2px;padding:84px 82px;background:var(--panel);box-shadow:0 2px 16px #00000012;overflow:visible;contain:layout style;text-rendering:optimizeSpeed;outline:none;caret-color:var(--accent);transition:none}
+.write-drag-over{outline:2px dashed var(--accent)!important;outline-offset:-6px;background:color-mix(in srgb,var(--card) 88%,var(--accent))!important}
 .write-workspace .editor input[type=text]{margin:8px 0 12px;font-size:1.3rem}
 #view-write{width:100%;max-width:100%;margin:0;padding:20px 0 44px}
 #view-write:has(.write-workspace:not([hidden])){padding-top:8px;background:var(--card)}
@@ -429,8 +518,19 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
 </head>
 <body>
 <div id="bg-effect" aria-hidden="true">
-  <div class="bg-layer bg-rain"></div>
+  <div class="bg-layer bg-rain">
+    <div class="ripple rip1"></div><div class="ripple rip2"></div><div class="ripple rip3"></div><div class="ripple rip4"></div>
+    <div class="ripple rip5"></div><div class="ripple rip6"></div><div class="ripple rip7"></div><div class="ripple rip8"></div>
+    <div class="ripple rip9"></div><div class="ripple rip10"></div><div class="ripple rip11"></div><div class="ripple rip12"></div>
+  </div>
   <div class="bg-layer bg-clouds"><span class="cloud c1"></span><span class="cloud c2"></span><span class="cloud c3"></span></div>
+  <div class="bg-layer bg-snow">
+    <span class="flake f1"></span><span class="flake f2"></span><span class="flake f3"></span><span class="flake f4"></span>
+    <span class="flake f5"></span><span class="flake f6"></span><span class="flake f7"></span><span class="flake f8"></span>
+    <span class="flake f9"></span><span class="flake f10"></span><span class="flake f11"></span><span class="flake f12"></span>
+    <span class="flake f13"></span><span class="flake f14"></span><span class="flake f15"></span><span class="flake f16"></span>
+    <span class="flake f17"></span><span class="flake f18"></span><span class="flake f19"></span><span class="flake f20"></span>
+  </div>
 </div>
 <div class="splash" id="splash" aria-label="Opening Loomwright">
   <div class="splash-content">
@@ -506,14 +606,52 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
             <div class="write-library-copy"><div class="eyebrow">Loomwright writing desk</div><h2 id="write-title">Where would you like to begin?</h2><p>Open a recent document or start a new one. Your writing stays saved on this device.</p></div>
             <div class="write-library-actions"><button class="primary-button" id="create-blank-doc" type="button">＋ New document</button><label class="secondary-button upload-button" for="file-input">⇪ Import documents</label><input type="file" id="file-input" accept=".txt,.docx,.pdf" multiple hidden></div>
           </div>
-          <section class="write-library-documents" aria-labelledby="document-list-title"><div class="write-library-heading"><h3 id="document-list-title">Recent documents</h3><span id="write-document-count"></span></div><div class="document-list" id="document-list" aria-live="polite"></div></section>
+          <section class="write-library-documents" aria-labelledby="document-list-title"><div class="write-library-heading"><h3 id="document-list-title">Recent documents</h3><div style="display:flex;align-items:center;gap:8px"><span id="write-document-count"></span><button class="secondary-button" id="sort-chapters-btn" type="button" style="padding:3px 9px;font-size:.72rem" title="Order chapters in natural sequence by title">↕ Sort by title</button></div></div><div class="document-list" id="document-list" aria-live="polite"></div></section>
           <section class="template-library" aria-labelledby="template-library-title">
             <div class="template-library-heading"><div><h3 id="template-library-title">Templates</h3><p>Start a new section from one of your writing templates.</p></div><div class="template-library-actions"><span class="template-count" id="template-count"></span><label class="secondary-button upload-button" for="template-file-input">＋ Add template</label><input id="template-file-input" type="file" accept=".txt,.docx" multiple hidden></div></div>
             <div class="template-grid" id="template-grid" aria-live="polite"></div>
           </section>
         </section>
         <section class="write-workspace" id="write-workspace" aria-label="Writing workspace" hidden>
-          <div class="writer-command-bar"><button class="writer-back" id="write-back" type="button">← Documents</button><div class="writer-command-actions"><select id="section-select" aria-label="Choose a section"></select><button class="addbtn" id="add-section" type="button">＋ Chapter</button></div></div>
+          <div class="writer-command-bar">
+            <button class="writer-back" id="write-back" type="button">← Documents</button>
+            <div class="writer-command-actions">
+              <select id="section-select" aria-label="Choose a section"></select>
+              <button class="secondary-button" id="writer-sort-chapters-btn" type="button" style="padding:6px 10px;font-size:.75rem" title="Order chapters in natural sequence by title">↕ Sort</button>
+              <button class="addbtn" id="add-section" type="button">＋ Chapter</button>
+              <button class="secondary-button ai-action-btn" id="btn-write-ai-toggle" type="button">
+                <svg class="ai-spark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z"/></svg>
+                AI Craft
+              </button>
+            </div>
+          </div>
+          <div id="write-ai-drawer" class="ai-craft-drawer" hidden>
+            <div class="ai-craft-header">
+              <strong style="font-size:.86rem;display:flex;align-items:center;gap:6px">
+                <svg class="ai-spark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z"/></svg>
+                AI Craft Assistant
+              </strong>
+              <button class="secondary-button" type="button" id="write-ai-close" style="padding:3px 8px;font-size:.72rem">Close</button>
+            </div>
+            <div class="ai-craft-presets">
+              <button type="button" class="ai-craft-preset-btn" data-action="continue">Continue scene</button>
+              <button type="button" class="ai-craft-preset-btn" data-action="sensory">Deepen sensory detail</button>
+              <button type="button" class="ai-craft-preset-btn" data-action="polish">Tighten &amp; polish</button>
+              <button type="button" class="ai-craft-preset-btn" data-action="dialogue">Spark dialogue</button>
+            </div>
+            <div class="ai-craft-input-row">
+              <input type="text" id="write-ai-custom-input" placeholder="Or custom request (e.g. heighten subtle tension, add dialogue beat)...">
+              <button type="button" class="primary-button ai-action-btn" id="write-ai-custom-submit">Send</button>
+            </div>
+            <div id="write-ai-output-wrap" hidden>
+              <div id="write-ai-output" class="ai-craft-result"></div>
+              <div class="btnrow" style="margin-top:8px">
+                <button type="button" class="primary" id="write-ai-insert">Insert into text</button>
+                <button type="button" class="ghost" id="write-ai-replace">Replace selection</button>
+                <button type="button" class="ghost" id="write-ai-copy">Copy</button>
+              </div>
+            </div>
+          </div>
           <div class="editor" id="editor-wrap"></div>
         </section>
       </div>
@@ -521,11 +659,32 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
 
     <section class="view" id="view-metrics" aria-labelledby="metrics-title">
       <div class="page-intro"><h2 id="metrics-title">Metrics</h2><p>Track your momentum, chapter pacing, and character presence as the draft evolves.</p></div>
+      <div class="ai-critique-shell" id="ai-critique-shell">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div>
+            <h3 style="margin:0;font-size:1.05rem;font-weight:400;display:flex;align-items:center;gap:6px">
+              <svg class="ai-spark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z"/></svg>
+              AI Editorial Manuscript Critique
+            </h3>
+            <p style="margin:4px 0 0;font-size:.76rem;color:var(--sub)">Comprehensive analysis of chapter pacing, character balance, tone trajectory, and revision steps.</p>
+          </div>
+          <button class="primary-button ai-action-btn" id="btn-generate-critique" type="button">Generate Critique</button>
+        </div>
+        <div id="ai-critique-content" style="margin-top:14px" hidden></div>
+      </div>
       <div class="metrics-shell" id="metrics-shell"></div>
     </section>
 
     <section class="view" id="view-characters" aria-labelledby="characters-title">
       <div class="page-intro"><h2 id="characters-title">Characters</h2><p>Recurring names are gathered from your manuscript. Add notes to keep each person’s details in view.</p></div>
+      <div class="char-actions-bar">
+        <button class="primary-button ai-action-btn" type="button" id="btn-ai-scan-entities">
+          <svg class="ai-spark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z"/></svg>
+          Scan Manuscript with AI
+        </button>
+        <span class="char-actions-note">AI logically analyzes chapters to distinguish characters, places, and key events.</span>
+      </div>
+      <div id="ai-entities-panel" class="ai-entities-panel" hidden></div>
       <div id="char-grid" class="char-grid"></div>
     </section>
 
@@ -533,7 +692,15 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
       <div class="page-intro"><h2 id="web-title">Story Web</h2><p>Map your manuscript from left to right. Arrange the nodes and connect story details as they develop.</p></div>
       <div class="web-controls" aria-label="Filter story nodes"><label for="web-category">Show</label><select id="web-category" aria-label="Filter by node type"><option value="all">All nodes</option><option value="story">Story and chapters</option><option value="character">Characters</option><option value="place">Places</option><option value="event">Events</option><option value="object">Objects</option><option value="thread">Story threads</option></select><label for="web-status">Character status</label><select id="web-status" aria-label="Filter characters by status"><option value="all">All statuses</option><option value="alive">Alive</option><option value="dead">Dead</option><option value="injured">Injured</option><option value="missing">Missing</option><option value="presumed-dead">Presumed dead</option><option value="captured">Captured</option><option value="recovering">Recovering</option><option value="unknown">Unknown</option></select></div>
       <form id="web-add-form" class="web-controls" aria-label="Add a story node"><label for="web-add-type">Add</label><select id="web-add-type" aria-label="New node type"><option value="place">Place</option><option value="event">Event</option><option value="object">Object</option><option value="thread">Story thread</option></select><input id="web-add-label" type="text" maxlength="80" placeholder="Name a node" aria-label="Node name" required><button class="primary" type="submit">Add node</button><button class="ghost" id="web-remove-node" type="button" disabled>Remove selected</button></form>
-      <div class="web-map-toolbar"><div class="web-map-tools"><button id="web-zoom-out" type="button" aria-label="Zoom out" title="Zoom out">−</button><span class="web-map-scale" id="web-zoom-level">100%</span><button id="web-zoom-in" type="button" aria-label="Zoom in" title="Zoom in">+</button><button id="web-fit" type="button" aria-label="Fit map" title="Fit map to view">Fit</button></div><span id="web-map-count">0 nodes · 0 links</span></div>
+      <div class="web-map-toolbar">
+        <div class="web-map-tools"><button id="web-zoom-out" type="button" aria-label="Zoom out" title="Zoom out">−</button><span class="web-map-scale" id="web-zoom-level">100%</span><button id="web-zoom-in" type="button" aria-label="Zoom in" title="Zoom in">+</button><button id="web-fit" type="button" aria-label="Fit map" title="Fit map to view">Fit</button></div>
+        <span id="web-map-count">0 nodes · 0 links</span>
+        <button id="btn-ai-enhance-web" class="secondary-button ai-action-btn" type="button" style="margin-left:auto;padding:5px 11px;font-size:.74rem">
+          <svg class="ai-spark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z"/></svg>
+          Enhance Web with AI
+        </button>
+      </div>
+      <div id="ai-web-panel" class="ai-web-panel" hidden></div>
       <div class="node-graph-wrap"><svg id="webcanvas" role="img" aria-label="Scrollable story map with draggable nodes and connection ports"></svg></div>
       <div class="web-legend" aria-label="Node types"><span><i class="legend-story"></i>Story</span><span><i class="legend-chapter"></i>Chapter</span><span><i class="legend-character"></i>Character</span><span><i></i>Story detail</span></div>
       <div id="web-selection" class="web-selection" role="status" aria-live="polite"></div>
@@ -542,16 +709,35 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
     </section>
 
     <section class="view" id="view-ai" aria-labelledby="ai-title">
-      <div class="page-intro"><h2 id="ai-title">AI Assist</h2><p>Choose a section, copy a prompt to Claude or ChatGPT, then decide whether to use any suggestions.</p></div>
+      <div class="page-intro"><h2 id="ai-title">AI Assist Studio</h2><p>Direct manuscript analysis, line polishing, and creative collaboration powered by Gemini.</p></div>
       <div class="ai-box">
         <label for="ai-section">Section to send</label><select id="ai-section"></select>
-        <label for="ai-template">Prompt template</label><textarea id="ai-template">Here is a section from my story. Please suggest improvements to pacing, clarity, and voice. Keep my style, just tighten and elevate it.
-
----
-{{TEXT}}</textarea>
-        <div class="btnrow"><button class="primary" type="button" id="copy-prompt">Copy Prompt for Claude/ChatGPT</button></div>
-        <label for="ai-response">Paste AI response back here</label><textarea id="ai-response" placeholder="Paste what Claude or ChatGPT gave you..."></textarea>
-        <div class="btnrow"><button class="ghost" type="button" id="insert-response">Insert into current section</button></div>
+        <label for="ai-mode-select">Craft goal</label>
+        <select id="ai-mode-select">
+          <option value="polish">Tighten &amp; Elevate Prose (Line Editing)</option>
+          <option value="sensory">Deepen Sensory Atmosphere &amp; Setting</option>
+          <option value="dialogue">Sharpen Dialogue &amp; Character Subtext</option>
+          <option value="continue">Propose Next Scene Continuation</option>
+          <option value="custom">Custom Craft Instruction</option>
+        </select>
+        <div id="ai-custom-prompt-wrap" hidden>
+          <label for="ai-custom-prompt">Your instruction</label>
+          <input type="text" id="ai-custom-prompt" placeholder="e.g. Focus on Elena’s internal dilemma..." style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)">
+        </div>
+        <div class="btnrow">
+          <button class="primary ai-action-btn" type="button" id="btn-run-ai-direct">
+            <svg class="ai-spark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z"/></svg>
+            Run AI Craft Analysis
+          </button>
+        </div>
+        <div id="ai-direct-output-wrap" hidden style="margin-top:16px">
+          <label id="ai-direct-output-label">AI Craft Response</label>
+          <div id="ai-direct-output" class="ai-craft-result"></div>
+          <div class="btnrow">
+            <button class="primary" type="button" id="ai-insert-direct">Insert into section</button>
+            <button class="ghost" type="button" id="ai-copy-direct">Copy to clipboard</button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -610,7 +796,7 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
                 <div class="setting-row"><div class="setting-copy"><strong>Theme</strong><small>Use a light or dark surface, or follow your device setting.</small></div><select id="theme-select" aria-label="Theme"><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
               </div>
               <div class="settings-block"><h4 class="settings-block-title">Atmosphere</h4>
-                <div class="setting-row"><div class="setting-copy"><strong>Background effect</strong><small>A quiet animated backdrop behind the app. Off by default to save power.</small></div><select id="bg-effect-select" aria-label="Background effect"><option value="none">None</option><option value="rain">Rain</option><option value="clouds">Drifting clouds</option></select></div>
+                <div class="setting-row"><div class="setting-copy"><strong>Background effect</strong><small>A quiet animated backdrop behind the app. Off by default to save power.</small></div><select id="bg-effect-select" aria-label="Background effect"><option value="none">None</option><option value="rain">Water ripples</option><option value="clouds">Drifting clouds</option><option value="snow">Snow</option></select></div>
                 <div class="setting-row"><div class="setting-copy"><strong>Opening animation</strong><small>Replay the short Loomwright welcome.</small></div><button class="secondary-button" type="button" id="replay-intro">Replay intro</button></div>
               </div>
             </div>

@@ -9,6 +9,7 @@
     "build": "node -e \"console.log('Build complete')\""
   },
   "dependencies": {
+    "@google/genai": "^2.27.0",
     "express": "^5.2.1"
   }
 }
