@@ -11,7 +11,7 @@
   if(!['auto','light','dark'].includes(theme))theme='light';
   if(palette==='parchment'&&theme==='auto'){palette='sage';theme='light'}
   else if(theme==='auto')theme=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
-  if(!['none','rain','clouds','snow'].includes(effect))effect='none';
+  if(!['none','rain','clouds','snow','dragon'].includes(effect))effect='none';
   root.dataset.palette=palette;root.dataset.theme=theme;root.dataset.bgEffect=effect;
   const themeColor=document.querySelector('meta[name="theme-color"]'),background=getComputedStyle(root).getPropertyValue('--bg').trim();
   if(themeColor&&background)themeColor.content=background;
@@ -48,6 +48,11 @@
           layer.appendChild(span);
         }
         bg.appendChild(layer);
+      }
+      const dragons=bg.querySelector('.bg-dragons'),firstDragon=dragons?.querySelector('.dragon-flight-one');
+      if(dragons&&firstDragon&&!dragons.querySelector('.dragon-flight-two')){
+        const second=firstDragon.cloneNode(true);second.classList.remove('dragon-flight-one');second.classList.add('dragon-flight-two');dragons.appendChild(second);
+        const third=firstDragon.cloneNode(true);third.classList.remove('dragon-flight-one');third.classList.add('dragon-flight-three');dragons.appendChild(third);
       }
     }
   }

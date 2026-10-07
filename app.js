@@ -7,7 +7,7 @@ window.pdfjsLib=pdfjsLib;
 pdfjsLib.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdfjs/build/pdf.worker.min.mjs',import.meta.url).href;
 const PDF_CMAP_URL=new URL('./vendor/pdfjs/cmaps/',import.meta.url).href;
 const PDF_STANDARD_FONT_URL=new URL('./vendor/pdfjs/standard_fonts/',import.meta.url).href;
-const APP_VERSION='1.4.0';
+const APP_VERSION='1.5.0';
 const PROJECT_RECORD_VERSION=3;
 const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,charNotes:{},charStatus:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webPositions:{},webNodes:[],webLinks:[],templates:[]};
 const PROJECTS_STORAGE_KEY='loomwright_projects_v1',ACTIVE_PROJECT_KEY='loomwright_active_project_v1',APP_SETTINGS_KEY='loomwright_app_settings_v1',DELETED_PROJECTS_STORAGE_KEY='loomwright_deleted_projects_v1';
@@ -66,7 +66,7 @@ async function screenImportFile(file){
 }
 function newProjectId(){return 'project-'+(window.crypto?.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2,9))}
 function newProjectState(){return {...DEFAULT_STATE,sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],charNotes:{},charStatus:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webNodes:[],webLinks:[],templates:[],book:{...DEFAULT_BOOK}}}
-function normalizeSettings(settings){const next={palette:'sage',theme:'light',bgEffect:'none',...(settings||{})};if(!['sage','parchment','slate','forest','ink'].includes(next.palette))next.palette='sage';if(!['auto','light','dark'].includes(next.theme))next.theme='light';if(!['none','rain','clouds','snow'].includes(next.bgEffect))next.bgEffect='none';if(next.palette==='parchment'&&next.theme==='auto'){next.palette='sage';next.theme='light'}return next}
+function normalizeSettings(settings){const next={palette:'sage',theme:'light',bgEffect:'none',...(settings||{})};if(!['sage','parchment','slate','forest','ink'].includes(next.palette))next.palette='sage';if(!['auto','light','dark'].includes(next.theme))next.theme='light';if(!['none','rain','clouds','snow','dragon'].includes(next.bgEffect))next.bgEffect='none';if(next.palette==='parchment'&&next.theme==='auto'){next.palette='sage';next.theme='light'}return next}
 function normalizeProjectState(value){const next=value&&typeof value==='object'?value:newProjectState();if(!Array.isArray(next.sections)||!next.sections.length)next.sections=newProjectState().sections;next.sections=next.sections.filter(s=>s&&typeof s==='object').map(s=>({...s,html:sanitizeRichHtml(s.html||'')}));if(!next.sections.length)next.sections=newProjectState().sections;delete next.settings;next.charNotes=next.charNotes||{};next.charStatus=next.charStatus||{};next.finaliseChecklist=next.finaliseChecklist||{};next.charIgnore=next.charIgnore||{};next.charMerge=next.charMerge||{};next.webPositions=next.webPositions||{};next.webNodes=Array.isArray(next.webNodes)?next.webNodes.filter(node=>node&&['place','event','object','thread'].includes(node.type)&&String(node.label||'').trim()).map(node=>({id:String(node.id||newProjectId()),type:node.type,label:String(node.label).trim().slice(0,80)})):[];next.webLinks=Array.isArray(next.webLinks)?next.webLinks.filter(link=>link&&typeof link.from==='string'&&typeof link.to==='string'):[];next.templates=Array.isArray(next.templates)?next.templates.filter(template=>template&&String(template.title||'').trim()&&typeof template.html==='string'&&template.html.length<=MAX_TEMPLATE_HTML_CHARS).slice(0,MAX_PROJECT_TEMPLATES).map(template=>({id:String(template.id||newProjectId()),title:String(template.title).trim().slice(0,120),html:sanitizeRichHtml(template.html),createdAt:template.createdAt||new Date().toISOString()})):[];next.book={...DEFAULT_BOOK,...(next.book||{})};return next}
 let legacyState=null,projectStore=null;
 try{legacyState=JSON.parse(localStorage.getItem('loomwright_state')||'null')}catch(e){}
@@ -138,7 +138,7 @@ function setupOfflineApp(){
   window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;updateInstallButton();setOfflineAppStatus('Loomwright is installed. Use “Prepare offline” once while connected to save all app files.')});
   if(isLocalPreview()){setOfflineAppStatus('Local preview · refresh this tab after app files change.');clearOfflinePreviewCache();return}
   if(!('serviceWorker'in navigator)||!window.isSecureContext){setOfflineAppStatus('Offline installation needs a secure website address. Open Loomwright once while connected, then prepare the offline copy.');return}
-  if('caches'in window){caches.keys().then(names=>names.filter(n=>n.startsWith('loomwright-offline-')&&n!=='loomwright-offline-v22').forEach(n=>caches.delete(n))).catch(()=>{});}
+  if('caches'in window){caches.keys().then(names=>names.filter(n=>n.startsWith('loomwright-offline-')&&n!=='loomwright-offline-v23').forEach(n=>caches.delete(n))).catch(()=>{});}
   navigator.serviceWorker.register(new URL('./sw.js',import.meta.url),{scope:new URL('./',import.meta.url).pathname}).then(async registration=>{
     try{await registration.update()}catch(_){}
     await navigator.serviceWorker.ready;
@@ -463,6 +463,13 @@ function renderHome(){
   document.getElementById('home-resume-edited').textContent=project?.updatedAt?`Edited ${formatProjectDate(project.updatedAt)}`:'Ready when you are';
   document.getElementById('home-resume-excerpt').textContent=excerpt?`“${excerpt.slice(0,180)}${excerpt.length>180?'…':''}”`:'Pick up where you left off and continue shaping the thread that connects it all.';
   if(resume)resume.onclick=()=>{switchView('write');openSection(activeSection?.id)};
+  const characterPreview=document.getElementById('home-character-stack'),detectedCharacters=detectCharacters().slice(0,5);
+  if(characterPreview)characterPreview.innerHTML=detectedCharacters.length?detectedCharacters.map(([name])=>`<span class="character-avatar" title="${escapeHtml(name)}">${escapeHtml(name.split(/\s+/).map(part=>part[0]).join('').slice(0,2).toUpperCase())}</span>`).join(''):'<span class="character-stack-empty">Your recurring characters will appear here.</span>';
+  const characterLiveCount=document.getElementById('home-character-live-count');if(characterLiveCount)characterLiveCount.textContent=`${characters.toLocaleString()} recurring`;
+  const webPreview=document.getElementById('home-web-preview'),webNodes=[...detectedCharacters.map(([name])=>name),...(state.webNodes||[]).map(node=>node.label)].slice(0,6);if(webPreview)webPreview.innerHTML=webNodes.length?webNodes.map((label,index)=>`<span class="web-mini-node web-mini-node-${index+1}" title="${escapeHtml(label)}">${escapeHtml(label.slice(0,1).toUpperCase())}</span>`).join(''):'<span class="web-mini-empty">Add a connection in Story Web.</span>';
+  const webLiveCount=document.getElementById('home-web-live-count');if(webLiveCount)webLiveCount.textContent=`${(characters+(state.webNodes||[]).length).toLocaleString()} story nodes`;
+  const ringValue=document.getElementById('home-finalise-ring-value'),ring=document.querySelector('.bento-progress-ring');if(ringValue)ringValue.textContent=`${pct}%`;if(ring)ring.style.setProperty('--finalise-progress',`${pct}%`);
+  const recentList=document.getElementById('home-recent-sections'),recentSections=[activeSection,...state.sections.filter(section=>section!==activeSection)].filter(Boolean).slice(0,4);if(recentList){recentList.innerHTML=recentSections.map(section=>`<button class="home-recent-item" type="button" data-home-section="${escapeHtml(String(section.id))}"><span class="home-recent-index">${escapeHtml((section.title||'U').trim().slice(0,1).toUpperCase())}</span><span><strong>${escapeHtml(section.title||'Untitled section')}</strong><small>${wc(section.html||'').toLocaleString()} words</small></span><span class="home-recent-arrow">→</span></button>`).join('');recentList.querySelectorAll('[data-home-section]').forEach(button=>button.addEventListener('click',()=>{switchView('write');openSection(button.dataset.homeSection)}))}
 }
 function renderDocumentList(){
   const list=document.getElementById('document-list');
