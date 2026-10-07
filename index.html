@@ -139,6 +139,7 @@ main{padding:24px 28px 44px}
 .eyebrow{font:700 .68rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
 .welcome-panel h2{font-size:clamp(1.9rem,4vw,2.8rem);font-weight:400;line-height:1.08;letter-spacing:-.025em;margin:9px 0 9px;max-width:600px}
 .welcome-panel p{color:var(--sub);font: .96rem/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;max-width:590px}
+.resume-project{margin-top:11px;color:var(--ink);font:600 .84rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}.resume-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:13px;color:var(--sub);font:.72rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}.resume-meta span+span:before{content:'·';margin-right:10px;color:var(--line)}.resume-panel .welcome-actions{margin-top:20px}
 .welcome-actions{display:flex;align-items:center;gap:12px;margin-top:18px;flex-wrap:wrap}
 .primary-button,.secondary-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;border-radius:9px;padding:10px 15px;font:600 .83rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer;transition:transform .15s var(--ease-out),filter .15s,background .15s}
 .primary-button{background:var(--accent);border:1px solid var(--accent);color:var(--primary-text)}
@@ -159,7 +160,7 @@ main{padding:24px 28px 44px}
 .stat-icon svg{width:18px;height:18px}.stat-value{font:650 1rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}.stat-label{font:.72rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub);margin-top:2px}
 .section-heading{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:25px 0 12px}
 .section-heading h3{font-size:1.22rem;font-weight:400;margin:0}.section-heading p{font:.78rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub);margin:4px 0 0}
-.tile-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.tile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .home-tile{min-height:151px;text-align:left;position:relative;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:17px 17px 15px;cursor:pointer;transition:transform .2s var(--ease-out),box-shadow .2s,border-color .2s,background .2s;display:flex;flex-direction:column;align-items:flex-start}
 .home-tile:hover{transform:translateY(-3px);box-shadow:0 8px 22px #241a1010;border-color:color-mix(in srgb,var(--accent) 40%,var(--line));background:color-mix(in srgb,var(--panel) 80%,var(--card))}
 .tile-icon{width:39px;height:39px;border-radius:11px;background:var(--card);color:var(--accent);display:grid;place-items:center;margin-bottom:15px}
@@ -568,12 +569,14 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
   </nav>
   <main>
     <section class="view active" id="view-home" aria-labelledby="home-title">
-      <div class="welcome-panel">
-        <div>
-          <div class="eyebrow">Your writing desk</div>
+      <div class="welcome-panel resume-panel">
+        <div class="resume-copy">
+          <div class="eyebrow">Resume writing</div>
+          <div class="resume-project" id="home-project-context">My First Project</div>
           <h2 id="home-title">Where your story takes shape.</h2>
-          <p>Pick up where you left off, keep track of the people in your story, and follow the threads that connect it all.</p>
-          <div class="welcome-actions"><button class="primary-button" type="button" data-open-view="write">Continue writing <span aria-hidden="true">→</span></button><button class="secondary-button" type="button" data-open-view="finalise">Open Finalise</button></div>
+          <p id="home-resume-excerpt">Pick up where you left off and continue shaping the thread that connects it all.</p>
+          <div class="resume-meta"><span id="home-resume-section">Chapter 1</span><span id="home-resume-words">0 words</span><span id="home-resume-edited">Ready when you are</span></div>
+          <div class="welcome-actions"><button class="primary-button" id="home-continue-writing" type="button">Continue writing <span aria-hidden="true">→</span></button><button class="secondary-button" type="button" data-open-view="finalise">Open Finalise</button></div>
         </div>
         <div class="welcome-art" aria-hidden="true"><div class="orbit"></div><div class="art-book"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 10c7-2 12 0 16 4 4-4 9-6 16-4v26c-7-2-12 0-16 4-4-4-9-6-16-4z"/><path d="M24 14v26M13 16c3-.5 6 0 8 1m-8 5c3-.5 6 0 8 1m14-7c-3-.5-6 0-8 1m8 5c-3-.5-6 0-8 1"/></svg></div></div>
       </div>
@@ -582,14 +585,10 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
         <div class="stat-card"><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5h16v15H4zM8 3v4m8-4v4M7 11h3m4 0h3M7 15h3"/></svg></span><div><div class="stat-value" id="home-section-count">1</div><div class="stat-label">Sections</div></div></div>
         <div class="stat-card"><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M17 8a2.5 2.5 0 1 1 0 5m1 2c2 .6 3 2 3 4"/></svg></span><div><div class="stat-value" id="home-character-count">0</div><div class="stat-label">Recurring characters</div></div></div>
       </div>
-      <div class="project-home-strip"><div class="project-home-copy"><strong>Current project: <span id="project-current-name">My First Project</span></strong><span id="project-home-count">1 project saved on this device</span></div><button class="secondary-button" type="button" data-open-view="projects">Open Projects →</button></div>
-      <div class="section-heading"><div><h3>Your workspaces</h3><p>Choose a place to continue shaping your story.</p></div></div>
+      <div class="section-heading"><div><h3>Jump back in</h3><p>Keep the people and connections in your manuscript close.</p></div><button class="secondary-button" type="button" data-open-view="projects">All projects →</button></div>
       <div class="tile-grid">
-        <button class="home-tile" type="button" data-open-view="projects"><span class="tile-arrow" aria-hidden="true">↗</span><span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7.5h7l2 2h9v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2"/></svg></span><span class="tile-title">Projects</span><span class="tile-desc">Create separate books and switch between your work.</span></button>
-        <button class="home-tile" type="button" data-open-view="write"><span class="tile-arrow" aria-hidden="true">↗</span><span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m15 5 4 4M4 20l4-.8L19 8a2.8 2.8 0 0 0-4-4L4 15z"/></svg></span><span class="tile-title">Write</span><span class="tile-desc">Draft and organize your sections in one quiet space.</span></button>
         <button class="home-tile" type="button" data-open-view="characters"><span class="tile-arrow" aria-hidden="true">↗</span><span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5.5a3 3 0 0 1 0 5.8M18 14c2 .8 3 2.5 3 5"/></svg></span><span class="tile-title">Characters</span><span class="tile-desc">Keep recurring names, notes, and appearances close.</span></button>
         <button class="home-tile" type="button" data-open-view="web"><span class="tile-arrow" aria-hidden="true">↗</span><span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="5" cy="5" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="19" r="2"/><path d="m7 6 10-1M6 7l5 10m7-9-5 10"/></svg></span><span class="tile-title">Story Web</span><span class="tile-desc">See which characters appear together across sections.</span></button>
-        <button class="home-tile" type="button" data-open-view="settings"><span class="tile-arrow" aria-hidden="true">↗</span><span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 3.1-.2-.1a1.7 1.7 0 0 0-1.8-.2 1.7 1.7 0 0 0-1 1.5v.2h-3.6v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.2l-.2.1-1.8-3.1.1-.1A1.7 1.7 0 0 0 7 15a1.7 1.7 0 0 0-1.5-1H5.3v-3.6h.2A1.7 1.7 0 0 0 7 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-3.1.2.1a1.7 1.7 0 0 0 1.8.2 1.7 1.7 0 0 0 1-1.5v-.2H15v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.2l.2-.1 1.8 3.1-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.2v3.6h-.2a1.7 1.7 0 0 0-1.5 1z"/></svg></span><span class="tile-title">Settings</span><span class="tile-desc">Choose a palette, theme, and opening experience.</span></button>
       </div>
       <div class="finalise-card">
         <div class="finalise-card-main"><span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m5 12 4 4L19 6"/><path d="M20 12a8 8 0 1 1-4-6.9"/></svg></span><div><h4>Finalise your manuscript</h4><p>A calm last-pass checklist and export options for when you’re ready to share.</p><div class="finalise-progress-wrap"><div class="progress-track"><div class="progress-fill" id="home-finalise-progress"></div></div><span class="progress-label" id="home-finalise-label">0 of 5 ready</span></div></div></div>

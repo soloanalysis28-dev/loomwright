@@ -7,7 +7,7 @@ window.pdfjsLib=pdfjsLib;
 pdfjsLib.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdfjs/build/pdf.worker.min.mjs',import.meta.url).href;
 const PDF_CMAP_URL=new URL('./vendor/pdfjs/cmaps/',import.meta.url).href;
 const PDF_STANDARD_FONT_URL=new URL('./vendor/pdfjs/standard_fonts/',import.meta.url).href;
-const APP_VERSION='1.3.3';
+const APP_VERSION='1.4.0';
 const PROJECT_RECORD_VERSION=3;
 const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,charNotes:{},charStatus:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webPositions:{},webNodes:[],webLinks:[],templates:[]};
 const PROJECTS_STORAGE_KEY='loomwright_projects_v1',ACTIVE_PROJECT_KEY='loomwright_active_project_v1',APP_SETTINGS_KEY='loomwright_app_settings_v1',DELETED_PROJECTS_STORAGE_KEY='loomwright_deleted_projects_v1';
@@ -138,7 +138,7 @@ function setupOfflineApp(){
   window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;updateInstallButton();setOfflineAppStatus('Loomwright is installed. Use “Prepare offline” once while connected to save all app files.')});
   if(isLocalPreview()){setOfflineAppStatus('Local preview · refresh this tab after app files change.');clearOfflinePreviewCache();return}
   if(!('serviceWorker'in navigator)||!window.isSecureContext){setOfflineAppStatus('Offline installation needs a secure website address. Open Loomwright once while connected, then prepare the offline copy.');return}
-  if('caches'in window){caches.keys().then(names=>names.filter(n=>n.startsWith('loomwright-offline-')&&n!=='loomwright-offline-v21').forEach(n=>caches.delete(n))).catch(()=>{});}
+  if('caches'in window){caches.keys().then(names=>names.filter(n=>n.startsWith('loomwright-offline-')&&n!=='loomwright-offline-v22').forEach(n=>caches.delete(n))).catch(()=>{});}
   navigator.serviceWorker.register(new URL('./sw.js',import.meta.url),{scope:new URL('./',import.meta.url).pathname}).then(async registration=>{
     try{await registration.update()}catch(_){}
     await navigator.serviceWorker.ready;
@@ -456,7 +456,13 @@ function renderHome(){
   const done=Object.values(state.finaliseChecklist).filter(Boolean).length,total=FINALISE_ITEMS.length,pct=Math.round(done/total*100);
   document.getElementById('home-finalise-progress').style.width=pct+'%';document.getElementById('home-finalise-label').textContent=`${done} of ${total} ready`;
   document.getElementById('totalstats').textContent=words.toLocaleString()+' words';
-  const project=projects.find(p=>p.id===activeProjectId);document.getElementById('project-current-name').textContent=project?.name||'Untitled Project';document.getElementById('project-home-count').textContent=`${projects.length} project${projects.length===1?'':'s'} saved on this device`;
+  const project=projects.find(p=>p.id===activeProjectId),activeSection=state.sections.find(section=>String(section.id)===String(state.activeId))||state.sections[0],sectionTitle=activeSection?.title||'Untitled section',excerpt=textOf(activeSection?.html||'').replace(/\s+/g,' ').trim(),resume=document.getElementById('home-continue-writing');
+  document.getElementById('home-project-context').textContent=`${project?.name||'Untitled Project'} · ${projects.length} project${projects.length===1?'':'s'}`;
+  document.getElementById('home-resume-section').textContent=sectionTitle;
+  document.getElementById('home-resume-words').textContent=`${wc(activeSection?.html||'').toLocaleString()} words in this section`;
+  document.getElementById('home-resume-edited').textContent=project?.updatedAt?`Edited ${formatProjectDate(project.updatedAt)}`:'Ready when you are';
+  document.getElementById('home-resume-excerpt').textContent=excerpt?`“${excerpt.slice(0,180)}${excerpt.length>180?'…':''}”`:'Pick up where you left off and continue shaping the thread that connects it all.';
+  if(resume)resume.onclick=()=>{switchView('write');openSection(activeSection?.id)};
 }
 function renderDocumentList(){
   const list=document.getElementById('document-list');
