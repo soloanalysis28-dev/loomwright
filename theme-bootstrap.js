@@ -16,6 +16,47 @@
   const themeColor=document.querySelector('meta[name="theme-color"]'),background=getComputedStyle(root).getPropertyValue('--bg').trim();
   if(themeColor&&background)themeColor.content=background;
 
+  const writing = settings?.writing || {};
+  const BUNDLED_FONTS = ['Bitter', 'Crimson Text', 'EB Garamond', 'Libre Baskerville', 'Lora', 'Merriweather', 'PT Serif', 'Playfair Display'];
+  const font = BUNDLED_FONTS.includes(writing.fontFamily) ? writing.fontFamily : 'Lora';
+  const size = Math.max(14, Math.min(28, Number(writing.fontSize) || 18));
+  const line = Math.max(1.3, Math.min(2.2, Number(writing.lineHeight) || 1.7));
+  const widthMap = { narrow: '640px', medium: '816px', wide: '1020px' };
+  const measure = widthMap[writing.columnWidth] || '816px';
+  const pageStyle = writing.pageStyle === 'flat' ? 'flat' : 'paper';
+  const indent = Boolean(writing.firstLineIndent);
+  const toolbarMode = writing.toolbarMode === 'pinned' ? 'pinned' : 'auto';
+
+  root.style.setProperty('--editor-font', `'${font}', Georgia, serif`);
+  root.style.setProperty('--editor-size', `${size}px`);
+  root.style.setProperty('--editor-line', String(line));
+  root.style.setProperty('--editor-measure', measure);
+
+  function applyEarlyEditorWrap(){
+    const wrap = document.getElementById('editor-wrap');
+    if (wrap) {
+      wrap.style.setProperty('--editor-font', `'${font}', Georgia, serif`);
+      wrap.style.setProperty('--editor-size', `${size}px`);
+      wrap.style.setProperty('--editor-line', String(line));
+      wrap.style.setProperty('--editor-measure', measure);
+      wrap.classList.toggle('page-style-paper', pageStyle === 'paper');
+      wrap.classList.toggle('page-style-flat', pageStyle === 'flat');
+      wrap.classList.toggle('has-first-line-indent', indent);
+      wrap.classList.toggle('toolbar-pinned', toolbarMode === 'pinned');
+      wrap.classList.toggle('toolbar-auto', toolbarMode === 'auto');
+    }
+    if (writing.focusHides) {
+      document.body?.classList.toggle('focus-hide-nav', writing.focusHides.nav !== false);
+      document.body?.classList.toggle('focus-hide-toolbar', writing.focusHides.toolbar !== false);
+      document.body?.classList.toggle('focus-hide-footer', Boolean(writing.focusHides.footer));
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyEarlyEditorWrap);
+  } else {
+    applyEarlyEditorWrap();
+  }
+
   function ensureAtmosphere(){
     const sel=document.getElementById('bg-effect-select');
     if(sel){

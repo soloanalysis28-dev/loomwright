@@ -1,3 +1,18 @@
+export const SENSITIVITY_THRESHOLDS = Object.freeze({
+  strict: Object.freeze({
+    threshold: 6.8,
+    highConfidenceThreshold: 9.6,
+  }),
+  balanced: Object.freeze({
+    threshold: 5.2,
+    highConfidenceThreshold: 8.4,
+  }),
+  loose: Object.freeze({
+    threshold: 3.6,
+    highConfidenceThreshold: 6.8,
+  }),
+});
+
 export const CHARACTER_RECOGNITION_CONFIG = Object.freeze({
   maxNameTokens: 4,
   threshold: 5.2,
@@ -208,8 +223,20 @@ export function scoreCharacterCandidate(candidate, config = CHARACTER_RECOGNITIO
   return {...candidate, features, capRatio, score, confidence, reasons};
 }
 
+export function getCharacterRecognitionConfig(sensitivity = 'balanced') {
+  const preset = SENSITIVITY_THRESHOLDS[sensitivity] || SENSITIVITY_THRESHOLDS.balanced;
+  return Object.freeze({
+    ...CHARACTER_RECOGNITION_CONFIG,
+    threshold: preset.threshold,
+    highConfidenceThreshold: preset.highConfidenceThreshold,
+  });
+}
+
 export function recognizeCharacters(chapters, config = CHARACTER_RECOGNITION_CONFIG) {
-  return extractCharacterCandidates(chapters, config)
-    .map(candidate => scoreCharacterCandidate(candidate, config))
+  const activeConfig = typeof config === 'string'
+    ? getCharacterRecognitionConfig(config)
+    : (config || CHARACTER_RECOGNITION_CONFIG);
+  return extractCharacterCandidates(chapters, activeConfig)
+    .map(candidate => scoreCharacterCandidate(candidate, activeConfig))
     .sort((first, second) => second.score - first.score || second.count - first.count || first.name.localeCompare(second.name));
 }

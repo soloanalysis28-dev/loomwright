@@ -2,12 +2,15 @@ import './vendor/mammoth/mammoth.browser.min.js';
 import DOMPurify from './vendor/dompurify/purify.es.mjs';
 import { unzipSync } from './vendor/fflate/browser.js';
 import * as pdfjsLib from './vendor/pdfjs/build/pdf.min.mjs';
+import { WRITING_DEFAULTS, BUNDLED_FONTS, normalizeWritingSettings } from './writing-settings.mjs';
+import { smartenInput } from './smart-typography.mjs';
+import { recognizeCharacters, getCharacterRecognitionConfig, SENSITIVITY_THRESHOLDS } from './character-recognition.mjs';
 const mammoth=window.mammoth;
 window.pdfjsLib=pdfjsLib;
 pdfjsLib.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdfjs/build/pdf.worker.min.mjs',import.meta.url).href;
 const PDF_CMAP_URL=new URL('./vendor/pdfjs/cmaps/',import.meta.url).href;
 const PDF_STANDARD_FONT_URL=new URL('./vendor/pdfjs/standard_fonts/',import.meta.url).href;
-const APP_VERSION='1.5.0.4';
+const APP_VERSION='1.5.0.5';
 const PROJECT_RECORD_VERSION=3;
 const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,charNotes:{},charStatus:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webPositions:{},webNodes:[],webLinks:[],templates:[]};
 const PROJECTS_STORAGE_KEY='loomwright_projects_v1',ACTIVE_PROJECT_KEY='loomwright_active_project_v1',APP_SETTINGS_KEY='loomwright_app_settings_v1',DELETED_PROJECTS_STORAGE_KEY='loomwright_deleted_projects_v1';
@@ -66,7 +69,7 @@ async function screenImportFile(file){
 }
 function newProjectId(){return 'project-'+(window.crypto?.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2,9))}
 function newProjectState(){return {...DEFAULT_STATE,sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],charNotes:{},charStatus:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webNodes:[],webLinks:[],templates:[],book:{...DEFAULT_BOOK}}}
-function normalizeSettings(settings){const next={palette:'sage',theme:'light',bgEffect:'none',...(settings||{})};if(!['sage','parchment','slate','forest','ink'].includes(next.palette))next.palette='sage';if(!['auto','light','dark'].includes(next.theme))next.theme='light';if(!['none','rain','clouds','snow','dragon'].includes(next.bgEffect))next.bgEffect='none';if(next.palette==='parchment'&&next.theme==='auto'){next.palette='sage';next.theme='light'}return next}
+function normalizeSettings(settings){const next={palette:'sage',theme:'light',bgEffect:'none',...(settings||{})};if(!['sage','parchment','slate','forest','ink'].includes(next.palette))next.palette='sage';if(!['auto','light','dark'].includes(next.theme))next.theme='light';if(!['none','rain','clouds','snow','dragon'].includes(next.bgEffect))next.bgEffect='none';if(next.palette==='parchment'&&next.theme==='auto'){next.palette='sage';next.theme='light'}next.writing=normalizeWritingSettings(next.writing);return next}
 function normalizeProjectState(value){const next=value&&typeof value==='object'?value:newProjectState();if(!Array.isArray(next.sections)||!next.sections.length)next.sections=newProjectState().sections;next.sections=next.sections.filter(s=>s&&typeof s==='object').map(s=>({...s,html:sanitizeRichHtml(s.html||'')}));if(!next.sections.length)next.sections=newProjectState().sections;delete next.settings;next.charNotes=next.charNotes||{};next.charStatus=next.charStatus||{};next.finaliseChecklist=next.finaliseChecklist||{};next.charIgnore=next.charIgnore||{};next.charMerge=next.charMerge||{};next.webPositions=next.webPositions||{};next.webNodes=Array.isArray(next.webNodes)?next.webNodes.filter(node=>node&&['place','event','object','thread'].includes(node.type)&&String(node.label||'').trim()).map(node=>({id:String(node.id||newProjectId()),type:node.type,label:String(node.label).trim().slice(0,80)})):[];next.webLinks=Array.isArray(next.webLinks)?next.webLinks.filter(link=>link&&typeof link.from==='string'&&typeof link.to==='string'):[];next.templates=Array.isArray(next.templates)?next.templates.filter(template=>template&&String(template.title||'').trim()&&typeof template.html==='string'&&template.html.length<=MAX_TEMPLATE_HTML_CHARS).slice(0,MAX_PROJECT_TEMPLATES).map(template=>({id:String(template.id||newProjectId()),title:String(template.title).trim().slice(0,120),html:sanitizeRichHtml(template.html),createdAt:template.createdAt||new Date().toISOString()})):[];next.book={...DEFAULT_BOOK,...(next.book||{})};return next}
 let legacyState=null,projectStore=null;
 try{legacyState=JSON.parse(localStorage.getItem('loomwright_state')||'null')}catch(e){}
@@ -245,8 +248,10 @@ function save(){
   return persisted;
 }
 async function saveWriter(){
+  flushWriterSave();
   const persisted=save();clearTimeout(offlineSaveTimer);
   try{if(offlineDb)await flushOfflineSave();else if(!persisted)return;toast('Saved on this device.')}catch(_){toast('Save failed. Export a copy from Finalise.')}
+  updateUnsavedIndicator();
 }
 async function copyWriterSelection(){
   const selection=window.getSelection(),editor=document.getElementById('content-editable');
@@ -267,6 +272,177 @@ document.addEventListener('keydown',event=>{
 });
 function persistAppSettings(){try{localStorage.setItem(APP_SETTINGS_KEY,JSON.stringify(appSettings));appSettingsStoredAtBoot=true;return true}catch(e){toast('Appearance settings could not be saved in this browser.');return false}}
 function updateAppSetting(key,value){appSettings[key]=value;appSettingsTouched=true;persistAppSettings();persistProjectStore();applyTheme()}
+
+const COLUMN_WIDTH_MAP = {
+  narrow: '640px',
+  medium: '816px',
+  wide: '1020px',
+};
+
+function getEffectiveIndent() {
+  const s = state.sections.find(x => String(x.id) === String(state.activeId));
+  if (s && s.firstLineIndent !== undefined && s.firstLineIndent !== null) {
+    return Boolean(s.firstLineIndent);
+  }
+  return Boolean(appSettings?.writing?.firstLineIndent);
+}
+
+function updateUnsavedIndicator() {
+  const el = document.getElementById('writer-unsaved-indicator');
+  if (!el) return;
+  if (!appSettings?.writing?.autosave && writerDirty) {
+    el.hidden = false;
+  } else {
+    el.hidden = true;
+  }
+}
+
+function applyWritingSettingsLive() {
+  const writing = appSettings?.writing || normalizeWritingSettings(null);
+  const root = document.documentElement;
+  const wrap = document.getElementById('editor-wrap');
+  const editor = document.getElementById('content-editable');
+
+  const font = BUNDLED_FONTS.includes(writing.fontFamily) ? writing.fontFamily : 'Lora';
+  const sizePx = `${writing.fontSize}px`;
+  const line = String(writing.lineHeight);
+  const measure = COLUMN_WIDTH_MAP[writing.columnWidth] || '816px';
+
+  root.style.setProperty('--editor-font', `'${font}', Georgia, serif`);
+  root.style.setProperty('--editor-size', sizePx);
+  root.style.setProperty('--editor-line', line);
+  root.style.setProperty('--editor-measure', measure);
+
+  if (wrap) {
+    wrap.style.setProperty('--editor-font', `'${font}', Georgia, serif`);
+    wrap.style.setProperty('--editor-size', sizePx);
+    wrap.style.setProperty('--editor-line', line);
+    wrap.style.setProperty('--editor-measure', measure);
+
+    wrap.classList.toggle('page-style-paper', writing.pageStyle === 'paper');
+    wrap.classList.toggle('page-style-flat', writing.pageStyle === 'flat');
+    wrap.classList.toggle('has-first-line-indent', getEffectiveIndent());
+    wrap.classList.toggle('toolbar-pinned', writing.toolbarMode === 'pinned');
+    wrap.classList.toggle('toolbar-auto', writing.toolbarMode === 'auto');
+  }
+
+  if (editor) {
+    editor.setAttribute('spellcheck', String(writing.spellcheck));
+  }
+
+  document.body.classList.toggle('focus-hide-nav', writing.focusHides?.nav !== false);
+  document.body.classList.toggle('focus-hide-toolbar', writing.focusHides?.toolbar !== false);
+  document.body.classList.toggle('focus-hide-footer', Boolean(writing.focusHides?.footer));
+
+  const previewDoc = document.getElementById('writing-preview-doc');
+  const previewBadge = document.getElementById('preview-style-badge');
+  if (previewDoc) {
+    previewDoc.style.setProperty('--preview-font', `'${font}', Georgia, serif`);
+    previewDoc.style.setProperty('--preview-size', sizePx);
+    previewDoc.style.setProperty('--preview-line', line);
+    previewDoc.style.setProperty('--preview-measure', measure);
+
+    previewDoc.classList.toggle('page-style-paper', writing.pageStyle === 'paper');
+    previewDoc.classList.toggle('page-style-flat', writing.pageStyle === 'flat');
+    previewDoc.classList.toggle('has-first-line-indent', Boolean(writing.firstLineIndent));
+  }
+  if (previewBadge) {
+    const styleCap = writing.pageStyle.charAt(0).toUpperCase() + writing.pageStyle.slice(1);
+    previewBadge.textContent = `${styleCap} · ${font} ${writing.fontSize}px`;
+  }
+
+  updateUnsavedIndicator();
+  updateWriterStatus();
+}
+
+function updateWritingSetting(key, value) {
+  if (!appSettings.writing) appSettings.writing = normalizeWritingSettings(null);
+  appSettings.writing[key] = value;
+  appSettings.writing = normalizeWritingSettings(appSettings.writing);
+  appSettingsTouched = true;
+  persistAppSettings();
+  persistProjectStore();
+  applyWritingSettingsLive();
+  renderWritingSettingsUI();
+  if (key === 'dashSeparatesWords') {
+    recountAllSections();
+  }
+  if (key === 'recogniserSensitivity') {
+    renderCharacters();
+    renderWeb();
+    renderMetrics();
+  }
+}
+
+function renderWritingSettingsUI() {
+  const writing = appSettings?.writing || normalizeWritingSettings(null);
+
+  function setSegmented(id, value) {
+    const group = document.getElementById(id);
+    if (!group) return;
+    group.querySelectorAll('.segmented-item').forEach(btn => {
+      const active = btn.dataset.value === String(value);
+      btn.setAttribute('aria-checked', String(active));
+    });
+  }
+
+  function setSwitch(id, value) {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.setAttribute('aria-checked', String(Boolean(value)));
+  }
+
+  function setRange(id, valId, value, formatter) {
+    const input = document.getElementById(id);
+    const readout = document.getElementById(valId);
+    if (input) input.value = value;
+    if (readout) readout.textContent = formatter(value);
+  }
+
+  setSegmented('writing-page-style', writing.pageStyle);
+  setSegmented('writing-column-width', writing.columnWidth);
+
+  const fontSelect = document.getElementById('writing-font-family');
+  if (fontSelect) fontSelect.value = writing.fontFamily;
+
+  setRange('writing-font-size', 'writing-font-size-val', writing.fontSize, v => `${v} px`);
+  setRange('writing-line-height', 'writing-line-height-val', writing.lineHeight, v => `${v}`);
+  setSwitch('writing-first-line-indent', writing.firstLineIndent);
+  setSegmented('writing-toolbar-mode', writing.toolbarMode);
+  setSwitch('writing-spellcheck', writing.spellcheck);
+  setSwitch('writing-smart-quotes', writing.smartQuotes);
+  setSwitch('writing-typewriter-scroll', writing.typewriterScroll);
+
+  setSwitch('writing-focus-hide-nav', writing.focusHides.nav);
+  setSwitch('writing-focus-hide-toolbar', writing.focusHides.toolbar);
+  setSwitch('writing-focus-hide-footer', writing.focusHides.footer);
+
+  setSwitch('writing-autosave', writing.autosave);
+  setRange('writing-autosave-delay', 'writing-autosave-delay-val', writing.autosaveDelayMs, v => `${(v / 1000).toFixed(1)}s`);
+
+  setRange('writing-daily-goal', 'writing-daily-goal-val', writing.dailyGoal, v => Number(v) === 0 ? 'Off' : `${v} w`);
+  setSwitch('writing-dash-separates', writing.dashSeparatesWords);
+  setSegmented('writing-recogniser-sensitivity', writing.recogniserSensitivity);
+}
+
+function performTypewriterScroll() {
+  if (!appSettings?.writing?.typewriterScroll) return;
+  const editor = document.getElementById('content-editable');
+  if (!editor || document.activeElement !== editor) return;
+  const selection = window.getSelection();
+  if (!selection || !selection.rangeCount) return;
+  const range = selection.getRangeAt(0);
+  const rect = range.getBoundingClientRect();
+  if (!rect || (rect.top === 0 && rect.bottom === 0)) return;
+  const viewportCenter = window.innerHeight / 2;
+  const caretCenter = rect.top + (rect.height / 2);
+  const delta = caretCenter - viewportCenter;
+  if (Math.abs(delta) > 8) {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollBy({ top: delta, behavior: reducedMotion ? 'auto' : 'smooth' });
+  }
+}
+
 function applyTheme(){
   let resolved=appSettings.theme;
   if(resolved==='auto')resolved=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
@@ -281,6 +457,8 @@ function applyTheme(){
     }
     bgfx.value=appSettings.bgEffect||'none';
   }
+  applyWritingSettingsLive();
+  renderWritingSettingsUI();
 }
 const ROMAN_NUMERAL_MAP = { i: 1, v: 5, x: 10, l: 50, c: 100, d: 500, m: 1000 };
 function parseRomanNumeral(str) {
@@ -365,15 +543,28 @@ function textOf(html){
   d.querySelectorAll('p,div,li,h1,h2,br').forEach(el=>el.insertAdjacentText('afterend','\n'));
   return d.textContent||'';
 }
-function countWordsFast(text) {
+function countWords(text, options = {}) {
   if (!text) return 0;
-  const matches = text.match(/\S+/g);
-  return matches ? matches.length : 0;
+  const dashSeparates = options.dashSeparatesWords !== undefined
+    ? options.dashSeparatesWords
+    : (appSettings?.writing?.dashSeparatesWords ?? true);
+
+  if (dashSeparates) {
+    const separated = text.replace(/[\u2010-\u2015\u2212\uFE58\uFE63\uFF0D\-]+/gu, ' ');
+    const matches = separated.match(/\S+/g);
+    return matches ? matches.length : 0;
+  } else {
+    const matches = text.match(/\S+/g);
+    return matches ? matches.length : 0;
+  }
 }
-function wc(html){
+function countWordsFast(text, options = {}) {
+  return countWords(text, options);
+}
+function wc(html, options = {}) {
   if (!html) return 0;
   const clean = html.replace(/<[^>]*>/g, ' ');
-  return countWordsFast(clean);
+  return countWords(clean, options);
 }
 function totalWords(){
   return state.sections.reduce((n,s)=>{
@@ -382,6 +573,23 @@ function totalWords(){
   }, 0);
 }
 function totalCharacters(){return detectCharacters().length}
+
+function recountAllSections() {
+  state.sections.forEach(s => {
+    delete s._wc;
+    s._wc = wc(s.html || '');
+  });
+  updateWriterStatus();
+  renderDocumentList();
+  renderHome();
+  renderMetrics();
+  const s = state.sections.find(x => String(x.id) === String(state.activeId));
+  const sel = document.getElementById('section-select');
+  if (sel && s) {
+    const opt = sel.querySelector(`option[value="${s.id}"]`);
+    if (opt) opt.textContent = `${s.title || 'Untitled'} (${s._wc}w)`;
+  }
+}
 
 let writerDirty = false;
 let writerDebounceTimer = null;
@@ -405,6 +613,7 @@ function flushWriterSave() {
     clearTimeout(writerStatusTimer);
     writerStatusTimer = null;
   }
+  updateUnsavedIndicator();
   save();
   const totalEl = document.getElementById('totalstats');
   if (totalEl) totalEl.textContent = totalWords().toLocaleString() + ' words';
@@ -428,10 +637,25 @@ function updateWriterStatusFast(editor) {
   const statusSec = document.getElementById('writer-status-section');
   const statusWords = document.getElementById('writer-status-words');
   const statusTotal = document.getElementById('writer-status-total');
+  const goalEl = document.getElementById('writer-daily-goal-indicator');
 
   if (statusSec) statusSec.textContent = `Section ${Math.max(index + 1, 1)} of ${state.sections.length}`;
   if (statusWords) statusWords.textContent = currentWords.toLocaleString() + ' words';
   if (statusTotal) statusTotal.textContent = totalWords().toLocaleString() + ' words total';
+
+  if (goalEl) {
+    const dailyGoal = appSettings?.writing?.dailyGoal ?? 500;
+    if (dailyGoal > 0) {
+      goalEl.hidden = false;
+      const pct = Math.min(100, Math.round((currentWords / dailyGoal) * 100));
+      goalEl.textContent = `Goal: ${currentWords.toLocaleString()} / ${dailyGoal.toLocaleString()}w (${pct}%)`;
+      goalEl.classList.toggle('goal-achieved', currentWords >= dailyGoal);
+    } else {
+      goalEl.hidden = true;
+    }
+  }
+
+  updateUnsavedIndicator();
 }
 
 function updateWriterStatus(){
@@ -811,8 +1035,45 @@ function renderEditor(){
     setImportSafetyStatus('Pasted text was cleaned before it was added.','ok');
     editor.dispatchEvent(new Event('input', { bubbles: true }));
   };
+  editor.addEventListener('beforeinput', (event) => {
+    if (!appSettings?.writing?.smartQuotes) return;
+    if (event.isComposing) return;
+    if (event.inputType?.startsWith('insertFromPaste') || event.inputType?.startsWith('insertFromDrop')) return;
+
+    if (event.inputType === 'insertText' && event.data) {
+      const selection = window.getSelection();
+      if (!selection || !selection.rangeCount) return;
+      const range = selection.getRangeAt(0);
+      if (!range.collapsed) return;
+
+      const preRange = range.cloneRange();
+      preRange.collapse(true);
+      preRange.setStart(editor, 0);
+      const preText = preRange.toString();
+      const prevTwo = preText.slice(-2);
+      const typed = event.data;
+
+      if (typed === '"' || typed === "'") {
+        const smart = smartenInput(prevTwo, typed);
+        if (smart !== typed) {
+          event.preventDefault();
+          document.execCommand('insertText', false, smart);
+        }
+      } else if (typed === '-' && prevTwo.endsWith('-')) {
+        event.preventDefault();
+        document.execCommand('delete', false);
+        document.execCommand('insertText', false, '—');
+      } else if (typed === '.' && prevTwo.endsWith('..')) {
+        event.preventDefault();
+        document.execCommand('delete', false);
+        document.execCommand('delete', false);
+        document.execCommand('insertText', false, '…');
+      }
+    }
+  });
   editor.oninput=()=>{
     writerDirty = true;
+    updateUnsavedIndicator();
     if (!writerStatusTimer) {
       writerStatusTimer = setTimeout(() => {
         writerStatusTimer = null;
@@ -820,14 +1081,22 @@ function renderEditor(){
       }, 350);
     }
     clearTimeout(writerDebounceTimer);
-    writerDebounceTimer = setTimeout(() => {
-      writerDebounceTimer = null;
-      flushWriterSave();
-    }, 1500);
+    if (appSettings?.writing?.autosave !== false) {
+      const delay = Math.max(500, Math.min(10000, Number(appSettings?.writing?.autosaveDelayMs) || 1500));
+      writerDebounceTimer = setTimeout(() => {
+        writerDebounceTimer = null;
+        flushWriterSave();
+      }, delay);
+    }
+    performTypewriterScroll();
+  };
+  editor.onkeyup=()=>{
+    performTypewriterScroll();
   };
   editor.onblur=()=>{
     flushWriterSave();
   };
+  applyWritingSettingsLive();
   updateWriterStatus();
   renderMetrics();
   document.getElementById('writer-save').onclick=saveWriter;
@@ -947,6 +1216,25 @@ function sectionLooksNonEnglish(html){
   return (hits/words.length)<0.08; // English prose is thick with function words; foreign text won't clear this bar
 }
 function detectCharacters(){
+  const sensitivity = appSettings?.writing?.recogniserSensitivity || 'balanced';
+  const chapters = state.sections.map(s => ({
+    id: s.id,
+    title: s.title || 'Untitled',
+    text: textOf(s.html || ''),
+  }));
+  const recognized = recognizeCharacters(chapters, sensitivity);
+  if (recognized && recognized.length > 0) {
+    const candidateEntries = recognized.map(c => [
+      c.name,
+      {
+        count: c.count,
+        sections: c.sectionTitles || new Set(),
+        aliases: c.parts && c.parts.length > 1 ? [c.parts[0], c.parts[c.parts.length - 1]] : undefined,
+      }
+    ]);
+    const merged = applyCharMerges(candidateEntries.filter(([n]) => !state.charIgnore?.[n]));
+    return merged.sort((a, b) => b[1].count - a[1].count);
+  }
   const nonEnglish=new Set();state.sections.forEach(s=>{if(sectionLooksNonEnglish(s.html||''))nonEnglish.add(s.id)});
   const scanSections=state.sections.filter(s=>!nonEnglish.has(s.id));
   const lowerSeen=new Set();scanSections.forEach(s=>{const plain=textOf(s.html||'').replace(/\n+/g,'. ');(plain.match(/[A-Za-z']+/g)||[]).forEach(w=>{if(/^[a-z][a-z']{2,}$/.test(w))lowerSeen.add(w)})});
@@ -1749,6 +2037,111 @@ settingsTabs.forEach((tab,index)=>{
   });
 });
 document.getElementById('palette-select').addEventListener('change',e=>updateAppSetting('palette',e.target.value));document.getElementById('theme-select').addEventListener('change',e=>updateAppSetting('theme',e.target.value));document.getElementById('bg-effect-select').addEventListener('change',e=>updateAppSetting('bgEffect',e.target.value));
+function setupWritingSettingsControls() {
+  function bindSegmented(id, key) {
+    const group = document.getElementById(id);
+    if (!group) return;
+    group.querySelectorAll('.segmented-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        updateWritingSetting(key, btn.dataset.value);
+      });
+      btn.addEventListener('keydown', (e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault();
+          updateWritingSetting(key, btn.dataset.value);
+        }
+      });
+    });
+  }
+
+  function bindSwitch(id, key, getter, setter) {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    function toggle() {
+      const cur = getter ? getter() : Boolean(appSettings?.writing?.[key]);
+      const next = !cur;
+      if (setter) setter(next);
+      else updateWritingSetting(key, next);
+    }
+    btn.addEventListener('click', toggle);
+    btn.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        toggle();
+      }
+    });
+  }
+
+  bindSegmented('writing-page-style', 'pageStyle');
+  bindSegmented('writing-column-width', 'columnWidth');
+  bindSegmented('writing-toolbar-mode', 'toolbarMode');
+  bindSegmented('writing-recogniser-sensitivity', 'recogniserSensitivity');
+
+  bindSwitch('writing-first-line-indent', 'firstLineIndent');
+  bindSwitch('writing-spellcheck', 'spellcheck');
+  bindSwitch('writing-smart-quotes', 'smartQuotes');
+  bindSwitch('writing-typewriter-scroll', 'typewriterScroll');
+
+  bindSwitch('writing-focus-hide-nav', null, () => appSettings?.writing?.focusHides?.nav, v => {
+    updateWritingSetting('focusHides', { ...(appSettings?.writing?.focusHides || {}), nav: v });
+  });
+  bindSwitch('writing-focus-hide-toolbar', null, () => appSettings?.writing?.focusHides?.toolbar, v => {
+    updateWritingSetting('focusHides', { ...(appSettings?.writing?.focusHides || {}), toolbar: v });
+  });
+  bindSwitch('writing-focus-hide-footer', null, () => appSettings?.writing?.focusHides?.footer, v => {
+    updateWritingSetting('focusHides', { ...(appSettings?.writing?.focusHides || {}), footer: v });
+  });
+
+  bindSwitch('writing-autosave', 'autosave');
+  bindSwitch('writing-dash-separates', 'dashSeparatesWords');
+
+  document.getElementById('writing-font-family')?.addEventListener('change', e => {
+    updateWritingSetting('fontFamily', e.target.value);
+  });
+  document.getElementById('writing-font-size')?.addEventListener('input', e => {
+    updateWritingSetting('fontSize', Number(e.target.value));
+  });
+  document.getElementById('writing-line-height')?.addEventListener('input', e => {
+    updateWritingSetting('lineHeight', Number(e.target.value));
+  });
+  document.getElementById('writing-autosave-delay')?.addEventListener('input', e => {
+    updateWritingSetting('autosaveDelayMs', Number(e.target.value));
+  });
+  document.getElementById('writing-daily-goal')?.addEventListener('input', e => {
+    updateWritingSetting('dailyGoal', Number(e.target.value));
+  });
+
+  document.getElementById('writing-restore-chars')?.addEventListener('click', async () => {
+    const confirmed = await showConfirmDialog(
+      'Restore hidden character suggestions?',
+      'This will bring back all character suggestions previously dismissed from your manuscript roster.',
+      'Restore characters'
+    );
+    if (confirmed) {
+      restoreIgnoredCharacters();
+      toast('Hidden character suggestions restored.');
+    }
+  });
+
+  document.getElementById('writing-reset-settings')?.addEventListener('click', async () => {
+    const confirmed = await showConfirmDialog(
+      'Reset writing settings?',
+      'All typography, spacing, page style, and editor settings will be restored to their factory defaults.',
+      'Reset writing settings'
+    );
+    if (confirmed) {
+      appSettings.writing = { ...WRITING_DEFAULTS, focusHides: { ...WRITING_DEFAULTS.focusHides } };
+      appSettingsTouched = true;
+      persistAppSettings();
+      persistProjectStore();
+      applyWritingSettingsLive();
+      renderWritingSettingsUI();
+      recountAllSections();
+      toast('Writing settings reset.');
+    }
+  });
+}
+setupWritingSettingsControls();
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(appSettings.theme==='auto')applyTheme()});
 document.getElementById('project-create-form').addEventListener('submit',e=>{e.preventDefault();const input=document.getElementById('new-project-name');createProject(input.value);input.value=''});
 function setupWriteDragDrop(){

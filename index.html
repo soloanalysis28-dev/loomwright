@@ -382,6 +382,44 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
 .setting-copy{min-width:0}.setting-copy strong{font-size:.82rem;display:block}.setting-copy small{font-size:.72rem;line-height:1.45;color:var(--sub);display:block;margin-top:4px;max-width:430px}
 .setting-row select{max-width:180px;min-width:125px;font: .8rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:8px}
 .setting-section h3{font:650 .9rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0 0 2px}.settings-footnote{font-size:.72rem;line-height:1.5;color:var(--sub);margin:13px 0 0}
+#editor-wrap{--editor-font:'Lora',Georgia,serif;--editor-size:18px;--editor-line:1.7;--editor-measure:816px;width:100%}
+#editor-wrap #content-editable{font-family:var(--editor-font,'Lora',Georgia,serif);font-size:var(--editor-size,18px);line-height:var(--editor-line,1.7);width:min(100%,var(--editor-measure,816px))}
+#editor-wrap.page-style-paper #content-editable{background:var(--panel);border:1px solid var(--line);box-shadow:0 2px 16px #00000012;border-radius:2px;padding:84px 82px}
+#editor-wrap.page-style-flat #content-editable{background:transparent;border:1px solid transparent;box-shadow:none;border-radius:0;padding:44px 28px}
+#editor-wrap.has-first-line-indent #content-editable p + p{text-indent:1.6em;margin-top:0;margin-bottom:0}
+#editor-wrap.toolbar-pinned .toolbar{position:sticky;top:6px;z-index:10;box-shadow:0 2px 8px #00000014}
+#editor-wrap.toolbar-auto .toolbar{position:static;box-shadow:none}
+body.writer-focus.focus-hide-nav .app-header,body.writer-focus.focus-hide-nav .app-nav{display:none!important}
+body.writer-focus.focus-hide-toolbar .toolbar,body.writer-focus.focus-hide-toolbar .writer-command-bar{display:none!important}
+body.writer-focus.focus-hide-footer .writer-statusbar,body.writer-focus.focus-hide-footer #writer-statusbar{display:none!important}
+.unsaved-badge{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:12px;background:color-mix(in srgb,var(--danger) 18%,var(--card));color:var(--danger);font:600 .72rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.daily-goal-badge{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:12px;background:color-mix(in srgb,var(--accent) 15%,var(--card));color:var(--accent);font:600 .72rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-variant-numeric:tabular-nums}
+.daily-goal-badge.goal-achieved{background:color-mix(in srgb,#2e7d32 18%,var(--card));color:#2e7d32}
+[data-theme="dark"] .daily-goal-badge.goal-achieved{color:#81c784}
+.settings-preview-wrap{border:1px solid var(--line);border-radius:8px;background:var(--bg);overflow:hidden;margin-bottom:8px}
+.settings-preview-header{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:color-mix(in srgb,var(--panel) 80%,var(--card));border-bottom:1px solid var(--line)}
+.settings-preview-title{font:700 .68rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.settings-preview-badge{font:600 .72rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub);font-variant-numeric:tabular-nums}
+.settings-preview-stage{padding:22px 18px;background:var(--card);display:flex;justify-content:center;align-items:flex-start;min-height:160px;overflow:auto}
+.settings-preview-document{transition:all .15s ease-out;box-sizing:border-box;font-family:var(--preview-font,'Lora',Georgia,serif);font-size:var(--preview-size,18px);line-height:var(--preview-line,1.7);width:min(100%,var(--preview-measure,816px))}
+.settings-preview-document p{margin:0 0 .85em}
+.settings-preview-document.page-style-paper{background:var(--panel);border:1px solid var(--line);box-shadow:0 2px 14px #00000010;border-radius:3px;padding:26px 30px}
+.settings-preview-document.page-style-flat{background:transparent;border:1px dashed color-mix(in srgb,var(--line) 75%,transparent);box-shadow:none;border-radius:0;padding:18px 14px}
+.settings-preview-document.has-first-line-indent p + p{text-indent:1.6em;margin-top:0;margin-bottom:0}
+.segmented-control{display:inline-flex;padding:3px;background:var(--panel);border:1px solid var(--line);border-radius:8px;gap:3px}
+.segmented-item{padding:5px 12px;border:1px solid transparent;background:transparent;color:var(--sub);font:600 .76rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;border-radius:6px;cursor:pointer;transition:all .12s}
+.segmented-item:hover{color:var(--ink);background:color-mix(in srgb,var(--card) 60%,transparent)}
+.segmented-item[aria-checked="true"]{background:var(--card-strong);color:var(--ink);border-color:var(--line);box-shadow:0 1px 3px #00000012}
+.settings-switch{position:relative;display:inline-block;width:44px;height:24px;border-radius:12px;border:1px solid var(--line);background:var(--panel);cursor:pointer;padding:0;transition:background .2s,border-color .2s;flex-shrink:0}
+.settings-switch:hover{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+.settings-switch[aria-checked="true"]{background:var(--accent);border-color:color-mix(in srgb,var(--accent) 80%,var(--line))}
+.settings-switch .switch-slider{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--bg);box-shadow:0 1px 3px #00000028;transition:transform .2s cubic-bezier(0.2,0,0,1)}
+.settings-switch[aria-checked="true"] .switch-slider{transform:translateX(20px);background:#fff}
+.slider-control-group{display:flex;align-items:center;gap:12px;min-width:190px}
+.settings-range{flex:1;accent-color:var(--accent);cursor:pointer;height:6px;border-radius:3px;background:var(--panel);border:1px solid var(--line)}
+.range-readout{font:650 .76rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--ink);min-width:52px;text-align:right;font-variant-numeric:tabular-nums}
+.danger-button{padding:7px 13px;border:1px solid color-mix(in srgb,var(--danger) 40%,var(--line));border-radius:7px;background:color-mix(in srgb,var(--danger) 10%,var(--card));color:var(--danger);font:600 .76rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer;transition:all .15s}
+.danger-button:hover{background:var(--danger);color:#fff}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:20px;font: .8rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;opacity:0;transition:opacity .25s;pointer-events:none;z-index:1100;max-width:calc(100vw - 24px);text-align:center}
 .toast.show{opacity:1}
 .confirm-backdrop{position:fixed;inset:0;z-index:1300;display:grid;place-items:center;padding:20px;background:#1017139c;backdrop-filter:blur(7px);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
@@ -822,8 +860,254 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
             </div>
           </section>
           <section class="settings-pane" id="settings-panel-writing" role="tabpanel" aria-labelledby="settings-tab-writing" hidden>
-            <header class="settings-pane-heading"><h3>Writing experience</h3><p>Writing-specific preferences will appear here.</p></header>
-            <div class="settings-empty-state">No additional preferences yet.</div>
+            <header class="settings-pane-heading">
+              <h3>Writing experience</h3>
+              <p>Configure typography, page flow, distraction-free writing, and editor behaviours.</p>
+            </header>
+
+            <div class="settings-groups">
+              <!-- Live Preview Paragraph -->
+              <div class="settings-preview-wrap" aria-label="Writing experience preview">
+                <div class="settings-preview-header">
+                  <span class="settings-preview-title">Live Preview</span>
+                  <span class="settings-preview-badge" id="preview-style-badge">Paper · Lora 18px</span>
+                </div>
+                <div class="settings-preview-stage" id="writing-preview-stage">
+                  <div class="settings-preview-document page-style-paper" id="writing-preview-doc">
+                    <p>The morning light fell across the weathered wooden desk, catching the edges of notebooks and unfinished manuscripts. Every sentence shaped its own quiet architecture, holding the rhythm of thought before it dissolved.</p>
+                    <p>Words settled into place with deliberate clarity. A story begins not with certainty, but with the curiosity to turn the next page and discover what was waiting all along.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Page Block -->
+              <div class="settings-block">
+                <h4 class="settings-block-title">Page</h4>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Page style</strong>
+                    <small>Choose between a tactile sheet of paper or a borderless, seamless canvas.</small>
+                  </div>
+                  <div class="segmented-control" role="radiogroup" aria-label="Page style" id="writing-page-style">
+                    <button type="button" class="segmented-item" role="radio" aria-checked="true" data-value="paper">Paper</button>
+                    <button type="button" class="segmented-item" role="radio" aria-checked="false" data-value="flat">Flat</button>
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Column width</strong>
+                    <small>Adjust manuscript measure for comfortable line length and reading cadence.</small>
+                  </div>
+                  <div class="segmented-control" role="radiogroup" aria-label="Column width" id="writing-column-width">
+                    <button type="button" class="segmented-item" role="radio" aria-checked="false" data-value="narrow">Narrow</button>
+                    <button type="button" class="segmented-item" role="radio" aria-checked="true" data-value="medium">Medium</button>
+                    <button type="button" class="segmented-item" role="radio" aria-checked="false" data-value="wide">Wide</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Editing Block -->
+              <div class="settings-block">
+                <h4 class="settings-block-title">Editing</h4>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Font family</strong>
+                    <small>Bundled typographic serif faces loaded entirely offline from local files.</small>
+                  </div>
+                  <select id="writing-font-family" aria-label="Font family">
+                    <option value="Bitter">Bitter</option>
+                    <option value="Crimson Text">Crimson Text</option>
+                    <option value="EB Garamond">EB Garamond</option>
+                    <option value="Libre Baskerville">Libre Baskerville</option>
+                    <option value="Lora" selected>Lora</option>
+                    <option value="Merriweather">Merriweather</option>
+                    <option value="PT Serif">PT Serif</option>
+                    <option value="Playfair Display">Playfair Display</option>
+                  </select>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Font size</strong>
+                    <small>Base body size across editor drafts.</small>
+                  </div>
+                  <div class="slider-control-group">
+                    <input type="range" class="settings-range" id="writing-font-size" min="14" max="28" step="1" value="18" aria-label="Font size">
+                    <span class="range-readout" id="writing-font-size-val">18 px</span>
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Line spacing</strong>
+                    <small>Vertical line rhythm and breathing room between sentences.</small>
+                  </div>
+                  <div class="slider-control-group">
+                    <input type="range" class="settings-range" id="writing-line-height" min="1.3" max="2.2" step="0.1" value="1.7" aria-label="Line spacing">
+                    <span class="range-readout" id="writing-line-height-val">1.7</span>
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>First-line indent</strong>
+                    <small>Indent paragraphs in book fashion instead of empty vertical paragraph gaps.</small>
+                  </div>
+                  <button type="button" class="settings-switch" role="switch" aria-checked="false" id="writing-first-line-indent" aria-label="First-line indent">
+                    <span class="switch-slider"></span>
+                  </button>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Formatting toolbar</strong>
+                    <small>Keep ribbon pinned at the top or allow it to scroll naturally with the draft.</small>
+                  </div>
+                  <div class="segmented-control" role="radiogroup" aria-label="Toolbar mode" id="writing-toolbar-mode">
+                    <button type="button" class="segmented-item" role="radio" aria-checked="true" data-value="auto">Auto</button>
+                    <button type="button" class="segmented-item" role="radio" aria-checked="false" data-value="pinned">Pinned</button>
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Spellcheck</strong>
+                    <small>Underline spelling errors using the browser’s built-in dictionary.</small>
+                  </div>
+                  <button type="button" class="settings-switch" role="switch" aria-checked="true" id="writing-spellcheck" aria-label="Spellcheck">
+                    <span class="switch-slider"></span>
+                  </button>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Smart typography</strong>
+                    <small>Transform quotes to curly quotes, apostrophes, “--” into em dashes, and “...” into ellipses.</small>
+                  </div>
+                  <button type="button" class="settings-switch" role="switch" aria-checked="true" id="writing-smart-quotes" aria-label="Smart typography">
+                    <span class="switch-slider"></span>
+                  </button>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Typewriter scroll</strong>
+                    <small>Keep the active line of text vertically centred on screen while typing.</small>
+                  </div>
+                  <button type="button" class="settings-switch" role="switch" aria-checked="false" id="writing-typewriter-scroll" aria-label="Typewriter scroll">
+                    <span class="switch-slider"></span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Focus mode Block -->
+              <div class="settings-block">
+                <h4 class="settings-block-title">Focus mode</h4>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Hide navigation</strong>
+                    <small>Hide header bar and top navigation tabs in distraction-free mode.</small>
+                  </div>
+                  <button type="button" class="settings-switch" role="switch" aria-checked="true" id="writing-focus-hide-nav" aria-label="Hide navigation in focus mode">
+                    <span class="switch-slider"></span>
+                  </button>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Hide toolbar</strong>
+                    <small>Hide the ribbon formatting controls when entering focus mode.</small>
+                  </div>
+                  <button type="button" class="settings-switch" role="switch" aria-checked="true" id="writing-focus-hide-toolbar" aria-label="Hide toolbar in focus mode">
+                    <span class="switch-slider"></span>
+                  </button>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Hide footer</strong>
+                    <small>Hide bottom word count status bar and shortcuts during focus mode.</small>
+                  </div>
+                  <button type="button" class="settings-switch" role="switch" aria-checked="false" id="writing-focus-hide-footer" aria-label="Hide footer in focus mode">
+                    <span class="switch-slider"></span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Saving Block -->
+              <div class="settings-block">
+                <h4 class="settings-block-title">Saving</h4>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Autosave drafts</strong>
+                    <small>Automatically save edits into local browser storage while you type.</small>
+                  </div>
+                  <button type="button" class="settings-switch" role="switch" aria-checked="true" id="writing-autosave" aria-label="Autosave drafts">
+                    <span class="switch-slider"></span>
+                  </button>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Autosave delay</strong>
+                    <small>Idle pause after typing before writing changes to offline storage.</small>
+                  </div>
+                  <div class="slider-control-group">
+                    <input type="range" class="settings-range" id="writing-autosave-delay" min="500" max="10000" step="250" value="1500" aria-label="Autosave delay">
+                    <span class="range-readout" id="writing-autosave-delay-val">1.5s</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Goals and counting Block -->
+              <div class="settings-block">
+                <h4 class="settings-block-title">Goals and counting</h4>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Daily writing goal</strong>
+                    <small>Target words to write per day. Set to 0 to disable daily goal tracking.</small>
+                  </div>
+                  <div class="slider-control-group">
+                    <input type="range" class="settings-range" id="writing-daily-goal" min="0" max="20000" step="50" value="500" aria-label="Daily writing goal">
+                    <span class="range-readout" id="writing-daily-goal-val">500 w</span>
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Dash separates words</strong>
+                    <small>Treat hyphenated and dashed compounds as distinct words in word counts.</small>
+                  </div>
+                  <button type="button" class="settings-switch" role="switch" aria-checked="true" id="writing-dash-separates" aria-label="Dash separates words">
+                    <span class="switch-slider"></span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Characters Block -->
+              <div class="settings-block">
+                <h4 class="settings-block-title">Characters</h4>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Recogniser sensitivity</strong>
+                    <small>Threshold level for extracting recurring names and character entities.</small>
+                  </div>
+                  <div class="segmented-control" role="radiogroup" aria-label="Recogniser sensitivity" id="writing-recogniser-sensitivity">
+                    <button type="button" class="segmented-item" role="radio" aria-checked="false" data-value="strict">Strict</button>
+                    <button type="button" class="segmented-item" role="radio" aria-checked="true" data-value="balanced">Balanced</button>
+                    <button type="button" class="segmented-item" role="radio" aria-checked="false" data-value="loose">Loose</button>
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Restore hidden suggestions</strong>
+                    <small>Un-ignore character names that were previously dismissed from the roster.</small>
+                  </div>
+                  <button class="secondary-button" type="button" id="writing-restore-chars">Restore characters</button>
+                </div>
+              </div>
+
+              <!-- Reset writing settings -->
+              <div class="settings-block">
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Reset writing settings</strong>
+                    <small>Restore all writing experience preferences to factory defaults.</small>
+                  </div>
+                  <button class="danger-button" type="button" id="writing-reset-settings">Reset writing settings</button>
+                </div>
+              </div>
+
+            </div>
           </section>
           <section class="settings-pane" id="settings-panel-storage" role="tabpanel" aria-labelledby="settings-tab-storage" hidden>
             <header class="settings-pane-heading"><h3>Offline &amp; storage</h3><p>Prepare this app for offline use and check how project data is saved.</p></header>
@@ -851,7 +1135,7 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
   </main>
 </div>
 <div class="writer-statusbar" id="writer-statusbar" aria-label="Writing status and shortcuts" hidden>
-  <div class="writer-status-info" aria-live="polite"><span id="writer-status-section">Section 1 of 1</span><span id="writer-status-words">0 words</span><span id="writer-status-total">0 words total</span></div>
+  <div class="writer-status-info" aria-live="polite"><span id="writer-status-section">Section 1 of 1</span><span id="writer-status-words">0 words</span><span id="writer-status-total">0 words total</span><span id="writer-unsaved-indicator" class="unsaved-badge" hidden>● Unsaved changes</span><span id="writer-daily-goal-indicator" class="daily-goal-badge" hidden>Goal: 0 / 500w</span></div>
   <div class="writer-status-actions"><button class="writer-status-action" id="writer-focus-toggle" type="button" aria-pressed="false" title="Toggle focus mode">Focus</button><button class="writer-status-action" id="writer-status-save" type="button" title="Save (Ctrl/Cmd+S)">Save</button><button class="writer-status-action del" id="delete-section" type="button">Delete section</button></div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>

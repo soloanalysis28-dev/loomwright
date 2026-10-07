@@ -4,6 +4,7 @@
   "./app-icon-512.png",
   "./app-icon.svg",
   "./app.js",
+  "./character-recognition.mjs",
   "./fonts.css",
   "./fonts/0QI8MX1D_JOuMw_hLdO6T2wV9KnW-MoFoq92nA.woff2",
   "./fonts/0QI8MX1D_JOuMw_hLdO6T2wV9KnW-MoFoqF2nOeZ.woff2",
@@ -44,6 +45,7 @@
   "./index.html",
   "./manifest.webmanifest",
   "./offline-assets.json",
+  "./smart-typography.mjs",
   "./sw.js",
   "./theme-bootstrap.js",
   "./vendor/dompurify/purify.es.mjs",
@@ -233,5 +235,6 @@
   "./vendor/pdfjs/standard_fonts/LiberationSans-Bold.ttf",
   "./vendor/pdfjs/standard_fonts/LiberationSans-BoldItalic.ttf",
   "./vendor/pdfjs/standard_fonts/LiberationSans-Italic.ttf",
-  "./vendor/pdfjs/standard_fonts/LiberationSans-Regular.ttf"
+  "./vendor/pdfjs/standard_fonts/LiberationSans-Regular.ttf",
+  "./writing-settings.mjs"
 ]
