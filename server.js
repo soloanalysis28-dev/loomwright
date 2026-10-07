@@ -1,6 +1,24 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
+import { readFileSync } from 'fs';
+
+// Load .env file manually (no extra dependency needed)
+try {
+  const envPath = new URL('.env', import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1');
+  const envContent = readFileSync(envPath, 'utf-8');
+  for (const line of envContent.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIndex = trimmed.indexOf('=');
+    if (eqIndex === -1) continue;
+    const key = trimmed.slice(0, eqIndex).trim();
+    const value = trimmed.slice(eqIndex + 1).trim();
+    if (key && !(key in process.env)) process.env[key] = value;
+  }
+} catch (e) {
+  // .env file not found, continue with existing env vars
+}
 import { fileURLToPath } from 'url';
 import { GoogleGenAI, Type } from '@google/genai';
 
@@ -144,7 +162,7 @@ Manuscript:
 ${manuscriptText}`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: 'gemini-2.0-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -253,7 +271,7 @@ app.post('/api/ai/write-assist', async (req, res) => {
     const prompt = `${taskPrompt}\n\nChapter context: "${chapterTitle || 'Manuscript Draft'}"\n${charContext}\n\nCurrent Text:\n"""\n${text}\n"""`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: 'gemini-2.0-flash',
       contents: prompt,
       config: {
         systemInstruction: systemPrompt,
@@ -307,7 +325,7 @@ Ensure every link has a clear narrative relationship label (e.g. "Visits", "Inve
 Return valid JSON.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: 'gemini-2.0-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -380,7 +398,7 @@ Provide a comprehensive, encouraging, and deeply perceptive editorial review cov
 5. recommendations: Exactly 3 to 5 concrete, actionable editorial steps for the author's next revision round.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: 'gemini-2.0-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',

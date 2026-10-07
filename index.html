@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#fbfcfa">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; frame-src 'none'; child-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src 'self'; worker-src 'self'; frame-src 'none'; child-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="no-referrer">
 <title>Loomwright — Your writing desk</title>
 <meta name="description" content="An offline-capable writing desk with project synchronization, manuscript editing, and formatting tools.">
@@ -14,8 +14,8 @@
 <link rel="icon" type="image/svg+xml" href="./app-icon.svg">
 <link rel="stylesheet" href="./fonts.css">
 <style>
-:root{--danger:#c15540;--primary-text:#fff;--ease-out:cubic-bezier(.23,1,.32,1);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--effect-ripple:color-mix(in srgb,var(--accent2) 65%,var(--ink));--effect-ripple-glow:color-mix(in srgb,var(--accent) 30%,transparent);--effect-snow:color-mix(in srgb,var(--accent) 45%,var(--ink));--effect-cloud:color-mix(in srgb,var(--accent) 40%,var(--sub));--dragon-body:color-mix(in srgb,var(--accent2) 48%,transparent);--dragon-highlight:color-mix(in srgb,var(--accent) 75%,var(--ink));--dragon-opacity:.42;--ripple-peak-op:0.62;--snow-opacity-mult:1.6;--cloud-opacity:0.18}
-[data-theme="dark"]{--effect-ripple:color-mix(in srgb,var(--accent) 65%,#ffffff);--effect-ripple-glow:color-mix(in srgb,var(--accent) 40%,transparent);--effect-snow:#ffffff;--effect-cloud:color-mix(in srgb,var(--ink) 80%,var(--accent));--dragon-body:color-mix(in srgb,var(--accent) 72%,#ffffff);--dragon-highlight:color-mix(in srgb,var(--accent) 80%,#ffffff);--dragon-opacity:.3;--ripple-peak-op:0.75;--snow-opacity-mult:2.4;--cloud-opacity:0.15}
+:root{--danger:#c15540;--primary-text:#fff;--ease-out:cubic-bezier(.23,1,.32,1);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--effect-ripple:color-mix(in srgb,var(--accent2) 65%,var(--ink));--effect-ripple-glow:color-mix(in srgb,var(--accent) 30%,transparent);--effect-snow:color-mix(in srgb,var(--accent) 45%,var(--ink));--effect-cloud:color-mix(in srgb,var(--accent) 40%,var(--sub));--dragon-body:color-mix(in srgb,var(--accent2) 62%,var(--ink));--dragon-belly:color-mix(in srgb,var(--accent) 45%,transparent);--dragon-highlight:color-mix(in srgb,var(--accent2) 85%,var(--ink));--dragon-gold:color-mix(in srgb,#c89b3c 45%,var(--accent));--dragon-opacity:.48;--ripple-peak-op:0.62;--snow-opacity-mult:1.6;--cloud-opacity:0.18}
+[data-theme="dark"]{--effect-ripple:color-mix(in srgb,var(--accent) 65%,#ffffff);--effect-ripple-glow:color-mix(in srgb,var(--accent) 40%,transparent);--effect-snow:#ffffff;--effect-cloud:color-mix(in srgb,var(--ink) 80%,var(--accent));--dragon-body:color-mix(in srgb,var(--accent) 76%,#ffffff);--dragon-belly:color-mix(in srgb,var(--accent) 35%,transparent);--dragon-highlight:color-mix(in srgb,var(--accent) 90%,#ffffff);--dragon-gold:color-mix(in srgb,#e4bf68 65%,#ffffff);--dragon-opacity:.38;--ripple-peak-op:0.75;--snow-opacity-mult:2.4;--cloud-opacity:0.15}
 [data-palette="sage"][data-theme="light"]{--bg:#fbfcfa;--panel:#fff;--ink:#26362d;--sub:#68776e;--line:#e3eae4;--accent:#91a997;--accent2:#718b78;--card:#f1f5f1;--card-strong:#e7eee8;--primary-text:#1e3527}
 [data-palette="sage"][data-theme="dark"]{--bg:#151a16;--panel:#1c241e;--ink:#e7eee8;--sub:#a5b1a8;--line:#313a33;--accent:#9bb39f;--accent2:#8eaa94;--card:#222a24;--card-strong:#2b352e;--primary-text:#17231a}
 [data-palette="parchment"][data-theme="light"]{--bg:#faf8f4;--panel:#fff;--ink:#1f1c18;--sub:#6b645a;--line:#e8e2d8;--accent:#8a5a44;--accent2:#4a6b5a;--card:#f3efe6;--card-strong:#ece4d7}
@@ -91,10 +91,8 @@ html[data-bg-effect="dragon"] .bg-dragons{display:block}
 @keyframes bgSnowFall1{0%{transform:translate3d(0,0,0)}50%{transform:translate3d(14px,56vh,0)}100%{transform:translate3d(-4px,112vh,0)}}
 @keyframes bgSnowFall2{0%{transform:translate3d(0,0,0)}45%{transform:translate3d(-16px,50vh,0)}100%{transform:translate3d(10px,112vh,0)}}
 @keyframes bgSnowFall3{0%{transform:translate3d(0,0,0)}55%{transform:translate3d(18px,62vh,0)}100%{transform:translate3d(6px,112vh,0)}}
-.bg-dragons{position:absolute;inset:0;overflow:hidden;pointer-events:none;color:var(--dragon-body);opacity:var(--dragon-opacity)}.dragon-flight{position:absolute;width:min(430px,42vw);min-width:280px;aspect-ratio:2.35;will-change:transform;filter:drop-shadow(0 0 12px color-mix(in srgb,var(--dragon-highlight) 22%,transparent));animation-timing-function:linear;animation-iteration-count:infinite}.dragon-svg{display:block;width:100%;height:100%;overflow:visible}.dragon-ribbon{fill:none;stroke:currentColor;stroke-width:7;stroke-linecap:round;stroke-linejoin:round}.dragon-ribbon-thin{fill:none;stroke:color-mix(in srgb,currentColor 68%,transparent);stroke-width:2;stroke-linecap:round}.dragon-scale{fill:none;stroke:color-mix(in srgb,currentColor 62%,transparent);stroke-width:2}.dragon-head{fill:color-mix(in srgb,currentColor 82%,transparent);stroke:var(--dragon-highlight);stroke-width:2}.dragon-eye{fill:var(--dragon-highlight)}.dragon-detail{fill:none;stroke:var(--dragon-highlight);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.dragon-flight-one{top:5%;left:-38%;animation:bgDragonFlightOne 39s ease-in-out infinite}.dragon-flight-two{top:44%;left:-42%;animation:bgDragonFlightTwo 47s ease-in-out infinite -19s;transform:scaleX(-1) scale(.8)}.dragon-flight-three{top:73%;left:-34%;animation:bgDragonFlightThree 53s ease-in-out infinite -31s;transform:scale(.68)}
-@keyframes bgDragonFlightOne{0%{transform:translate3d(-8vw,12vh,0) rotate(-5deg) scale(.76)}25%{transform:translate3d(24vw,-4vh,0) rotate(4deg) scale(.92)}50%{transform:translate3d(56vw,7vh,0) rotate(-2deg) scale(1)}75%{transform:translate3d(84vw,-7vh,0) rotate(5deg) scale(.88)}100%{transform:translate3d(126vw,14vh,0) rotate(-3deg) scale(.76)}}
-@keyframes bgDragonFlightTwo{0%{transform:translate3d(-8vw,3vh,0) rotate(5deg) scaleX(-1) scale(.72)}35%{transform:translate3d(32vw,12vh,0) rotate(-4deg) scaleX(-1) scale(.9)}68%{transform:translate3d(72vw,-8vh,0) rotate(3deg) scaleX(-1) scale(.82)}100%{transform:translate3d(126vw,5vh,0) rotate(-5deg) scaleX(-1) scale(.72)}}
-@keyframes bgDragonFlightThree{0%{transform:translate3d(-12vw,-4vh,0) rotate(-3deg) scale(.62)}30%{transform:translate3d(28vw,8vh,0) rotate(4deg) scale(.72)}65%{transform:translate3d(70vw,-2vh,0) rotate(-4deg) scale(.66)}100%{transform:translate3d(128vw,9vh,0) rotate(3deg) scale(.62)}}
+.bg-dragons{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.dragon-flight-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:block}
 @media(prefers-reduced-motion: reduce){#bg-effect{display:none}}
 button,input,select,textarea{font:inherit}
 button{color:inherit}
@@ -547,14 +545,7 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
     <span class="flake f17"></span><span class="flake f18"></span><span class="flake f19"></span><span class="flake f20"></span>
   </div>
   <div class="bg-layer bg-dragons">
-    <div class="dragon-flight dragon-flight-one">
-      <svg class="dragon-svg" viewBox="0 0 420 180" aria-hidden="true">
-        <path class="dragon-ribbon" d="M22 111C57 66 91 139 132 96s75-39 111-1 65 41 83-19"/><path class="dragon-ribbon-thin" d="M27 120C62 78 92 151 137 106s75-35 107 2 61 39 83-20"/>
-        <path class="dragon-detail" d="M66 94l-8-22m19 28-2-24m29 19 8-21m87-8-6-22m19 25 5-21m73 20 15-15m-15 18 21-5"/>
-        <circle class="dragon-scale" cx="52" cy="91" r="7"/><circle class="dragon-scale" cx="83" cy="104" r="7"/><circle class="dragon-scale" cx="119" cy="101" r="7"/><circle class="dragon-scale" cx="157" cy="78" r="7"/><circle class="dragon-scale" cx="199" cy="74" r="7"/><circle class="dragon-scale" cx="239" cy="96" r="7"/>
-        <path class="dragon-detail" d="M278 85c10-22 30-29 47-17l17 12-10 23c-18 6-34 1-45-18M300 58l-3-21m11 20 9-21m-17 47c-6 8-15 12-24 11m40-5c7 6 15 8 24 5m-42-27c9-4 18-4 27 1"/><circle class="dragon-head" cx="311" cy="75" r="18"/><circle class="dragon-eye" cx="318" cy="70" r="2.7"/><path class="dragon-detail" d="M326 82c13 4 20 1 28-6m-25 12c12 10 20 12 29 10"/>
-      </svg>
-    </div>
+    <canvas id="dragon-flight-canvas" class="dragon-flight-canvas" aria-hidden="true"></canvas>
   </div>
 </div>
 <div class="splash" id="splash" aria-label="Opening Loomwright">

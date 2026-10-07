@@ -7,7 +7,7 @@ window.pdfjsLib=pdfjsLib;
 pdfjsLib.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdfjs/build/pdf.worker.min.mjs',import.meta.url).href;
 const PDF_CMAP_URL=new URL('./vendor/pdfjs/cmaps/',import.meta.url).href;
 const PDF_STANDARD_FONT_URL=new URL('./vendor/pdfjs/standard_fonts/',import.meta.url).href;
-const APP_VERSION='1.5.0';
+const APP_VERSION='1.5.0.4';
 const PROJECT_RECORD_VERSION=3;
 const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,charNotes:{},charStatus:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webPositions:{},webNodes:[],webLinks:[],templates:[]};
 const PROJECTS_STORAGE_KEY='loomwright_projects_v1',ACTIVE_PROJECT_KEY='loomwright_active_project_v1',APP_SETTINGS_KEY='loomwright_app_settings_v1',DELETED_PROJECTS_STORAGE_KEY='loomwright_deleted_projects_v1';
@@ -1778,6 +1778,362 @@ function setupWriteDragDrop(){
   });
 }
 
+/* Multi-Dragon Atmospheric Flight Engine (Dynamic Omni-directional Kinematics, Watermark-Free) */
+function initDragonFlight() {
+  const canvas = document.getElementById('dragon-flight-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  let width = 0, height = 0, dpr = 1;
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = Math.floor(width * dpr);
+    canvas.height = Math.floor(height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // Helper to spawn a fresh flight path entering from any screen perimeter
+  function spawnDragon(scale, speed, delayTicks = 0) {
+    const margin = 260;
+    // Pick an entry side: 0=Left, 1=Right, 2=Top, 3=Bottom
+    const entrySide = Math.floor(Math.random() * 4);
+    let x, y, angle;
+
+    if (entrySide === 0) { // Left
+      x = -margin;
+      y = Math.random() * height;
+      angle = (Math.random() - 0.5) * 0.9; // heading mostly rightwards
+    } else if (entrySide === 1) { // Right
+      x = width + margin;
+      y = Math.random() * height;
+      angle = Math.PI + (Math.random() - 0.5) * 0.9; // heading mostly leftwards
+    } else if (entrySide === 2) { // Top
+      x = Math.random() * width;
+      y = -margin;
+      angle = Math.PI * 0.5 + (Math.random() - 0.5) * 1.1; // heading downwards
+    } else { // Bottom
+      x = Math.random() * width;
+      y = height + margin;
+      angle = -Math.PI * 0.5 + (Math.random() - 0.5) * 1.1; // heading upwards
+    }
+
+    // Number of segments for the sinuous spine
+    const numPoints = 36;
+    const segDist = 14 * scale;
+    const history = [];
+    for (let i = 0; i < numPoints * 4; i++) {
+      history.push({
+        x: x - Math.cos(angle) * (i * segDist * 0.25),
+        y: y - Math.sin(angle) * (i * segDist * 0.25),
+        angle: angle
+      });
+    }
+
+    return {
+      x,
+      y,
+      angle,
+      targetAngle: angle,
+      turnTimer: 0,
+      scale,
+      speed,
+      bodyWaveSpeed: 4.8 + Math.random() * 0.8,
+      numPoints,
+      segDist,
+      history,
+      active: delayTicks <= 0,
+      delayTicks
+    };
+  }
+
+  // 3 dragons with increased scale (~0.58 to 0.72) and staggered launches
+  const dragons = [
+    spawnDragon(0.68, 1.95, 0),    // Main majesty dragon
+    spawnDragon(0.52, 1.55, 120),  // Mid-scale companion
+    spawnDragon(0.60, 1.75, 260)   // Second swooping dragon
+  ];
+
+  let tick = 0;
+  let rafId = null;
+
+  function renderDragon(d, time) {
+    ctx.save();
+
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const computed = getComputedStyle(document.documentElement);
+    const bodyColor = computed.getPropertyValue('--dragon-body').trim() || (isDark ? '#8eaa94' : '#26362d');
+    const goldColor = computed.getPropertyValue('--dragon-gold').trim() || (isDark ? '#e4bf68' : '#c89b3c');
+    const highlightColor = computed.getPropertyValue('--dragon-highlight').trim() || (isDark ? '#ffffff' : '#1e3527');
+
+    const pts = [];
+    const step = 4;
+    for (let i = 0; i < d.numPoints; i++) {
+      const hIdx = Math.min(i * step, d.history.length - 1);
+      const h = d.history[hIdx] || { x: d.x, y: d.y, angle: d.angle };
+      const segT = i / (d.numPoints - 1);
+
+      // Sinuous swimming wave perpendicular to local heading
+      const perpAngle = h.angle + Math.PI * 0.5;
+      const wave = Math.sin(time * d.bodyWaveSpeed - (i * 0.44)) * (20 * d.scale * (1 - segT * 0.3));
+      const px = h.x + Math.cos(perpAngle) * wave;
+      const py = h.y + Math.sin(perpAngle) * wave;
+      pts.push({ x: px, y: py, angle: h.angle });
+    }
+
+    if (pts.length < 2) {
+      ctx.restore();
+      return;
+    }
+
+    const bodyWidth = 18 * d.scale;
+
+    // Draw Dorsal Fin Ridge along undulating spine
+    ctx.strokeStyle = goldColor;
+    ctx.lineWidth = 2.4 * d.scale;
+    ctx.beginPath();
+    for (let i = 2; i < pts.length - 2; i += 2) {
+      const p = pts[i];
+      const prev = pts[i - 1];
+      const dx = p.x - prev.x, dy = p.y - prev.y;
+      const nx = -dy, ny = dx;
+      const len = Math.hypot(nx, ny) || 1;
+      const finH = 17 * d.scale * (1 - (i / pts.length) * 0.4);
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(p.x + (nx / len) * finH, p.y + (ny / len) * finH);
+    }
+    ctx.stroke();
+
+    // Draw Sinuous Body (Thick brush with belly tone)
+    for (let i = pts.length - 1; i > 0; i--) {
+      const p1 = pts[i];
+      const p0 = pts[i - 1];
+      const t = i / pts.length;
+      const w = bodyWidth * (1 - t * 0.65);
+
+      ctx.strokeStyle = bodyColor;
+      ctx.lineWidth = Math.max(w, 2);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.lineTo(p1.x, p1.y);
+      ctx.stroke();
+
+      // Belly under-tone line
+      ctx.strokeStyle = highlightColor;
+      ctx.lineWidth = Math.max(w * 0.35, 1);
+      const perp = p1.angle + Math.PI * 0.5;
+      const ox = Math.cos(perp) * (w * 0.25);
+      const oy = Math.sin(perp) * (w * 0.25);
+      ctx.beginPath();
+      ctx.moveTo(p0.x + ox, p0.y + oy);
+      ctx.lineTo(p1.x + ox, p1.y + oy);
+      ctx.stroke();
+    }
+
+    // Four Claws (Active step cycles along body orientation)
+    const legIndices = [8, 13, 20, 26];
+    legIndices.forEach((idx, lIdx) => {
+      if (pts[idx]) {
+        const lp = pts[idx];
+        const sideSign = (lIdx % 2 === 0 ? 1 : -1);
+        const legPerp = lp.angle + (Math.PI * 0.5 * sideSign);
+        const legReach = Math.sin(time * 3.5 + lIdx) * (6 * d.scale);
+
+        const kneeX = lp.x + Math.cos(legPerp) * (18 * d.scale) + Math.cos(lp.angle) * (4 * d.scale);
+        const kneeY = lp.y + Math.sin(legPerp) * (18 * d.scale) + Math.sin(lp.angle) * (4 * d.scale);
+        const footX = kneeX + Math.cos(legPerp) * (10 * d.scale) + Math.cos(lp.angle) * (12 * d.scale + legReach);
+        const footY = kneeY + Math.sin(legPerp) * (10 * d.scale) + Math.sin(lp.angle) * (12 * d.scale + legReach);
+
+        ctx.strokeStyle = bodyColor;
+        ctx.lineWidth = 2.6 * d.scale;
+        ctx.beginPath();
+        ctx.moveTo(lp.x, lp.y);
+        ctx.lineTo(kneeX, kneeY);
+        ctx.lineTo(footX, footY);
+
+        // 3 Sharp Talons
+        const talonLen = 6 * d.scale;
+        const clawAngle = lp.angle + (0.2 * sideSign);
+        ctx.lineTo(footX + Math.cos(clawAngle + 0.3) * talonLen, footY + Math.sin(clawAngle + 0.3) * talonLen);
+        ctx.moveTo(footX, footY);
+        ctx.lineTo(footX + Math.cos(clawAngle) * (talonLen * 1.2), footY + Math.sin(clawAngle) * (talonLen * 1.2));
+        ctx.moveTo(footX, footY);
+        ctx.lineTo(footX + Math.cos(clawAngle - 0.3) * talonLen, footY + Math.sin(clawAngle - 0.3) * talonLen);
+        ctx.stroke();
+      }
+    });
+
+    // Flowing Tail Fan (Tuft)
+    const tailTip = pts[pts.length - 1];
+    const tailPre = pts[pts.length - 2];
+    if (tailTip && tailPre) {
+      const tAngle = Math.atan2(tailTip.y - tailPre.y, tailTip.x - tailPre.x);
+      ctx.save();
+      ctx.translate(tailTip.x, tailTip.y);
+      ctx.rotate(tAngle);
+      ctx.fillStyle = goldColor;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.bezierCurveTo(12 * d.scale, -18 * d.scale, 30 * d.scale, -12 * d.scale, 38 * d.scale, 0);
+      ctx.bezierCurveTo(30 * d.scale, 12 * d.scale, 12 * d.scale, 18 * d.scale, 0, 0);
+      ctx.fill();
+      ctx.strokeStyle = highlightColor;
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Majestic Dragon Head, Antlers, Mane & Whiskers
+    const pHead = pts[0];
+    const pNeck = pts[1];
+    if (pHead && pNeck) {
+      const hAngle = Math.atan2(pHead.y - pNeck.y, pHead.x - pNeck.x);
+      ctx.save();
+      ctx.translate(pHead.x, pHead.y);
+      ctx.rotate(hAngle);
+
+      // Skull & Snout
+      ctx.fillStyle = bodyColor;
+      ctx.beginPath();
+      ctx.ellipse(6 * d.scale, 0, 18 * d.scale, 10 * d.scale, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Lower Jaw
+      ctx.strokeStyle = bodyColor;
+      ctx.lineWidth = 2.4 * d.scale;
+      ctx.beginPath();
+      ctx.moveTo(8 * d.scale, 3 * d.scale);
+      ctx.lineTo(19 * d.scale, 6 * d.scale);
+      ctx.stroke();
+
+      // Stag Antlers
+      ctx.strokeStyle = goldColor;
+      ctx.lineWidth = 2.8 * d.scale;
+      ctx.beginPath();
+      ctx.moveTo(-3 * d.scale, -7 * d.scale);
+      ctx.lineTo(-16 * d.scale, -26 * d.scale);
+      ctx.lineTo(-10 * d.scale, -34 * d.scale);
+      ctx.moveTo(-10 * d.scale, -18 * d.scale);
+      ctx.lineTo(-2 * d.scale, -23 * d.scale);
+      ctx.stroke();
+
+      // Flowing Mane
+      ctx.strokeStyle = goldColor;
+      ctx.lineWidth = 2.2 * d.scale;
+      ctx.beginPath();
+      ctx.moveTo(-8 * d.scale, -4 * d.scale);
+      ctx.quadraticCurveTo(-24 * d.scale, -14 * d.scale, -36 * d.scale, -6 * d.scale);
+      ctx.moveTo(-5 * d.scale, 4 * d.scale);
+      ctx.quadraticCurveTo(-22 * d.scale, 9 * d.scale, -34 * d.scale, 16 * d.scale);
+      ctx.stroke();
+
+      // Expressive Eye
+      ctx.fillStyle = goldColor;
+      ctx.beginPath();
+      ctx.arc(5 * d.scale, -4 * d.scale, 3.2 * d.scale, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = isDark ? '#ffffff' : '#000000';
+      ctx.beginPath();
+      ctx.arc(5.5 * d.scale, -4 * d.scale, 1.5 * d.scale, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Flowing Long Barbels / Whiskers
+      const wWave = Math.sin(time * 4) * 6 * d.scale;
+      ctx.strokeStyle = goldColor;
+      ctx.lineWidth = 1.8 * d.scale;
+      ctx.beginPath();
+      ctx.moveTo(16 * d.scale, -3 * d.scale);
+      ctx.bezierCurveTo(32 * d.scale, -10 * d.scale + wWave, 46 * d.scale, 8 * d.scale - wWave, 62 * d.scale, 6 * d.scale);
+      ctx.moveTo(14 * d.scale, 3 * d.scale);
+      ctx.bezierCurveTo(28 * d.scale, 8 * d.scale - wWave, 38 * d.scale, 18 * d.scale + wWave, 52 * d.scale, 20 * d.scale);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+
+  function loop() {
+    const isEffectActive = document.documentElement.getAttribute('data-bg-effect') === 'dragon';
+    if (!isEffectActive) {
+      ctx.clearRect(0, 0, width, height);
+      rafId = requestAnimationFrame(loop);
+      return;
+    }
+
+    ctx.clearRect(0, 0, width, height);
+    tick += 0.016;
+
+    dragons.forEach((d, idx) => {
+      if (!d.active) {
+        d.delayTicks--;
+        if (d.delayTicks <= 0) d.active = true;
+        return;
+      }
+
+      // Smooth steering toward targetAngle for curving, diagonal, and vertical flight paths
+      d.turnTimer--;
+      if (d.turnTimer <= 0) {
+        // Change heading naturally every few seconds
+        d.targetAngle += (Math.random() - 0.5) * 1.5;
+        d.turnTimer = 80 + Math.floor(Math.random() * 120);
+
+        // If wandering too close to edges while in the middle of screen, guide back towards interior
+        if (d.x > 150 && d.x < width - 150 && d.y > 150 && d.y < height - 150) {
+          const centerAngle = Math.atan2(height * 0.5 - d.y, width * 0.5 - d.x);
+          d.targetAngle = d.targetAngle * 0.7 + centerAngle * 0.3;
+        }
+      }
+
+      // Smooth angle interpolation
+      let diff = d.targetAngle - d.angle;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      d.angle += diff * 0.035;
+
+      // Advance head in 2D space
+      d.x += Math.cos(d.angle) * d.speed;
+      d.y += Math.sin(d.angle) * d.speed;
+
+      // Prepend to history for vertebrae tracking
+      d.history.unshift({ x: d.x, y: d.y, angle: d.angle });
+      if (d.history.length > d.numPoints * 5) {
+        d.history.pop();
+      }
+
+      // Screen exit check: when dragon flies completely off-screen, respawn on a new perimeter side
+      const margin = 320;
+      const isOffscreen = (
+        d.x < -margin ||
+        d.x > width + margin ||
+        d.y < -margin ||
+        d.y > height + margin
+      );
+
+      // Only respawn if it had already entered the screen
+      if (isOffscreen && d.history.length >= d.numPoints * 4) {
+        const nextScale = 0.50 + Math.random() * 0.22;
+        const nextSpeed = 1.5 + Math.random() * 0.6;
+        const fresh = spawnDragon(nextScale, nextSpeed, Math.floor(Math.random() * 100));
+        Object.assign(d, fresh);
+      }
+
+      renderDragon(d, tick);
+    });
+
+    rafId = requestAnimationFrame(loop);
+  }
+
+  loop();
+}
+
 bindBookDesigner();
 setupConfirmDialog();
 renderAppVersion();
@@ -1787,5 +2143,7 @@ setupAIStoryWebEnhancement();
 setupAIMetricsCritique();
 setupAIAssistStudio();
 setupWriteDragDrop();
+initDragonFlight();
 window.addEventListener('beforeunload', () => { flushWriterSave(); });
 setupOfflineApp();initializeOfflineStorage().then(startSharedSync).finally(playIntro);
+
