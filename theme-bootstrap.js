@@ -12,7 +12,10 @@
   if(palette==='parchment'&&theme==='auto'){palette='sage';theme='light'}
   else if(theme==='auto')theme=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
   if(!['none','rain','clouds','snow','dragon'].includes(effect))effect='none';
-  root.dataset.palette=palette;root.dataset.theme=theme;root.dataset.bgEffect=effect;
+  const navPosition = settings.navPosition === 'side' ? 'side' : 'top';
+  root.dataset.palette=palette;root.dataset.theme=theme;root.dataset.bgEffect=effect;root.dataset.navPosition=navPosition;
+  const applyNavPos = () => { if (document.body) document.body.classList.toggle('nav-side-mounted', navPosition === 'side'); };
+  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', applyNavPos); } else { applyNavPos(); }
   const themeColor=document.querySelector('meta[name="theme-color"]'),background=getComputedStyle(root).getPropertyValue('--bg').trim();
   if(themeColor&&background)themeColor.content=background;
 
