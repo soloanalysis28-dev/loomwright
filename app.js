@@ -10,7 +10,7 @@ window.pdfjsLib=pdfjsLib;
 pdfjsLib.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdfjs/build/pdf.worker.min.mjs',import.meta.url).href;
 const PDF_CMAP_URL=new URL('./vendor/pdfjs/cmaps/',import.meta.url).href;
 const PDF_STANDARD_FONT_URL=new URL('./vendor/pdfjs/standard_fonts/',import.meta.url).href;
-const APP_VERSION='1.5.0.5';
+const APP_VERSION='1.5.0.6';
 const PROJECT_RECORD_VERSION=3;
 const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,charNotes:{},charStatus:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webPositions:{},webNodes:[],webLinks:[],templates:[]};
 const PROJECTS_STORAGE_KEY='loomwright_projects_v1',ACTIVE_PROJECT_KEY='loomwright_active_project_v1',APP_SETTINGS_KEY='loomwright_app_settings_v1',DELETED_PROJECTS_STORAGE_KEY='loomwright_deleted_projects_v1';
@@ -639,7 +639,7 @@ function updateWriterStatusFast(editor) {
   const statusTotal = document.getElementById('writer-status-total');
   const goalEl = document.getElementById('writer-daily-goal-indicator');
 
-  if (statusSec) statusSec.textContent = `Section ${Math.max(index + 1, 1)} of ${state.sections.length}`;
+  if (statusSec) statusSec.textContent = `Chapter ${Math.max(index + 1, 1)} of ${state.sections.length}`;
   if (statusWords) statusWords.textContent = currentWords.toLocaleString() + ' words';
   if (statusTotal) statusTotal.textContent = totalWords().toLocaleString() + ' words total';
 
@@ -861,7 +861,8 @@ const RIBBON_ICONS={
   alignRight:'<path d="M4 5h16M9 9h11M4 13h16M9 17h11M4 21h16"/>',
   alignJustify:'<path d="M4 5h16M4 9h16M4 13h16M4 17h16M4 21h16"/>',
   bullets:'<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
-  numbers:'<path d="M10 6h10M10 12h10M10 18h10M4 5h2v3M4 11h2l-2 2h2M4 17h2v2H4"/>'
+  numbers:'<path d="M10 6h10M10 12h10M10 18h10M4 5h2v3M4 11h2l-2 2h2M4 17h2v2H4"/>',
+  trash:'<path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2m-6 5v6m4-6v6"/>'
 };
 function ribbonIcon(name){return `<svg class="ribbon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${RIBBON_ICONS[name]}</svg>`}
 const WRITER_THEME_COLORS=['#ffffff','#000000','#e7e6e6','#44546a','#5b9bd5','#ed7d31','#a5a5a5','#ffc000','#4472c4','#70ad47'];
@@ -965,9 +966,9 @@ function setHighlight(color){applyWriterColor(document.getElementById('content-e
 function setLineSpacing(val){const s=state.sections.find(x=>String(x.id)===String(state.activeId));if(!s)return;s.lineHeight=safeLineHeight(val);save();const el=document.getElementById('content-editable');if(el)el.style.lineHeight=s.lineHeight}
 function renderEditor(){
   const s=state.sections.find(x=>String(x.id)===String(state.activeId)),wrap=document.getElementById('editor-wrap');
-  if(!s){wrap.innerHTML='<div class="empty">No section selected.</div>';return}
+  if(!s){wrap.innerHTML='<div class="empty">No chapter selected.</div>';return}
   const fontOptions=BOOK_FONTS.map(g=>`<optgroup label="${g.group}">${g.fonts.map(f=>`<option value="${f}" style="font-family:'${f}'">${f}</option>`).join('')}</optgroup>`).join('');
-  wrap.innerHTML=`<input type="text" id="title-input" aria-label="Section title" value="${escapeHtml(s.title||'Untitled')}">
+  wrap.innerHTML=`<input type="text" id="title-input" aria-label="Chapter title" placeholder="Chapter title" value="${escapeHtml(s.title||'Untitled')}">
     <div class="toolbar" aria-label="Formatting tools">
       <div class="tb-group" role="group" aria-label="Clipboard">
         <button type="button" id="writer-save" aria-label="Save" title="Save (Ctrl/Cmd+S)">${ribbonIcon('save')}</button><button type="button" id="writer-copy" aria-label="Copy" title="Copy selected text">${ribbonIcon('copy')}</button><button type="button" id="writer-paste" aria-label="Paste" title="Paste plain text at the cursor">${ribbonIcon('paste')}</button><span class="tb-group-label">Clipboard</span>
@@ -1001,8 +1002,11 @@ function renderEditor(){
       <div class="tb-group" role="group" aria-label="Line spacing">
         <select id="tb-linespacing" aria-label="Line spacing"><option value="1.4">Single</option><option value="1.6">1.15</option><option value="1.8">1.5</option><option value="2.2">Double</option></select><span class="tb-group-label">Spacing</span>
       </div>
+      <div class="tb-group tb-group-tools" role="group" aria-label="Tools">
+        <button type="button" id="delete-section" class="tb-del-btn" aria-label="Delete chapter" title="Delete current chapter">${ribbonIcon('trash')}<span>Delete</span></button><span class="tb-group-label">Tools</span>
+      </div>
     </div>
-    <div contenteditable="true" id="content-editable" role="textbox" aria-multiline="true" aria-label="Manuscript section" style="line-height:${safeLineHeight(s.lineHeight)}">${sanitizeRichHtml(s.html||'<p></p>')}</div>`;
+    <div contenteditable="true" id="content-editable" role="textbox" aria-multiline="true" aria-label="Manuscript chapter" style="line-height:${safeLineHeight(s.lineHeight)}">${sanitizeRichHtml(s.html||'<p></p>')}</div>`;
   const titleInput = document.getElementById('title-input');
   let titleTimer = null;
   if(titleInput){
@@ -1126,8 +1130,8 @@ function renderEditor(){
   lsSelect.onchange=e=>setLineSpacing(e.target.value);
   document.getElementById('delete-section').onclick=()=>delSection(s.id);
 }
-function addSection(){flushWriterSave();const id=Date.now();state.sections.push({id,title:'New Section',html:'<p></p>'});state.activeId=id;save();renderSidebar();renderEditor();renderHome();document.getElementById('title-input')?.focus()}
-function delSection(id){flushWriterSave();if(state.sections.length===1){toast("You can’t delete your only section.");return}state.sections=state.sections.filter(s=>s.id!==id);state.activeId=state.sections[0].id;save();void flushOfflineSave().catch(()=>toast('Chapter deleted here, but the offline save needs attention.'));renderSidebar();renderEditor();renderHome()}
+function addSection(){flushWriterSave();const id=Date.now();state.sections.push({id,title:'New Chapter',html:'<p></p>'});state.activeId=id;save();renderSidebar();renderEditor();renderHome();document.getElementById('title-input')?.focus()}
+async function delSection(id){flushWriterSave();if(state.sections.length===1){toast("You can’t delete your only chapter.");return}const s=state.sections.find(item=>item.id===id);const title=s?.title?.trim()||'Untitled';const confirmed=await showConfirmDialog('Delete “'+title+'”?','Are you sure you want to delete this chapter? This cannot be undone.','Delete chapter');if(!confirmed)return;state.sections=state.sections.filter(s=>s.id!==id);state.activeId=state.sections[0].id;save();void flushOfflineSave().catch(()=>toast('Chapter deleted here, but the offline save needs attention.'));renderSidebar();renderEditor();renderHome();toast('Chapter deleted.')}
 
 document.getElementById('add-section').addEventListener('click',addSection);
 document.getElementById('create-blank-doc').addEventListener('click',createBlankDocument);

@@ -236,6 +236,8 @@ main{padding:24px 28px 44px}
 .writer-status-action:hover{background:var(--card);border-color:var(--line)}
 .writer-status-action[aria-pressed="true"]{background:var(--card-strong);border-color:var(--line)}
 .writer-status-action.del{color:var(--danger)}
+.tb-del-btn{color:var(--danger)!important}
+.tb-del-btn:hover,.tb-del-btn:focus-visible{background:color-mix(in srgb,var(--danger) 14%,var(--panel))!important;border-color:color-mix(in srgb,var(--danger) 35%,var(--line))!important}
 .write-workspace{padding-bottom:56px}
 body.writer-focus .app-header,body.writer-focus .app-nav,body.writer-focus #view-write .writer-command-bar,body.writer-focus #view-write .toolbar{display:none}
 body.writer-focus #view-write{padding-top:0}
@@ -660,20 +662,20 @@ body.writer-focus.focus-hide-footer .writer-statusbar,body.writer-focus.focus-hi
       <div class="write-shell">
         <section class="write-library" id="write-library" aria-label="Writing desk">
           <div class="write-library-hero">
-            <div class="write-library-copy"><div class="eyebrow">Loomwright writing desk</div><h2 id="write-title">Where would you like to begin?</h2><p>Open a recent document or start a new one. Your writing stays saved on this device.</p></div>
-            <div class="write-library-actions"><button class="primary-button" id="create-blank-doc" type="button">＋ New document</button><label class="secondary-button upload-button" for="file-input">⇪ Import documents</label><input type="file" id="file-input" accept=".txt,.docx,.pdf" multiple hidden></div>
+            <div class="write-library-copy"><div class="eyebrow">Loomwright writing desk</div><h2 id="write-title">Where would you like to begin?</h2><p>Open a recent chapter or start a new one. Your writing stays saved on this device.</p></div>
+            <div class="write-library-actions"><button class="primary-button" id="create-blank-doc" type="button" aria-label="Add chapter">＋ Add chapter</button><label class="secondary-button upload-button" for="file-input">⇪ Import chapters</label><input type="file" id="file-input" accept=".txt,.docx,.pdf" multiple hidden></div>
           </div>
-          <section class="write-library-documents" aria-labelledby="document-list-title"><div class="write-library-heading"><h3 id="document-list-title">Recent documents</h3><div style="display:flex;align-items:center;gap:8px"><span id="write-document-count"></span><button class="secondary-button" id="sort-chapters-btn" type="button" style="padding:3px 9px;font-size:.72rem" title="Order chapters in natural sequence by title">↕ Sort by title</button></div></div><div class="document-list" id="document-list" aria-live="polite"></div></section>
+          <section class="write-library-documents" aria-labelledby="document-list-title"><div class="write-library-heading"><h3 id="document-list-title">Recent chapters</h3><div style="display:flex;align-items:center;gap:8px"><span id="write-document-count"></span><button class="secondary-button" id="sort-chapters-btn" type="button" style="padding:3px 9px;font-size:.72rem" title="Order chapters in natural sequence by title">↕ Sort by title</button></div></div><div class="document-list" id="document-list" aria-live="polite"></div></section>
           <section class="template-library" aria-labelledby="template-library-title">
-            <div class="template-library-heading"><div><h3 id="template-library-title">Templates</h3><p>Start a new section from one of your writing templates.</p></div><div class="template-library-actions"><span class="template-count" id="template-count"></span><label class="secondary-button upload-button" for="template-file-input">＋ Add template</label><input id="template-file-input" type="file" accept=".txt,.docx" multiple hidden></div></div>
+            <div class="template-library-heading"><div><h3 id="template-library-title">Templates</h3><p>Start a new chapter from one of your writing templates.</p></div><div class="template-library-actions"><span class="template-count" id="template-count"></span><label class="secondary-button upload-button" for="template-file-input">＋ Add template</label><input id="template-file-input" type="file" accept=".txt,.docx" multiple hidden></div></div>
             <div class="template-grid" id="template-grid" aria-live="polite"></div>
           </section>
         </section>
         <section class="write-workspace" id="write-workspace" aria-label="Writing workspace" hidden>
           <div class="writer-command-bar">
-            <button class="writer-back" id="write-back" type="button">← Documents</button>
+            <button class="writer-back" id="write-back" type="button">← Chapters</button>
             <div class="writer-command-actions">
-              <select id="section-select" aria-label="Choose a section"></select>
+              <select id="section-select" aria-label="Choose a chapter"></select>
               <button class="secondary-button" id="writer-sort-chapters-btn" type="button" style="padding:6px 10px;font-size:.75rem" title="Order chapters in natural sequence by title">↕ Sort</button>
               <button class="addbtn" id="add-section" type="button">＋ Chapter</button>
               <button class="secondary-button ai-action-btn" id="btn-write-ai-toggle" type="button">
@@ -1135,8 +1137,8 @@ body.writer-focus.focus-hide-footer .writer-statusbar,body.writer-focus.focus-hi
   </main>
 </div>
 <div class="writer-statusbar" id="writer-statusbar" aria-label="Writing status and shortcuts" hidden>
-  <div class="writer-status-info" aria-live="polite"><span id="writer-status-section">Section 1 of 1</span><span id="writer-status-words">0 words</span><span id="writer-status-total">0 words total</span><span id="writer-unsaved-indicator" class="unsaved-badge" hidden>● Unsaved changes</span><span id="writer-daily-goal-indicator" class="daily-goal-badge" hidden>Goal: 0 / 500w</span></div>
-  <div class="writer-status-actions"><button class="writer-status-action" id="writer-focus-toggle" type="button" aria-pressed="false" title="Toggle focus mode">Focus</button><button class="writer-status-action" id="writer-status-save" type="button" title="Save (Ctrl/Cmd+S)">Save</button><button class="writer-status-action del" id="delete-section" type="button">Delete section</button></div>
+  <div class="writer-status-info" aria-live="polite"><span id="writer-status-section">Chapter 1 of 1</span><span id="writer-status-words">0 words</span><span id="writer-status-total">0 words total</span><span id="writer-unsaved-indicator" class="unsaved-badge" hidden>● Unsaved changes</span><span id="writer-daily-goal-indicator" class="daily-goal-badge" hidden>Goal: 0 / 500w</span></div>
+  <div class="writer-status-actions"><button class="writer-status-action" id="writer-focus-toggle" type="button" aria-pressed="false" title="Toggle focus mode">Focus</button><button class="writer-status-action" id="writer-status-save" type="button" title="Save (Ctrl/Cmd+S)">Save</button></div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="confirm-backdrop" id="confirm-dialog" hidden>
