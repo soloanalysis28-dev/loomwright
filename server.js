@@ -1,6 +1,8 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import { readFileSync } from 'fs';
 
 // Load .env file manually (no extra dependency needed)
@@ -24,6 +26,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const execFileAsync = promisify(execFile);
 
 let aiClient = null;
 function getAIClient() {
@@ -47,6 +50,52 @@ const HOST = '0.0.0.0';
 const DATA_DIR = path.join(__dirname, '.loomwright-data');
 const SNAPSHOT_PATH = path.join(DATA_DIR, 'projects.json');
 const BACKUP_PATH = path.join(DATA_DIR, 'projects.json.bak');
+const gitSyncState = { running: false, action: null, startedAt: null, finishedAt: null, ok: null, output: '', error: '' };
+
+async function runGit(args) {
+  return execFileAsync('git', args, { cwd: __dirname, maxBuffer: 2 * 1024 * 1024, timeout: 120000 });
+}
+
+async function readGitStatus() {
+  const [branchResult, commitResult, logResult, statusResult] = await Promise.all([
+    runGit(['branch', '--show-current']),
+    runGit(['rev-parse', '--short', 'HEAD']),
+    runGit(['log', '-1', '--format=%s']),
+    runGit(['-c', 'color.ui=false', 'status', '--short', '--branch']),
+  ]);
+  const summary = statusResult.stdout.trim();
+  return {
+    branch: branchResult.stdout.trim() || 'detached',
+    commit: commitResult.stdout.trim(),
+    message: logResult.stdout.trim(),
+    summary,
+    dirty: summary.split('\n').slice(1).some(Boolean),
+    operation: { ...gitSyncState },
+  };
+}
+
+function startGitOperation(action, args) {
+  if (gitSyncState.running) return false;
+  gitSyncState.running = true;
+  gitSyncState.action = action;
+  gitSyncState.startedAt = new Date().toISOString();
+  gitSyncState.finishedAt = null;
+  gitSyncState.ok = null;
+  gitSyncState.output = '';
+  gitSyncState.error = '';
+  runGit(args).then(({ stdout = '', stderr = '' }) => {
+    gitSyncState.output = `${stdout}${stderr}`.trim();
+    gitSyncState.ok = true;
+  }).catch(error => {
+    gitSyncState.output = `${error.stdout || ''}${error.stderr || ''}`.trim();
+    gitSyncState.error = error.message || `Git ${action} failed.`;
+    gitSyncState.ok = false;
+  }).finally(() => {
+    gitSyncState.running = false;
+    gitSyncState.finishedAt = new Date().toISOString();
+  });
+  return true;
+}
 
 try {
   fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
@@ -77,6 +126,42 @@ app.get('/api/app-status', (req, res) => {
     res.json({ name: packageInfo.name || 'loomwright', version: packageInfo.version || 'unknown' });
   } catch (error) {
     res.status(500).json({ error: 'Could not read the installed app version.' });
+  }
+});
+
+app.get('/api/git/status', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  try {
+    res.json(await readGitStatus());
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Git status is unavailable.', operation: { ...gitSyncState } });
+  }
+});
+
+app.post('/api/git/pull', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  if (gitSyncState.running) return res.status(409).json({ error: 'A Git operation is already running.', operation: { ...gitSyncState } });
+  try {
+    const status = await readGitStatus();
+    if (status.branch !== 'main') return res.status(409).json({ error: `Pull is limited to the main branch (currently ${status.branch}).`, ...status });
+    if (status.dirty) return res.status(409).json({ error: 'Pull blocked because there are uncommitted local changes. Commit or stash them first.', ...status });
+    startGitOperation('pull', ['pull', '--ff-only', 'origin', 'main']);
+    res.status(202).json({ accepted: true, operation: { ...gitSyncState } });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Could not start Git pull.' });
+  }
+});
+
+app.post('/api/git/push', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  if (gitSyncState.running) return res.status(409).json({ error: 'A Git operation is already running.', operation: { ...gitSyncState } });
+  try {
+    const status = await readGitStatus();
+    if (status.branch !== 'main') return res.status(409).json({ error: `Push is limited to the main branch (currently ${status.branch}).`, ...status });
+    startGitOperation('push', ['push', 'origin', 'main']);
+    res.status(202).json({ accepted: true, operation: { ...gitSyncState } });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Could not start Git push.' });
   }
 });
 
