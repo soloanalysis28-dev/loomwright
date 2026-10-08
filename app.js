@@ -10,7 +10,7 @@ window.pdfjsLib=pdfjsLib;
 pdfjsLib.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdfjs/build/pdf.worker.min.mjs',import.meta.url).href;
 const PDF_CMAP_URL=new URL('./vendor/pdfjs/cmaps/',import.meta.url).href;
 const PDF_STANDARD_FONT_URL=new URL('./vendor/pdfjs/standard_fonts/',import.meta.url).href;
-const APP_VERSION='1.5.0.9';
+const APP_VERSION='1.5.0.10';
 const PROJECT_RECORD_VERSION=3;
 const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,charNotes:{},charStatus:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webPositions:{},webNodes:[],webLinks:[],templates:[]};
 const PROJECTS_STORAGE_KEY='loomwright_projects_v1',ACTIVE_PROJECT_KEY='loomwright_active_project_v1',APP_SETTINGS_KEY='loomwright_app_settings_v1',DELETED_PROJECTS_STORAGE_KEY='loomwright_deleted_projects_v1';
@@ -118,20 +118,22 @@ function renderAppVersion(){const el=document.getElementById('app-version-settin
 function compareVersions(a,b){const left=String(a||'0').replace(/^v/i,'').split('.').map(Number),right=String(b||'0').replace(/^v/i,'').split('.').map(Number);for(let i=0;i<Math.max(left.length,right.length);i++){const delta=(left[i]||0)-(right[i]||0);if(delta)return delta}return 0}
 async function checkForAppUpdate(){const status=document.getElementById('about-update-status'),badge=document.getElementById('about-version-status'),button=document.getElementById('check-for-updates');if(!status)return;status.textContent='Checking for updates…';if(button)button.disabled=true;try{const response=await fetch(new URL('./api/app-status',import.meta.url),{cache:'no-store'});if(!response.ok)throw new Error('Update status is unavailable.');const server=await response.json(),serverVersion=String(server.version||'unknown'),comparison=compareVersions(serverVersion,APP_VERSION);if(comparison>0){status.textContent=`Version ${serverVersion} is ready on the server · refresh to load it.`;if(badge){badge.textContent='Update available';badge.classList.add('is-update')}}else{status.textContent=`You are up to date · checked just now.`;if(badge){badge.textContent='Up to date';badge.classList.remove('is-update')}}const registration=await navigator.serviceWorker?.getRegistration?.();if(registration)await registration.update()}catch(error){status.textContent=error?.message||'Could not check for updates.'}finally{if(button)button.disabled=false}}
 function renderGitStatus(data){
-  const status=document.getElementById('about-git-status'),pull=document.getElementById('git-pull-button'),push=document.getElementById('git-push-button');if(!status)return;
-  const operation=data?.operation||{},running=Boolean(operation.running);status.classList.toggle('is-running',running);status.classList.toggle('is-error',operation.ok===false||Boolean(data?.error));
-  if(data?.error){status.textContent=data.error}
-  else{let message=`${data.branch||'unknown'} · ${data.commit||'no commit'}\n${data.message||'No commit message available.'}`;if(data.dirty)message+='\nUncommitted local changes detected.';if(running)message+=`\nRunning Git ${operation.action} in the background…`;else if(operation.finishedAt)message+=`\nLast ${operation.action} ${operation.ok?'completed':'failed'}.`;if(operation.output)message+=`\n${operation.output.slice(-700)}`;status.textContent=message}
-  if(pull)pull.disabled=running;if(push)push.disabled=running;
+  const status=document.getElementById('about-git-status'),button=document.getElementById('git-update-button'),progress=document.getElementById('about-git-progress'),fill=document.getElementById('about-git-progress-fill');if(!status)return;
+  const operation=data?.operation||{},running=Boolean(operation.running),percent=running?(operation.step==='push'?72:34):(operation.ok===true?100:0);status.classList.toggle('is-running',running);status.classList.toggle('is-error',operation.ok===false||Boolean(data?.error));
+  if(data?.error)status.textContent=data.error;
+  else if(running)status.textContent=operation.step==='push'?'Pushing committed changes…':'Pulling the latest update…';
+  else if(operation.ok===true)status.textContent='Update complete. Refresh the app to load the latest files.';
+  else if(data?.dirty)status.textContent='Ready when local changes are committed or stashed.';
+  else status.textContent='Ready to update from Git.';
+  if(button)button.disabled=running;if(progress){progress.hidden=!running&&operation.ok!==true;progress.classList.toggle('is-complete',operation.ok===true);progress.classList.toggle('is-error',operation.ok===false||Boolean(data?.error))}if(fill)fill.style.width=`${percent}%`;
 }
-async function refreshGitStatus(){try{const response=await fetch(new URL('./api/git/status',import.meta.url),{cache:'no-store'});const data=await response.json();if(!response.ok)throw new Error(data.error||'Git status is unavailable.');renderGitStatus(data)}catch(error){renderGitStatus({error:error.message})}}
-async function runGitSync(action){
-  const button=document.getElementById(action==='pull'?'git-pull-button':'git-push-button');if(!button||button.disabled)return;button.disabled=true;
-  try{const response=await fetch(new URL(`./api/git/${action}`,import.meta.url),{method:'POST',headers:{'Content-Type':'application/json'}}),data=await response.json();if(!response.ok)throw new Error(data.error||`Git ${action} could not start.`);renderGitStatus(data);setTimeout(refreshGitStatus,700)}catch(error){renderGitStatus({error:error.message});if(button)button.disabled=false}
+async function readGitResponse(response){const type=response.headers.get('content-type')||'';if(!type.includes('application/json')){await response.text();throw new Error(response.status===404?'Update service unavailable. Pull the latest app code and restart the local server.':`Update service returned HTTP ${response.status}.`)}const data=await response.json();if(!response.ok)throw new Error(data.error||'Git update could not start.');return data}
+async function refreshGitStatus(){try{const response=await fetch(new URL('./api/git/status',import.meta.url),{cache:'no-store'});const data=await readGitResponse(response);renderGitStatus(data)}catch(error){renderGitStatus({error:error.message})}}
+async function runGitUpdate(){
+  const button=document.getElementById('git-update-button');if(!button||button.disabled)return;button.disabled=true;renderGitStatus({operation:{running:true,step:'pull'}});
+  try{const response=await fetch(new URL('./api/git/sync',import.meta.url),{method:'POST',headers:{'Content-Type':'application/json'}});const data=await readGitResponse(response);renderGitStatus(data);setTimeout(refreshGitStatus,700)}catch(error){renderGitStatus({error:error.message});if(button)button.disabled=false}
 }
-function setupGitSync(){
-  document.getElementById('git-pull-button')?.addEventListener('click',()=>runGitSync('pull'));document.getElementById('git-push-button')?.addEventListener('click',()=>runGitSync('push'));refreshGitStatus();setInterval(refreshGitStatus,5000);
-}
+function setupGitSync(){document.getElementById('git-update-button')?.addEventListener('click',runGitUpdate);refreshGitStatus();setInterval(refreshGitStatus,5000)}
 async function offlineCacheCount(){const names=(await caches.keys()).filter(name=>name.startsWith('loomwright-offline-'));let count=0;for(const name of names)count+=(await (await caches.open(name)).keys()).length;return count}
 function updateInstallButton(){const button=document.getElementById('install-app');if(button)button.hidden=!deferredInstallPrompt}
 async function prepareOfflineApp(){
@@ -156,7 +158,7 @@ function setupOfflineApp(){
   window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;updateInstallButton();setOfflineAppStatus('Loomwright is installed. Use “Prepare offline” once while connected to save all app files.')});
   if(isLocalPreview()){setOfflineAppStatus('Local preview · refresh this tab after app files change.');clearOfflinePreviewCache();return}
   if(!('serviceWorker'in navigator)||!window.isSecureContext){setOfflineAppStatus('Offline installation needs a secure website address. Open Loomwright once while connected, then prepare the offline copy.');return}
-  if('caches'in window){caches.keys().then(names=>names.filter(n=>n.startsWith('loomwright-offline-')&&n!=='loomwright-offline-v31').forEach(n=>caches.delete(n))).catch(()=>{});}
+  if('caches'in window){caches.keys().then(names=>names.filter(n=>n.startsWith('loomwright-offline-')&&n!=='loomwright-offline-v32').forEach(n=>caches.delete(n))).catch(()=>{});}
   navigator.serviceWorker.register(new URL('./sw.js',import.meta.url),{scope:new URL('./',import.meta.url).pathname}).then(async registration=>{
     try{await registration.update()}catch(_){}
     await navigator.serviceWorker.ready;

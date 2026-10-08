@@ -50,7 +50,7 @@ const HOST = '0.0.0.0';
 const DATA_DIR = path.join(__dirname, '.loomwright-data');
 const SNAPSHOT_PATH = path.join(DATA_DIR, 'projects.json');
 const BACKUP_PATH = path.join(DATA_DIR, 'projects.json.bak');
-const gitSyncState = { running: false, action: null, startedAt: null, finishedAt: null, ok: null, output: '', error: '' };
+const gitSyncState = { running: false, action: null, step: null, startedAt: null, finishedAt: null, ok: null, output: '', error: '' };
 
 async function runGit(args) {
   return execFileAsync('git', args, { cwd: __dirname, maxBuffer: 2 * 1024 * 1024, timeout: 120000 });
@@ -97,6 +97,35 @@ function startGitOperation(action, args) {
   return true;
 }
 
+function startGitUpdate() {
+  if (gitSyncState.running) return false;
+  gitSyncState.running = true;
+  gitSyncState.action = 'update';
+  gitSyncState.step = 'pull';
+  gitSyncState.startedAt = new Date().toISOString();
+  gitSyncState.finishedAt = null;
+  gitSyncState.ok = null;
+  gitSyncState.output = '';
+  gitSyncState.error = '';
+  (async () => {
+    const pull = await runGit(['pull', '--ff-only', 'origin', 'main']);
+    gitSyncState.output = `${pull.stdout || ''}${pull.stderr || ''}`.trim();
+    gitSyncState.step = 'push';
+    const push = await runGit(['push', 'origin', 'main']);
+    gitSyncState.output = `${gitSyncState.output}\n${push.stdout || ''}${push.stderr || ''}`.trim();
+    gitSyncState.ok = true;
+  })().catch(error => {
+    gitSyncState.output = `${gitSyncState.output}\n${error.stdout || ''}${error.stderr || ''}`.trim();
+    gitSyncState.error = error.message || 'Git update failed.';
+    gitSyncState.ok = false;
+  }).finally(() => {
+    gitSyncState.running = false;
+    gitSyncState.step = null;
+    gitSyncState.finishedAt = new Date().toISOString();
+  });
+  return true;
+}
+
 try {
   fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
 } catch (err) {
@@ -135,6 +164,20 @@ app.get('/api/git/status', async (req, res) => {
     res.json(await readGitStatus());
   } catch (error) {
     res.status(500).json({ error: error.message || 'Git status is unavailable.', operation: { ...gitSyncState } });
+  }
+});
+
+app.post('/api/git/sync', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  if (gitSyncState.running) return res.status(409).json({ error: 'An update is already running.', operation: { ...gitSyncState } });
+  try {
+    const status = await readGitStatus();
+    if (status.branch !== 'main') return res.status(409).json({ error: `Update is limited to the main branch (currently ${status.branch}).`, ...status });
+    if (status.dirty) return res.status(409).json({ error: 'Update blocked: local changes must be committed or stashed before updating.', ...status });
+    startGitUpdate();
+    res.status(202).json({ accepted: true, operation: { ...gitSyncState } });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Could not start the Git update.' });
   }
 });
 
