@@ -38,3 +38,25 @@ test('recognizeCharacters runs cleanly with sensitivity string', () => {
   assert.ok(Array.isArray(results));
   assert.ok(results.some(c => c.name === 'Rowan'));
 });
+
+test('recognizeCharacters excludes pronouns and question words as single-name candidates', () => {
+  const chapters = [{
+    id: 1,
+    title: 'Chapter 1',
+    text: 'He looked up. It was late. Who was there? He asked again. It moved. Who answered?',
+  }];
+  const names = recognizeCharacters(chapters, 'loose').map(candidate => candidate.name.toLowerCase());
+  assert.equal(names.includes('he'), false);
+  assert.equal(names.includes('it'), false);
+  assert.equal(names.includes('who'), false);
+});
+
+test('recognizeCharacters keeps a recurring character connected across chapters', () => {
+  const chapters = [
+    { id: 1, title: 'Chapter 1', text: 'Mara entered the room. "Stay here," Mara whispered.' },
+    { id: 2, title: 'Chapter 2', text: 'Mara crossed the bridge. Later, Mara returned and Mara waited.' },
+  ];
+  const mara = recognizeCharacters(chapters, 'balanced').find(candidate => candidate.name === 'Mara');
+  assert.ok(mara);
+  assert.deepEqual([...mara.sectionTitles], ['Chapter 1', 'Chapter 2']);
+});

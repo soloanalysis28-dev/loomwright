@@ -10,7 +10,7 @@ window.pdfjsLib=pdfjsLib;
 pdfjsLib.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdfjs/build/pdf.worker.min.mjs',import.meta.url).href;
 const PDF_CMAP_URL=new URL('./vendor/pdfjs/cmaps/',import.meta.url).href;
 const PDF_STANDARD_FONT_URL=new URL('./vendor/pdfjs/standard_fonts/',import.meta.url).href;
-const APP_VERSION='1.5.0.7';
+const APP_VERSION='1.5.0.8';
 const PROJECT_RECORD_VERSION=3;
 const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,charNotes:{},charStatus:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webPositions:{},webNodes:[],webLinks:[],templates:[]};
 const PROJECTS_STORAGE_KEY='loomwright_projects_v1',ACTIVE_PROJECT_KEY='loomwright_active_project_v1',APP_SETTINGS_KEY='loomwright_app_settings_v1',DELETED_PROJECTS_STORAGE_KEY='loomwright_deleted_projects_v1';
@@ -141,7 +141,7 @@ function setupOfflineApp(){
   window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;updateInstallButton();setOfflineAppStatus('Loomwright is installed. Use “Prepare offline” once while connected to save all app files.')});
   if(isLocalPreview()){setOfflineAppStatus('Local preview · refresh this tab after app files change.');clearOfflinePreviewCache();return}
   if(!('serviceWorker'in navigator)||!window.isSecureContext){setOfflineAppStatus('Offline installation needs a secure website address. Open Loomwright once while connected, then prepare the offline copy.');return}
-  if('caches'in window){caches.keys().then(names=>names.filter(n=>n.startsWith('loomwright-offline-')&&n!=='loomwright-offline-v23').forEach(n=>caches.delete(n))).catch(()=>{});}
+  if('caches'in window){caches.keys().then(names=>names.filter(n=>n.startsWith('loomwright-offline-')&&n!=='loomwright-offline-v30').forEach(n=>caches.delete(n))).catch(()=>{});}
   navigator.serviceWorker.register(new URL('./sw.js',import.meta.url),{scope:new URL('./',import.meta.url).pathname}).then(async registration=>{
     try{await registration.update()}catch(_){}
     await navigator.serviceWorker.ready;
@@ -1226,6 +1226,7 @@ document.getElementById('template-file-input').onchange=async e=>{
 };
 
 const STOPWORDS=new Set(['The','A','An','I','He','She','They','We','It','You','Us','Them','Its','Your','Yours','Yourself','Our','Ours','Ourselves','Themselves','Himself','Herself','Myself','Someone','Somebody','Something','Somewhere','Somehow','Anyone','Anybody','Anything','Anywhere','Everyone','Everybody','Everything','Everywhere','Nothing','Nobody','Nowhere','None','But','And','Or','Nor','So','Yet','If','When','Then','Than','There','Here','This','That','These','Those','His','Her','Their','Because','Although','Though','While','Since','Unless','Until','After','Before','Above','Below','Between','Among','Beyond','Within','Without','Through','Across','Around','Toward','Towards','During','Despite','Perhaps','Suddenly','Meanwhile','Normally','However','Instead','Otherwise','Still','Also','Even','Just','Now','Soon','Later','Finally','Eventually','Indeed','Certainly','Probably','Maybe','Well','Oh','Ah','Yes','No','Okay','Alright','Sure','Right','Look','Listen','Wait','Stop','Come','Go','Let','Once','Again','Almost','Already','Always','Never','Every','Each','Both','Few','Many','Most','Some','All','Any','Can','Could','Would','Should','Will','Shall','Must','May','Might','Do','Does','Did','Am','Is','Are','Was','Were','Being','Been','Have','Has','Had','Sorry','Please','Thanks','Thank','Hello','Hi','Hey','Goodbye','Bye','Congratulations','Welcome','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','January','February','March','April','May','June','July','August','September','October','November','December','Chapter','Prologue','Epilogue','Part']);
+['Who','Whom','Whose','What','Where','Which','Why','How'].forEach(word=>STOPWORDS.add(word));
 const COMMON_ENGLISH=new Set(['the','of','and','a','to','in','is','was','he','for','it','with','as','his','on','be','at','by','i','this','had','not','are','but','from','or','have','an','they','which','one','you','were','her','all','she','there','would','their','we','him','been','has','when','who','will','more','no','if','out','so','said','what','up','its','about','into','than','them','can','only','other','new','some','could','time','these','two','may','then','do','first','any','my','now','such','like','our','over','me','even','most','made','after','also','did','many','before','must','through','back','where','much','your','way','well','down','should','because','each','just','those','how','too','little','very','make','still','own','see','work','long','here','get','both','between','know','while','last','might','us','old','year','come','right','used','take']);
 function sectionLooksNonEnglish(html){
   const words=(textOf(html).match(/[A-Za-z']+/g)||[]);
@@ -1235,13 +1236,14 @@ function sectionLooksNonEnglish(html){
 }
 function detectCharacters(){
   const sensitivity = appSettings?.writing?.recogniserSensitivity || 'balanced';
+  const recognitionConfig = getCharacterRecognitionConfig(sensitivity);
   const chapters = state.sections.map(s => ({
     id: s.id,
     title: s.title || 'Untitled',
     text: textOf(s.html || ''),
   }));
-  const recognized = recognizeCharacters(chapters, sensitivity);
-  if (recognized && recognized.length > 0) {
+  const recognized = recognizeCharacters(chapters, recognitionConfig).filter(candidate => candidate.count >= 2 && candidate.score >= recognitionConfig.threshold && candidate.confidence !== 'low');
+  if (recognized.length > 0) {
     const candidateEntries = recognized.map(c => [
       c.name,
       {
@@ -1304,6 +1306,16 @@ function renderCharacters(){
     grid.appendChild(card);
   });
   if(hiddenCount){const note=document.createElement('div');note.className='empty';note.innerHTML=`<a href="#" id="restore-hidden-link">Restore ${hiddenCount} hidden entr${hiddenCount===1?'y':'ies'}</a>`;grid.appendChild(note);document.getElementById('restore-hidden-link').onclick=e=>{e.preventDefault();restoreIgnoredCharacters()}}
+}
+async function scanCharacters(){
+  const button=document.getElementById('btn-scan-characters'),status=document.getElementById('character-scan-status');
+  if(!button||button.disabled)return;
+  flushWriterSave();button.disabled=true;button.classList.add('is-scanning');const original=button.innerHTML;button.innerHTML='<span class="scan-spinner" aria-hidden="true"></span> Scanning chapters…';if(status)status.textContent=`Checking ${state.sections.length} ${state.sections.length===1?'chapter':'chapters'} for new and returning characters…`;
+  await new Promise(resolve=>setTimeout(resolve,180));
+  try{
+    const characters=detectCharacters();renderCharacters();renderHome();renderWeb();renderMetrics();
+    if(status)status.textContent=`Scanned ${state.sections.length} ${state.sections.length===1?'chapter':'chapters'} · ${characters.length} recurring ${characters.length===1?'character':'characters'} found · updated just now.`;
+  }finally{button.disabled=false;button.classList.remove('is-scanning');button.innerHTML=original}
 }
 let webViewport={x:0,y:0,scale:1,initialized:false},webSelectedNode='',webPendingOutput='';
 window.addEventListener('resize',()=>{if(document.getElementById('view-web').classList.contains('active')){webViewport.initialized=false;renderWeb()}});
@@ -2167,6 +2179,7 @@ function setupWritingSettingsControls() {
       toast('Hidden character suggestions restored.');
     }
   });
+  document.getElementById('btn-scan-characters')?.addEventListener('click', scanCharacters);
 
   document.getElementById('writing-reset-settings')?.addEventListener('click', async () => {
     const confirmed = await showConfirmDialog(
@@ -2584,4 +2597,3 @@ setupWriteDragDrop();
 initDragonFlight();
 window.addEventListener('beforeunload', () => { flushWriterSave(); });
 setupOfflineApp();initializeOfflineStorage().then(startSharedSync).finally(playIntro);
-

@@ -53,6 +53,19 @@ export const CHARACTER_RECOGNITION_CONFIG = Object.freeze({
     'palace', 'park', 'port', 'road', 'river', 'sea', 'shore', 'square', 'street',
     'temple', 'tower', 'town', 'valley', 'village', 'woods',
   ]),
+  excludedSingleWords: new Set([
+    'a', 'an', 'and', 'all', 'am', 'any', 'are', 'as', 'at', 'be', 'because', 'been',
+    'before', 'between', 'but', 'by', 'can', 'chapter', 'could', 'did', 'do', 'does',
+    'during', 'each', 'either', 'every', 'few', 'for', 'from', 'he', 'her', 'hers',
+    'him', 'his', 'how', 'i', 'if', 'in', 'into', 'is', 'it', 'its', 'just', 'me',
+    'many', 'may', 'maybe', 'might', 'more', 'most', 'much', 'my', 'neither', 'no',
+    'nobody', 'none', 'nor', 'not', 'nothing', 'now', 'of', 'on', 'one', 'or', 'our',
+    'ours', 'she', 'should', 'since', 'so', 'some', 'someone', 'something', 'than',
+    'that', 'the', 'their', 'theirs', 'them', 'then', 'there', 'these', 'they', 'this',
+    'those', 'though', 'through', 'to', 'too', 'under', 'until', 'us', 'we', 'were',
+    'what', 'when', 'where', 'which', 'who', 'whom', 'whose', 'why', 'will', 'with',
+    'would', 'you', 'your', 'yours', 'prologue', 'epilogue', 'part', 'act',
+  ]),
 });
 
 const WORD_PATTERN = /[\p{L}\p{M}]+(?:['’][\p{L}\p{M}]+)?/gu;
@@ -135,7 +148,7 @@ export function extractCharacterCandidates(chapters, config = CHARACTER_RECOGNIT
       const first = tokens[start];
       if (!first.capitalized) continue;
 
-      if (!config.titleWords.has(first.lower)) {
+      if (!config.titleWords.has(first.lower) && !config.excludedSingleWords?.has(first.lower)) {
         const single = createCandidate([first]);
         if (!candidates.has(single.key)) candidates.set(single.key, single);
       }
@@ -146,9 +159,9 @@ export function extractCharacterCandidates(chapters, config = CHARACTER_RECOGNIT
         if (!next.capitalized || !isJoined(text, tokens[end - 1], next, config)) break;
         run.push(next);
         const candidate = createCandidate(run);
-        if (!config.titleWords.has(first.lower) || run.length > 1) {
-          if (!candidates.has(candidate.key)) candidates.set(candidate.key, candidate);
-        }
+          if ((!config.titleWords.has(first.lower) && !config.excludedSingleWords?.has(first.lower)) || run.length > 1) {
+            if (!candidates.has(candidate.key)) candidates.set(candidate.key, candidate);
+          }
       }
     }
   }
@@ -192,7 +205,7 @@ export function extractCharacterCandidates(chapters, config = CHARACTER_RECOGNIT
     }
   }
 
-  return sortedCandidates.filter(candidate => candidate.count > 0);
+  return sortedCandidates.filter(candidate => candidate.count > 0 && (candidate.parts.length > 1 || !config.excludedSingleWords?.has(candidate.parts[0])));
 }
 
 export function scoreCharacterCandidate(candidate, config = CHARACTER_RECOGNITION_CONFIG) {

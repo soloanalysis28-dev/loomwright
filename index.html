@@ -273,7 +273,7 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
 .ai-action-btn:hover{filter:brightness(1.05);transform:translateY(-1px)}
 .ai-spark-icon{width:15px;height:15px;color:var(--accent);flex:none}
 .char-actions-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:0 0 16px;padding:12px 16px;background:var(--panel);border:1px solid var(--line);border-radius:10px}
-.char-actions-note{font-size:.76rem;color:var(--sub)}
+.char-actions-bar>#btn-scan-characters svg{width:16px;height:16px}.char-actions-note{font-size:.76rem;color:var(--sub);flex:1;min-width:220px}.char-scan-status{width:100%;font: .7rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub);padding-top:2px}.scan-spinner{display:inline-block;width:13px;height:13px;border:2px solid color-mix(in srgb,currentColor 28%,transparent);border-top-color:currentColor;border-radius:50%;animation:scanSpin .7s linear infinite;vertical-align:-2px}@keyframes scanSpin{to{transform:rotate(360deg)}}
 .ai-entities-panel{background:var(--panel);border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line));border-radius:12px;padding:18px;margin-bottom:20px;box-shadow:0 6px 20px #18201912}
 .ai-entities-panel[hidden]{display:none}
 .ai-entities-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
@@ -747,11 +747,13 @@ body.writer-focus.focus-hide-footer .writer-statusbar,body.writer-focus.focus-hi
     <section class="view" id="view-characters" aria-labelledby="characters-title">
       <div class="page-intro"><h2 id="characters-title">Characters</h2><p>Recurring names are gathered from your manuscript. Add notes to keep each person’s details in view.</p></div>
       <div class="char-actions-bar">
+        <button class="secondary-button" type="button" id="btn-scan-characters"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M20 11a8 8 0 1 0 1 4"/><path d="M20 4v7h-7"/><path d="M12 7v5l3 2"/></svg> Scan &amp; refresh</button>
         <button class="primary-button ai-action-btn" type="button" id="btn-ai-scan-entities">
           <svg class="ai-spark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z"/></svg>
           Scan Manuscript with AI
         </button>
-        <span class="char-actions-note">AI logically analyzes chapters to distinguish characters, places, and key events.</span>
+        <span class="char-actions-note">Scan checks every chapter again, including new chapters and newer appearances. AI analysis is optional.</span>
+        <span class="char-scan-status" id="character-scan-status" role="status" aria-live="polite">Not scanned this session.</span>
       </div>
       <div id="ai-entities-panel" class="ai-entities-panel" hidden></div>
       <div id="char-grid" class="char-grid"></div>
