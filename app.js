@@ -699,7 +699,19 @@ function switchView(name){
   if(name!=='write'){document.body.classList.remove('writer-focus');document.getElementById('writer-statusbar').hidden=true}
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));
-  if(name==='home')renderHome();if(name==='projects')renderProjects();if(name==='write')showWriteLibrary();if(name==='metrics')renderMetrics();if(name==='characters')renderCharacters();if(name==='web'){webViewport.initialized=false;renderWeb()}if(name==='ai')renderAI();if(name==='finalise')renderFinalise();if(name==='settings')applyTheme();
+  try {
+    if(name==='home')renderHome();
+    if(name==='projects')renderProjects();
+    if(name==='write')showWriteLibrary();
+    if(name==='metrics')renderMetrics();
+    if(name==='characters')renderCharacters();
+    if(name==='web'){webViewport.initialized=false;renderWeb()}
+    if(name==='ai')renderAI();
+    if(name==='finalise')renderFinalise();
+    if(name==='settings')applyTheme();
+  } catch (err) {
+    console.error(`Error opening view "${name}":`, err);
+  }
   window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
 }
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>switchView(t.dataset.view)));
@@ -719,7 +731,7 @@ function renderHome(){
   document.getElementById('home-resume-excerpt').textContent=excerpt?`“${excerpt.slice(0,180)}${excerpt.length>180?'…':''}”`:'Pick up where you left off and continue shaping the thread that connects it all.';
   if(resume)resume.onclick=()=>{switchView('write');openSection(activeSection?.id)};
   const characterPreview=document.getElementById('home-character-stack'),detectedCharacters=detectCharacters().slice(0,5);
-  if(characterPreview)characterPreview.innerHTML=detectedCharacters.length?detectedCharacters.map(([name])=>`<span class="character-avatar" title="${escapeHtml(name)}">${escapeHtml(name.split(/\s+/).map(part=>part[0]).join('').slice(0,2).toUpperCase())}</span>`).join(''):'<span class="character-stack-empty">Your recurring characters will appear here.</span>';
+  if(characterPreview)characterPreview.innerHTML=detectedCharacters.length?detectedCharacters.map(([name])=>`<span class="character-avatar" title="${escapeHtml(name)}">${escapeHtml(name.split(/\s+/).filter(Boolean).map(part=>part[0]||'').join('').slice(0,2).toUpperCase())}</span>`).join(''):'<span class="character-stack-empty">Your recurring characters will appear here.</span>';
   const characterLiveCount=document.getElementById('home-character-live-count');if(characterLiveCount)characterLiveCount.textContent=`${characters.toLocaleString()} recurring`;
   const webPreview=document.getElementById('home-web-preview'),webNodes=[...detectedCharacters.map(([name])=>name),...(state.webNodes||[]).map(node=>node.label)].slice(0,6);if(webPreview)webPreview.innerHTML=webNodes.length?webNodes.map((label,index)=>`<span class="web-mini-node web-mini-node-${index+1}" title="${escapeHtml(label)}">${escapeHtml(label.slice(0,1).toUpperCase())}</span>`).join(''):'<span class="web-mini-empty">Add a connection in Story Web.</span>';
   const webLiveCount=document.getElementById('home-web-live-count');if(webLiveCount)webLiveCount.textContent=`${(characters+(state.webNodes||[]).length).toLocaleString()} story nodes`;
@@ -1252,28 +1264,38 @@ function sectionLooksNonEnglish(html){
   return (hits/words.length)<0.08; // English prose is thick with function words; foreign text won't clear this bar
 }
 function detectCharacters(){
-  const sensitivity = appSettings?.writing?.recogniserSensitivity || 'balanced';
-  const recognitionConfig = getCharacterRecognitionConfig(sensitivity);
-  const chapters = state.sections.map(s => ({
-    id: s.id,
-    title: s.title || 'Untitled',
-    text: textOf(s.html || ''),
-  }));
-  const recognized = recognizeCharacters(chapters, recognitionConfig).filter(candidate => candidate.count >= 2 && candidate.score >= recognitionConfig.threshold && candidate.confidence !== 'low');
-  if (recognized.length > 0) {
-    const candidateEntries = recognized.map(c => [
-      c.name,
-      {
-        count: c.count,
-        sections: c.sectionTitles || new Set(),
-        aliases: c.parts && c.parts.length > 1 ? [c.parts[0], c.parts[c.parts.length - 1]] : undefined,
-      }
-    ]);
-    const merged = applyCharMerges(candidateEntries.filter(([n]) => !state.charIgnore?.[n]));
-    return merged.sort((a, b) => b[1].count - a[1].count);
+  try {
+    const sensitivity = appSettings?.writing?.recogniserSensitivity || 'balanced';
+    const recognitionConfig = getCharacterRecognitionConfig(sensitivity);
+    const chapters = (state?.sections || []).map(s => ({
+      id: s.id,
+      title: s.title || 'Untitled',
+      text: textOf(s.html || ''),
+    }));
+    const recognized = recognizeCharacters(chapters, recognitionConfig).filter(candidate => candidate.count >= 2 && candidate.score >= recognitionConfig.threshold);
+    if (recognized.length > 0) {
+      const candidateEntries = recognized.map(c => {
+        const aliasList = Array.isArray(c.aliases) && c.aliases.length > 0
+          ? c.aliases
+          : (c.parts && c.parts.length > 1 ? c.parts.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()) : undefined);
+        return [
+          c.name,
+          {
+            count: c.count,
+            sections: c.sectionTitles instanceof Set ? c.sectionTitles : new Set(Array.isArray(c.sectionTitles) ? c.sectionTitles : []),
+            aliases: aliasList,
+          }
+        ];
+      });
+      const merged = applyCharMerges(candidateEntries.filter(([n]) => !state.charIgnore?.[n]));
+      return merged.sort((a, b) => b[1].count - a[1].count);
+    }
+  } catch (err) {
+    console.warn('Advanced character recognition error, falling back:', err);
   }
-  const nonEnglish=new Set();state.sections.forEach(s=>{if(sectionLooksNonEnglish(s.html||''))nonEnglish.add(s.id)});
-  const scanSections=state.sections.filter(s=>!nonEnglish.has(s.id));
+  const sections = Array.isArray(state?.sections) ? state.sections : [];
+  const nonEnglish=new Set();sections.forEach(s=>{if(sectionLooksNonEnglish(s.html||''))nonEnglish.add(s.id)});
+  const scanSections=sections.filter(s=>!nonEnglish.has(s.id));
   const lowerSeen=new Set();scanSections.forEach(s=>{const plain=textOf(s.html||'').replace(/\n+/g,'. ');(plain.match(/[A-Za-z']+/g)||[]).forEach(w=>{if(/^[a-z][a-z']{2,}$/.test(w))lowerSeen.add(w)})});
   const solo={},bigrams={};scanSections.forEach(s=>{const plain=textOf(s.html||'').replace(/\n+/g,'. '),tokens=plain.match(/[A-Za-z']+|[.!?,;]|["“”:]/g)||[];let atStart=true,prevWord='',prevCand=null;const seenSolo=new Set(),seenBig=new Set();
     tokens.forEach(tok=>{if(tok===','||tok===';'){prevCand=null;return}if(tok==='.'||tok==='!'||tok==='?'||tok==='"'||tok==='“'||tok==='”'||tok===':'){atStart=true;prevCand=null;return}
@@ -1300,7 +1322,9 @@ function applyCharMerges(results){
     const canonical=resolveMergeTarget(name,map);
     if(!grouped[canonical])grouped[canonical]={count:0,sections:new Set(),aliasSet:new Set()};
     grouped[canonical].count+=d.count;
-    d.sections.forEach(x=>grouped[canonical].sections.add(x));
+    if (d.sections instanceof Set || Array.isArray(d.sections)) {
+      d.sections.forEach(x=>grouped[canonical].sections.add(x));
+    }
     if(name!==canonical)grouped[canonical].aliasSet.add(name);
     (d.aliases||[]).forEach(a=>grouped[canonical].aliasSet.add(a));
   });
@@ -1310,19 +1334,72 @@ function applyCharMerges(results){
   function restoreIgnoredCharacters(){state.charIgnore={};save();renderCharacters();renderWeb();renderMetrics()}
   function mergeCharacter(name,target){if(!target||target===name)return;state.charMerge=state.charMerge||{};state.charMerge[name]=target;save();renderCharacters();renderWeb();renderMetrics()}
 function renderCharacters(){
-  const grid=document.getElementById('char-grid'),chars=detectCharacters(),hiddenCount=Object.keys(state.charIgnore||{}).length;
-  if(!chars.length){grid.innerHTML='<div class="empty">No recurring characters detected yet. Names mentioned two or more times, including away from sentence starts, will appear here.</div>'+(hiddenCount?`<div class="empty"><a href="#" id="restore-hidden-link">Restore ${hiddenCount} hidden entr${hiddenCount===1?'y':'ies'}</a></div>`:'');if(hiddenCount)document.getElementById('restore-hidden-link').onclick=e=>{e.preventDefault();restoreIgnoredCharacters()};return}
-  grid.innerHTML='';chars.forEach(([name,d])=>{
-    const others=chars.filter(([n])=>n!==name).map(([n])=>n);
-    const card=document.createElement('div');card.className='char-card';
-    const aliasNote=d.aliases?`<div class="count">Also referred to as: ${d.aliases.map(escapeHtml).join(', ')}</div>`:'';
-    const mergeOptions=others.map(n=>`<option value="merge:${encodeURIComponent(n)}">${escapeHtml(n)}</option>`).join('');
-    card.innerHTML=`<h3>${escapeHtml(name)}</h3><div class="count">Mentioned ${d.count} times</div>${aliasNote}<textarea aria-label="Notes for ${escapeHtml(name)}" placeholder="Role, notes...">${escapeHtml(state.charNotes[name]||'')}</textarea><div class="chapters">Appears in: ${[...d.sections].map(escapeHtml).join(', ')}</div><select class="char-action-select" aria-label="Actions for ${escapeHtml(name)}"><option value="">Actions ▾</option><option value="__delete">Delete — not a character</option>${others.length?`<optgroup label="Merge into">${mergeOptions}</optgroup>`:''}</select>`;
-    card.querySelector('textarea').oninput=e=>{state.charNotes[name]=e.target.value;save()};
-    card.querySelector('.char-action-select').onchange=e=>{const val=e.target.value;if(val==='__delete')ignoreCharacter(name);else if(val.startsWith('merge:'))mergeCharacter(name,decodeURIComponent(val.slice(6)));};
-    grid.appendChild(card);
-  });
-  if(hiddenCount){const note=document.createElement('div');note.className='empty';note.innerHTML=`<a href="#" id="restore-hidden-link">Restore ${hiddenCount} hidden entr${hiddenCount===1?'y':'ies'}</a>`;grid.appendChild(note);document.getElementById('restore-hidden-link').onclick=e=>{e.preventDefault();restoreIgnoredCharacters()}}
+  try {
+    state.charNotes = state.charNotes || {};
+    state.charIgnore = state.charIgnore || {};
+    state.charMerge = state.charMerge || {};
+    const grid = document.getElementById('char-grid');
+    if (!grid) return;
+    const chars = detectCharacters() || [];
+    const hiddenCount = Object.keys(state.charIgnore).length;
+    if (!chars.length) {
+      grid.innerHTML = '<div class="empty">No recurring characters detected yet. Names mentioned two or more times, including away from sentence starts, will appear here.</div>' +
+        (hiddenCount ? `<div class="empty"><a href="#" id="restore-hidden-link">Restore ${hiddenCount} hidden entr${hiddenCount === 1 ? 'y' : 'ies'}</a></div>` : '');
+      if (hiddenCount) {
+        const link = document.getElementById('restore-hidden-link');
+        if (link) link.onclick = e => { e.preventDefault(); restoreIgnoredCharacters(); };
+      }
+      return;
+    }
+    grid.innerHTML = '';
+    chars.forEach(([name, d]) => {
+      if (!name || !d) return;
+      const others = chars.filter(([n]) => n !== name).map(([n]) => n).slice(0, 50);
+      const card = document.createElement('div');
+      card.className = 'char-card';
+      const aliasList = Array.isArray(d.aliases) ? d.aliases : (d.aliases instanceof Set ? [...d.aliases] : []);
+      const aliasNote = aliasList.length ? `<div class="count">Also referred to as: ${aliasList.map(escapeHtml).join(', ')}</div>` : '';
+      const mergeOptions = others.map(n => `<option value="merge:${encodeURIComponent(n)}">${escapeHtml(n)}</option>`).join('');
+      const sectionsList = (d.sections instanceof Set || Array.isArray(d.sections)) ? [...d.sections] : [];
+      card.innerHTML = `<h3>${escapeHtml(name)}</h3><div class="count">Mentioned ${d.count || 0} times</div>${aliasNote}<textarea aria-label="Notes for ${escapeHtml(name)}" placeholder="Role, notes...">${escapeHtml(state.charNotes[name] || '')}</textarea><div class="chapters">Appears in: ${sectionsList.map(escapeHtml).join(', ')}</div><select class="char-action-select" aria-label="Actions for ${escapeHtml(name)}"><option value="">Actions ▾</option><option value="__delete">Delete — not a character</option>${others.length ? `<optgroup label="Merge into">${mergeOptions}</optgroup>` : ''}</select>`;
+      const textarea = card.querySelector('textarea');
+      if (textarea) {
+        textarea.oninput = e => {
+          state.charNotes = state.charNotes || {};
+          state.charNotes[name] = e.target.value;
+          save();
+        };
+      }
+      const select = card.querySelector('.char-action-select');
+      if (select) {
+        select.onchange = e => {
+          const val = e.target.value;
+          if (val === '__delete') {
+            ignoreCharacter(name);
+          } else if (val.startsWith('merge:')) {
+            let target = val.slice(6);
+            try { target = decodeURIComponent(target); } catch (_) {}
+            mergeCharacter(name, target);
+          }
+        };
+      }
+      grid.appendChild(card);
+    });
+    if (hiddenCount) {
+      const note = document.createElement('div');
+      note.className = 'empty';
+      note.innerHTML = `<a href="#" class="restore-hidden-link">Restore ${hiddenCount} hidden entr${hiddenCount === 1 ? 'y' : 'ies'}</a>`;
+      grid.appendChild(note);
+      const link = note.querySelector('.restore-hidden-link');
+      if (link) link.onclick = e => { e.preventDefault(); restoreIgnoredCharacters(); };
+    }
+  } catch (err) {
+    console.error('Characters tab rendering error:', err);
+    const grid = document.getElementById('char-grid');
+    if (grid) {
+      grid.innerHTML = `<div class="empty">Unable to display characters: ${escapeHtml(err?.message || 'Unexpected error')}. <br><button class="secondary-button" style="margin-top:10px" onclick="renderCharacters()">Retry</button></div>`;
+    }
+  }
 }
 async function scanCharacters(){
   const button=document.getElementById('btn-scan-characters'),status=document.getElementById('character-scan-status');
@@ -1332,6 +1409,11 @@ async function scanCharacters(){
   try{
     const characters=detectCharacters();renderCharacters();renderHome();renderWeb();renderMetrics();
     if(status)status.textContent=`Scanned ${state.sections.length} ${state.sections.length===1?'chapter':'chapters'} · ${characters.length} recurring ${characters.length===1?'character':'characters'} found · updated just now.`;
+    toast(`Character scan complete: ${characters.length} recurring characters found.`);
+  }catch(err){
+    console.error('Character scan failed:', err);
+    if(status)status.textContent='Scan encountered an error.';
+    toast('Character scan failed: ' + err.message);
   }finally{button.disabled=false;button.classList.remove('is-scanning');button.innerHTML=original}
 }
 let webViewport={x:0,y:0,scale:1,initialized:false},webSelectedNode='',webPendingOutput='';
@@ -1348,7 +1430,8 @@ function renderWeb(){
   const nodes=[{key:'story-root',type:'story',label:projects.find(project=>String(project.id)===String(activeProjectId))?.name||'Story',detail:'MANUSCRIPT',width:176,height:58,defaultX:92,defaultY:120+(chapters.length-1)*66}];
   chapters.forEach((chapter,index)=>nodes.push({key:`chapter:${chapter.id}`,type:'chapter',label:chapter.title||'Untitled chapter',detail:`${wc(chapter.html||'').toLocaleString()} words`,width:176,height:58,defaultX:390,defaultY:120+index*132,section:chapter}));
   characters.forEach(([name,data],index)=>{
-    const linked=chapters.filter(chapter=>data.sections.has(chapter.title||'Untitled')),defaultY=linked.length?linked.reduce((total,chapter)=>total+120+chapters.indexOf(chapter)*132,0)/linked.length:150+index*96;
+    const inSection = (chapter) => data.sections instanceof Set ? data.sections.has(chapter.title||'Untitled') : (Array.isArray(data.sections) && data.sections.includes(chapter.title||'Untitled'));
+    const linked=chapters.filter(inSection),defaultY=linked.length?linked.reduce((total,chapter)=>total+120+chapters.indexOf(chapter)*132,0)/linked.length:150+index*96;
     nodes.push({key:`character:${name}`,type:'character',label:name,detail:`${data.count} mentions`,width:176,height:58,defaultX:700,defaultY,character:data});
   });
   state.webNodes.forEach((custom,index)=>nodes.push({key:`custom:${custom.id}`,type:custom.type,label:custom.label,detail:custom.type.toUpperCase(),width:176,height:58,defaultX:1010+Math.floor(index/9)*260,defaultY:120+(index%9)*96,custom}));
@@ -1357,7 +1440,10 @@ function renderWeb(){
   const visible=nodes.filter(node=>(category==='all'||(category==='story'&&['story','chapter'].includes(node.type))||node.type===category)&&(status==='all'||(node.type==='character'&&(state.charStatus?.[node.label]||'unknown')===status)));
   const visibleByKey=new Map(visible.map(node=>[node.key,node])),connections=[];
   chapters.forEach(chapter=>connections.push([`story-root`,`chapter:${chapter.id}`]));
-  characters.forEach(([name,data])=>chapters.forEach(chapter=>{if(data.sections.has(chapter.title||'Untitled'))connections.push([`chapter:${chapter.id}`,`character:${name}`])}));
+  characters.forEach(([name,data])=>chapters.forEach(chapter=>{
+    const hasSec = data.sections instanceof Set ? data.sections.has(chapter.title||'Untitled') : (Array.isArray(data.sections) && data.sections.includes(chapter.title||'Untitled'));
+    if(hasSec)connections.push([`chapter:${chapter.id}`,`character:${name}`]);
+  }));
   state.webLinks.forEach(link=>{if(link&&typeof link.from==='string'&&typeof link.to==='string')connections.push([link.from,link.to])});
   const uniqueLinks=[...new Map(connections.filter(([from,to])=>from!==to&&visibleByKey.has(from)&&visibleByKey.has(to)).map(pair=>[pair.join('\u0000'),pair])).values()];
   const defs=document.createElementNS(ns,'defs'),pattern=document.createElementNS(ns,'pattern'),gridPath=document.createElementNS(ns,'path');

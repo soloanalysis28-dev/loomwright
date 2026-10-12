@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
-    "build": "node -e \"console.log('Build complete')\""
+    "build": "node -e \"console.log('Build complete')\"",
+    "lint": "node -c server.js character-recognition.mjs writing-settings.mjs smart-typography.mjs",
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.27.0",

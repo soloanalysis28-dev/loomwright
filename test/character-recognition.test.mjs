@@ -60,3 +60,46 @@ test('recognizeCharacters keeps a recurring character connected across chapters'
   assert.ok(mara);
   assert.deepEqual([...mara.sectionTitles], ['Chapter 1', 'Chapter 2']);
 });
+
+test('recognizeCharacters normalizes possessives properly without truncating names', () => {
+  const chapters = [
+    { id: 1, title: 'Chapter 1', text: "James's coat was wet. James' brother arrived. James whispered softly. James stepped outside." },
+  ];
+  const results = recognizeCharacters(chapters, 'balanced');
+  const james = results.find(c => c.name === 'James');
+  assert.ok(james, 'James should be recognized');
+  assert.equal(results.some(c => c.name === 'Jame'), false, 'Should not produce truncated name Jame');
+});
+
+test('recognizeCharacters does not bridge names across sentence boundaries', () => {
+  const chapters = [
+    { id: 1, title: 'Chapter 1', text: 'Elena finished speaking. Vance stood up. Later, Elena sighed. Vance walked away.' },
+  ];
+  const results = recognizeCharacters(chapters, 'balanced');
+  assert.equal(results.some(c => c.name === 'Elena Vance'), false, 'Should not create bridge name across sentences');
+  assert.ok(results.some(c => c.name === 'Elena'));
+  assert.ok(results.some(c => c.name === 'Vance'));
+});
+
+test('recognizeCharacters excludes sentence-initial verbs, adverbs and interjections', () => {
+  const chapters = [
+    { id: 1, title: 'Chapter 1', text: '"Sit down," Leo said. "Get out," Leo added. Instantly, Leo left. Ha! What a night. Sit down again.' },
+  ];
+  const names = recognizeCharacters(chapters, 'balanced').map(c => c.name.toLowerCase());
+  assert.equal(names.includes('sit'), false, 'Sit should not be a character');
+  assert.equal(names.includes('get'), false, 'Get should not be a character');
+  assert.equal(names.includes('instantly'), false, 'Instantly should not be a character');
+  assert.equal(names.includes('ha'), false, 'Ha should not be a character');
+  assert.ok(names.includes('leo'), 'Leo should be recognized');
+});
+
+test('recognizeCharacters consolidates full names with single-name parts as aliases', () => {
+  const chapters = [
+    { id: 1, title: 'Chapter 1', text: 'Elias Thorne entered the library. Elias looked around. "Welcome," Elias said. Thorne nodded.' },
+  ];
+  const results = recognizeCharacters(chapters, 'balanced');
+  const full = results.find(c => c.name === 'Elias Thorne');
+  assert.ok(full, 'Full name Elias Thorne should be recognized');
+  assert.ok(full.aliases?.includes('Elias'), 'Should have Elias as alias');
+  assert.equal(results.some(c => c.name === 'Elias'), false, 'Duplicate standalone card for Elias should be consolidated');
+});
