@@ -10,7 +10,7 @@ window.pdfjsLib=pdfjsLib;
 pdfjsLib.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdfjs/build/pdf.worker.min.mjs',import.meta.url).href;
 const PDF_CMAP_URL=new URL('./vendor/pdfjs/cmaps/',import.meta.url).href;
 const PDF_STANDARD_FONT_URL=new URL('./vendor/pdfjs/standard_fonts/',import.meta.url).href;
-const APP_VERSION='1.5.0.10';
+const APP_VERSION='1.5.0.12';
 const PROJECT_RECORD_VERSION=3;
 const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,charNotes:{},charStatus:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webPositions:{},webNodes:[],webLinks:[],templates:[]};
 const PROJECTS_STORAGE_KEY='loomwright_projects_v1',ACTIVE_PROJECT_KEY='loomwright_active_project_v1',APP_SETTINGS_KEY='loomwright_app_settings_v1',DELETED_PROJECTS_STORAGE_KEY='loomwright_deleted_projects_v1';
@@ -115,20 +115,14 @@ function setSyncStatus(msg,ok){const el=document.getElementById('sync-status');e
 let deferredInstallPrompt=null;
 function setOfflineAppStatus(message){const el=document.getElementById('offline-app-status');if(el)el.textContent=message}
 function renderAppVersion(){const el=document.getElementById('app-version-settings');if(el)el.textContent=`v${APP_VERSION}`}
-function compareVersions(a,b){const left=String(a||'0').replace(/^v/i,'').split('.').map(Number),right=String(b||'0').replace(/^v/i,'').split('.').map(Number);for(let i=0;i<Math.max(left.length,right.length);i++){const delta=(left[i]||0)-(right[i]||0);if(delta)return delta}return 0}
-async function checkForAppUpdate(){const status=document.getElementById('about-update-status'),badge=document.getElementById('about-version-status'),button=document.getElementById('check-for-updates');if(!status)return;status.textContent='Checking for updates…';if(button)button.disabled=true;try{const response=await fetch(new URL('./api/app-status',import.meta.url),{cache:'no-store'});if(!response.ok)throw new Error('Update status is unavailable.');const server=await response.json(),serverVersion=String(server.version||'unknown'),comparison=compareVersions(serverVersion,APP_VERSION);if(comparison>0){status.textContent=`Version ${serverVersion} is ready on the server · refresh to load it.`;if(badge){badge.textContent='Update available';badge.classList.add('is-update')}}else{status.textContent=`You are up to date · checked just now.`;if(badge){badge.textContent='Up to date';badge.classList.remove('is-update')}}const registration=await navigator.serviceWorker?.getRegistration?.();if(registration)await registration.update()}catch(error){status.textContent=error?.message||'Could not check for updates.'}finally{if(button)button.disabled=false}}
 function renderGitStatus(data){
   const status=document.getElementById('about-git-status'),button=document.getElementById('git-update-button'),progress=document.getElementById('about-git-progress'),fill=document.getElementById('about-git-progress-fill');if(!status)return;
-  const operation=data?.operation||{},running=Boolean(operation.running),percent=running?(operation.step==='push'?72:34):(operation.ok===true?100:0);status.classList.toggle('is-running',running);status.classList.toggle('is-error',operation.ok===false||Boolean(data?.error));
-  if(data?.error)status.textContent=data.error;
-  else if(running)status.textContent=operation.step==='push'?'Pushing committed changes…':'Pulling the latest update…';
-  else if(operation.ok===true)status.textContent='Update complete. Refresh the app to load the latest files.';
-  else if(data?.dirty)status.textContent='Ready when local changes are committed or stashed.';
-  else status.textContent='Ready to update from Git.';
-  if(button)button.disabled=running;if(progress){progress.hidden=!running&&operation.ok!==true;progress.classList.toggle('is-complete',operation.ok===true);progress.classList.toggle('is-error',operation.ok===false||Boolean(data?.error))}if(fill)fill.style.width=`${percent}%`;
+  const operation=data?.operation||{},running=Boolean(operation.running),hasError=!data?.silent&&(Boolean(data?.error)||operation.ok===false),percent=running?(operation.step==='push'?72:34):0;status.classList.toggle('is-running',running);status.classList.toggle('is-error',hasError);
+  if(data?.error&&!data?.silent)status.textContent=data.error;else if(running)status.textContent=operation.step==='push'?'Updating local changes to GitHub…':'Updating Loomwright from GitHub…';
+  status.hidden=!running&&!hasError;if(button)button.disabled=running;if(progress){progress.hidden=!running;progress.classList.toggle('is-complete',false);progress.classList.toggle('is-error',hasError)}if(fill)fill.style.width=`${percent}%`;
 }
-async function readGitResponse(response){const type=response.headers.get('content-type')||'';if(!type.includes('application/json')){await response.text();throw new Error(response.status===404?'Update service unavailable. Pull the latest app code and restart the local server.':`Update service returned HTTP ${response.status}.`)}const data=await response.json();if(!response.ok)throw new Error(data.error||'Git update could not start.');return data}
-async function refreshGitStatus(){try{const response=await fetch(new URL('./api/git/status',import.meta.url),{cache:'no-store'});const data=await readGitResponse(response);renderGitStatus(data)}catch(error){renderGitStatus({error:error.message})}}
+async function readGitResponse(response){const type=response.headers.get('content-type')||'';if(!type.includes('application/json')){await response.text();throw new Error('Update service unavailable. Pull the latest app code and restart the local server.')}const data=await response.json();if(!response.ok)throw new Error(data.error||'Git update could not start.');return data}
+async function refreshGitStatus(){try{const response=await fetch(new URL('./api/git/status',import.meta.url),{cache:'no-store'});const data=await readGitResponse(response);renderGitStatus(data)}catch(error){renderGitStatus({error:error.message,silent:true})}}
 async function runGitUpdate(){
   const button=document.getElementById('git-update-button');if(!button||button.disabled)return;button.disabled=true;renderGitStatus({operation:{running:true,step:'pull'}});
   try{const response=await fetch(new URL('./api/git/sync',import.meta.url),{method:'POST',headers:{'Content-Type':'application/json'}});const data=await readGitResponse(response);renderGitStatus(data);setTimeout(refreshGitStatus,700)}catch(error){renderGitStatus({error:error.message});if(button)button.disabled=false}
@@ -151,14 +145,13 @@ async function prepareOfflineApp(){
 }
 function setupOfflineApp(){
   const prepare=document.getElementById('prepare-offline'),install=document.getElementById('install-app');
-  document.getElementById('check-for-updates')?.addEventListener('click',checkForAppUpdate);checkForAppUpdate();setInterval(checkForAppUpdate,60000);
   prepare?.addEventListener('click',prepareOfflineApp);
   install?.addEventListener('click',async()=>{if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;updateInstallButton()});
   window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;updateInstallButton()});
   window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;updateInstallButton();setOfflineAppStatus('Loomwright is installed. Use “Prepare offline” once while connected to save all app files.')});
   if(isLocalPreview()){setOfflineAppStatus('Local preview · refresh this tab after app files change.');clearOfflinePreviewCache();return}
   if(!('serviceWorker'in navigator)||!window.isSecureContext){setOfflineAppStatus('Offline installation needs a secure website address. Open Loomwright once while connected, then prepare the offline copy.');return}
-  if('caches'in window){caches.keys().then(names=>names.filter(n=>n.startsWith('loomwright-offline-')&&n!=='loomwright-offline-v32').forEach(n=>caches.delete(n))).catch(()=>{});}
+  if('caches'in window){caches.keys().then(names=>names.filter(n=>n.startsWith('loomwright-offline-')&&n!=='loomwright-offline-v34').forEach(n=>caches.delete(n))).catch(()=>{});}
   navigator.serviceWorker.register(new URL('./sw.js',import.meta.url),{scope:new URL('./',import.meta.url).pathname}).then(async registration=>{
     try{await registration.update()}catch(_){}
     await navigator.serviceWorker.ready;
@@ -289,6 +282,21 @@ document.addEventListener('keydown',event=>{
 });
 function persistAppSettings(){try{localStorage.setItem(APP_SETTINGS_KEY,JSON.stringify(appSettings));appSettingsStoredAtBoot=true;return true}catch(e){toast('Appearance settings could not be saved in this browser.');return false}}
 function updateAppSetting(key,value){appSettings[key]=value;appSettingsTouched=true;persistAppSettings();persistProjectStore();applyTheme()}
+let zenTimerId=null,zenModeActive=false;
+function setZenMode(active){
+  zenModeActive=Boolean(active);document.body.classList.toggle('zen-mode-active',zenModeActive);document.documentElement.dataset.zenActive=String(zenModeActive);
+}
+function scheduleZenMode(){
+  clearTimeout(zenTimerId);zenTimerId=null;if(zenModeActive)return;const minutes=Number(appSettings.zenIdleMinutes||0);if(minutes>0)zenTimerId=setTimeout(()=>setZenMode(true),minutes*60*1000);
+}
+function recordZenActivity(){if(zenModeActive)setZenMode(false);scheduleZenMode()}
+function setupZenMode(){
+  const timer=document.getElementById('zen-timer-select'),enter=document.getElementById('btn-enter-zen');
+  timer?.addEventListener('change',event=>{updateAppSetting('zenIdleMinutes',Number(event.target.value));if(!Number(event.target.value))setZenMode(false);scheduleZenMode()});
+  enter?.addEventListener('click',()=>setZenMode(true));
+  ['pointermove','pointerdown','keydown','wheel','touchstart','input'].forEach(type=>document.addEventListener(type,recordZenActivity,{passive:type!=='keydown'}));
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)recordZenActivity()});scheduleZenMode();
+}
 
 const COLUMN_WIDTH_MAP = {
   narrow: '640px',
@@ -2695,6 +2703,7 @@ function initDragonFlight() {
 bindBookDesigner();
 setupConfirmDialog();
 renderAppVersion();
+setupZenMode();
 setupGitSync();
 setupAIEntityScanner();
 setupAIWritingAssistant();
