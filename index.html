@@ -44,6 +44,7 @@ html[data-bg-effect="rain"] .bg-rain{display:block}
 html[data-bg-effect="clouds"] .bg-clouds{display:block}
 html[data-bg-effect="snow"] .bg-snow{display:block}
 html[data-bg-effect="dragon"] .bg-dragons{display:block}
+html[data-zen-active="true"][data-bg-effect="none"] .bg-clouds{display:block}
 .bg-rain{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .ripple{position:absolute;width:104px;height:78px;margin-left:-52px;margin-top:-39px}
 .ripple::before,.ripple::after{content:"";position:absolute;inset:0;border-radius:50%;border:1.5px solid var(--effect-ripple);background:radial-gradient(ellipse at center,var(--effect-ripple-glow) 0%,transparent 65%);box-shadow:0 0 5px var(--effect-ripple-glow);opacity:0;will-change:transform,opacity;animation:bgRippleExpand 4.6s cubic-bezier(.12,.5,.22,1) infinite}
@@ -99,6 +100,20 @@ button{color:inherit}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[contenteditable]:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 58%,transparent);outline-offset:2px}
 .app-shell{position:relative;z-index:1;min-height:100vh;max-width:1180px;margin:0 auto;opacity:0;transform:translateY(5px);transition:opacity .28s var(--ease-out),transform .28s var(--ease-out);visibility:hidden}
 .app-shell.is-ready{opacity:1;transform:none;visibility:visible}
+body.zen-mode-active .app-shell,
+body.zen-mode-active .writer-statusbar,
+body.zen-mode-active .toast,
+body.zen-mode-active .confirm-backdrop,
+body.zen-mode-active .splash,
+body.zen-mode-active .palette-picker,
+body.zen-mode-active .node-map-tooltip{opacity:0!important;pointer-events:none!important;visibility:hidden!important;transform:scale(.992)!important;transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1),visibility .8s!important}
+body.zen-mode-active{cursor:none!important;overflow:hidden!important}
+body.zen-mode-active #bg-effect{z-index:1000!important;opacity:1!important;display:block!important}
+.zen-mode-overlay{position:fixed;inset:0;z-index:1001;pointer-events:none;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding-bottom:28px;opacity:0;visibility:hidden;transition:opacity .8s cubic-bezier(.16,1,.3,1),visibility .8s}
+body.zen-mode-active .zen-mode-overlay{opacity:1;visibility:visible;transition-delay:.4s}
+.zen-mode-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 15px;border-radius:9999px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:.74rem;letter-spacing:.05em;text-transform:uppercase;color:var(--sub);background:color-mix(in srgb,var(--panel) 65%,transparent);border:1px solid color-mix(in srgb,var(--line) 45%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 4px 18px -4px color-mix(in srgb,var(--ink) 12%,transparent);user-select:none}
+.zen-mode-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:zenPulse 2.8s ease-in-out infinite}
+@keyframes zenPulse{0%,100%{opacity:.35;transform:scale(.9)}50%{opacity:1;transform:scale(1.25)}}
 .app-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:17px 28px 14px;border-bottom:1px solid var(--line)}
 .brand-button{display:flex;align-items:center;gap:10px;border:0;background:transparent;padding:0;cursor:pointer;color:var(--ink);font-size:1.38rem;letter-spacing:.015em}
 .brand-mark{width:30px;height:30px;color:var(--accent);flex:none}
@@ -614,6 +629,9 @@ body.writer-focus.focus-hide-footer .writer-statusbar,body.writer-focus.focus-hi
       <svg class="brand-mark" viewBox="0 0 80 80" aria-hidden="true"><path d="M15 39c9-23 31-29 45-18 10 8 5 19-8 22L28 49c-13 4-14 17-2 21 12 5 28-3 39-16M20 18c14 23 31 28 43 22M17 58c12-17 31-23 46-22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
       <span>Loom<span>wright</span></span>
     </button>
+    <div class="header-right">
+      <button class="home-shortcut" id="btn-zen-shortcut" type="button" title="Zen Mode (Ctrl+Alt+Z)">Zen Mode</button>
+    </div>
   </header>
   <nav class="app-nav" aria-label="Main navigation">
     <button class="tab active" data-view="home" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>Home</button>
@@ -885,8 +903,42 @@ body.writer-focus.focus-hide-footer .writer-statusbar,body.writer-focus.focus-hi
                   </div>
                 </div>
               </div>
-              <div class="settings-block"><h4 class="settings-block-title">Atmosphere</h4>
-                <div class="setting-row"><div class="setting-copy"><strong>Background effect</strong><small>A quiet animated backdrop behind the app. Off by default to save power.</small></div><select id="bg-effect-select" aria-label="Background effect"><option value="none">None</option><option value="rain">Water ripples</option><option value="clouds">Drifting clouds</option><option value="snow">Snow</option><option value="dragon">Flying dragons</option></select></div>
+              <div class="settings-block"><h4 class="settings-block-title">Atmosphere &amp; Zen Mode</h4>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Zen Mode background effect</strong>
+                    <small>The calming animated backdrop displayed behind the app and in Zen Mode.</small>
+                  </div>
+                  <select id="bg-effect-select" aria-label="Zen Mode background effect">
+                    <option value="none">None</option>
+                    <option value="rain">Water ripples</option>
+                    <option value="clouds">Drifting clouds</option>
+                    <option value="snow">Snow</option>
+                    <option value="dragon">Flying dragons</option>
+                  </select>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Zen Mode inactivity timer</strong>
+                    <small>When idle, everything in the foreground disappears and only the Zen background shows.</small>
+                  </div>
+                  <select id="zen-timer-select" aria-label="Zen Mode inactivity timer">
+                    <option value="0">Off (manual only)</option>
+                    <option value="0.5">After 30 seconds</option>
+                    <option value="1">After 1 minute</option>
+                    <option value="2">After 2 minutes</option>
+                    <option value="5">After 5 minutes</option>
+                    <option value="10">After 10 minutes</option>
+                    <option value="15">After 15 minutes</option>
+                  </select>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-copy">
+                    <strong>Enter Zen Mode</strong>
+                    <small>Fade away the foreground now until mouse moves or keys are pressed.</small>
+                  </div>
+                  <button class="secondary-button" type="button" id="btn-enter-zen">Enter Zen Mode</button>
+                </div>
                 <div class="setting-row"><div class="setting-copy"><strong>Opening animation</strong><small>Replay the short Loomwright welcome.</small></div><button class="secondary-button" type="button" id="replay-intro">Replay intro</button></div>
               </div>
             </div>
@@ -1175,7 +1227,7 @@ body.writer-focus.focus-hide-footer .writer-statusbar,body.writer-focus.focus-hi
 </div>
 <div class="writer-statusbar" id="writer-statusbar" aria-label="Writing status and shortcuts" hidden>
   <div class="writer-status-info" aria-live="polite"><span id="writer-status-section">Chapter 1 of 1</span><span id="writer-status-words">0 words</span><span id="writer-status-total">0 words total</span><span id="writer-unsaved-indicator" class="unsaved-badge" hidden>● Unsaved changes</span><span id="writer-daily-goal-indicator" class="daily-goal-badge" hidden>Goal: 0 / 500w</span></div>
-  <div class="writer-status-actions"><button class="writer-status-action" id="writer-focus-toggle" type="button" aria-pressed="false" title="Toggle focus mode">Focus</button><button class="writer-status-action" id="writer-status-save" type="button" title="Save (Ctrl/Cmd+S)">Save</button></div>
+  <div class="writer-status-actions"><button class="writer-status-action" id="writer-zen-toggle" type="button" title="Zen Mode (Ctrl+Alt+Z)">Zen</button><button class="writer-status-action" id="writer-focus-toggle" type="button" aria-pressed="false" title="Toggle focus mode">Focus</button><button class="writer-status-action" id="writer-status-save" type="button" title="Save (Ctrl/Cmd+S)">Save</button></div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="confirm-backdrop" id="confirm-dialog" hidden>
@@ -1184,6 +1236,12 @@ body.writer-focus.focus-hide-footer .writer-statusbar,body.writer-focus.focus-hi
     <p class="confirm-dialog-message" id="confirm-dialog-message"></p>
     <div class="confirm-dialog-actions"><button type="button" class="confirm-dialog-cancel" id="confirm-dialog-cancel">Keep project</button><button type="button" class="confirm-dialog-confirm" id="confirm-dialog-confirm">Delete project</button></div>
   </section>
+</div>
+<div class="zen-mode-overlay" id="zen-mode-overlay" aria-hidden="true">
+  <div class="zen-mode-badge">
+    <span class="zen-mode-badge-dot"></span>
+    <span>Zen Mode · Move mouse or press any key</span>
+  </div>
 </div>
 <script type="module" src="./app.js"></script>
 </body>

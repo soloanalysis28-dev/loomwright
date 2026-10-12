@@ -160,6 +160,9 @@ export const CHARACTER_RECOGNITION_CONFIG = Object.freeze({
     'medieval', 'classical', 'contemporary', 'prehistoric', 'lost', 'forgotten',
     'fallen', 'frustrated', 'cleaned', 'looked', 'stared', 'listening',
     'unmistakable', 'insistent', 'particular', 'multiple', 'various', 'numerous', 'several',
+    'ethiopia', 'egypt', 'greece', 'rome', 'america', 'britain', 'england', 'france', 'germany',
+    'russia', 'china', 'japan', 'india', 'africa', 'asia', 'europe', 'australia', 'antarctica',
+    'earth', 'mars', 'jupiter', 'saturn', 'venus', 'mercury', 'neptune', 'uranus', 'pluto', 'atlantis',
   ]),
 });
 
