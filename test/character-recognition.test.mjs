@@ -101,5 +101,40 @@ test('recognizeCharacters consolidates full names with single-name parts as alia
   const full = results.find(c => c.name === 'Elias Thorne');
   assert.ok(full, 'Full name Elias Thorne should be recognized');
   assert.ok(full.aliases?.includes('Elias'), 'Should have Elias as alias');
+  assert.ok(full.aliases?.includes('Thorne'), 'Should have Thorne as alias');
   assert.equal(results.some(c => c.name === 'Elias'), false, 'Duplicate standalone card for Elias should be consolidated');
+  assert.equal(results.some(c => c.name === 'Thorne'), false, 'Duplicate standalone card for Thorne should be consolidated');
+});
+
+test('recognizeCharacters excludes in-world language, chants and spells', () => {
+  const chapters = [
+    {
+      id: 1,
+      title: 'Chapter 1',
+      text: 'Umbrion looked into the distance. In his rough voice he said, “Proth Onos.” Leo stepped back. In the darkness, a whisper came: “Ankhor. Ankhor.” The ancient tongue spoke: “Uth luhs onos stan.” Leo watched Umbrion. "Be careful," Leo whispered.',
+    },
+  ];
+  const names = recognizeCharacters(chapters, 'balanced').map(c => c.name.toLowerCase());
+  assert.equal(names.includes('ankhor'), false, 'Ankhor should not be recognized as a character');
+  assert.equal(names.includes('proth onos'), false, 'Proth Onos should not be recognized as a character');
+  assert.equal(names.includes('uth'), false, 'Uth should not be recognized as a character');
+  assert.ok(names.includes('leo'), 'Leo should be recognized');
+  assert.ok(names.includes('umbrion'), 'Umbrion should be recognized');
+});
+
+test('recognizeCharacters excludes abbreviations like St-, events like World War, topics and places', () => {
+  const chapters = [
+    {
+      id: 1,
+      title: 'Chapter 1',
+      text: 'Leo walked past St. Jude’s high school. The teacher asked about the Second World War. Leo read about Lost Civilizations in the library, and walked to the burger joint, The Daily Grind. Maya smiled. "Are you ready?" Leo asked Maya.',
+    },
+  ];
+  const names = recognizeCharacters(chapters, 'balanced').map(c => c.name.toLowerCase());
+  assert.equal(names.includes('st'), false, 'St should not be a character');
+  assert.equal(names.includes('world war'), false, 'World War should not be a character');
+  assert.equal(names.includes('lost civilizations'), false, 'Lost Civilizations should not be a character');
+  assert.equal(names.includes('daily grind'), false, 'Daily Grind should not be a character');
+  assert.equal(names.includes('grind'), false, 'Grind should not be a character');
+  assert.ok(names.includes('leo'), 'Leo should be recognized');
 });

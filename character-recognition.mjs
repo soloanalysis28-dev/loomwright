@@ -32,8 +32,8 @@ export const CHARACTER_RECOGNITION_CONFIG = Object.freeze({
     'cousin', 'deacon', 'detective', 'doctor', 'dr', 'duke', 'duchess', 'elder', 'father',
     'general', 'gen', 'governor', 'gov', 'grandpa', 'grandma', 'grandfather', 'grandmother',
     'inspector', 'judge', 'king', 'lady', 'lord', 'lt', 'madam', 'major', 'master', 'miss',
-    'mistress', 'mr', 'mrs', 'ms', 'officer', 'pastor', 'prince', 'princess', 'professor',
-    'prof', 'queen', 'reverend', 'rev', 'senator', 'sen', 'sergeant', 'sgt', 'sir', 'sister', 'uncle',
+    'mistress', 'mr', 'mrs', 'ms', 'mt', 'mount', 'officer', 'pastor', 'prince', 'princess', 'professor',
+    'prof', 'queen', 'reverend', 'rev', 'saint', 'senator', 'sen', 'sergeant', 'sgt', 'sir', 'sister', 'st', 'uncle',
   ]),
   speechVerbs: new Set([
     'answered', 'asked', 'called', 'chuckled', 'cried', 'demanded', 'exclaimed',
@@ -52,17 +52,46 @@ export const CHARACTER_RECOGNITION_CONFIG = Object.freeze({
   pronouns: new Set(['he', 'her', 'hers', 'him', 'his', 'she', 'their', 'them', 'they']),
   locationPrepositions: new Set(['at', 'from', 'in', 'near', 'to', 'into', 'onto', 'towards', 'toward']),
   placeSuffixes: new Set([
-    'academy', 'alley', 'avenue', 'bar', 'bay', 'bridge', 'building', 'camp', 'castle',
-    'cathedral', 'cave', 'center', 'centre', 'chamber', 'chapel', 'church', 'city', 'cliff',
-    'cliffs', 'clinic', 'coast', 'college', 'court', 'desert', 'district', 'drive', 'dungeon',
-    'estate', 'field', 'fields', 'forest', 'fort', 'fortress', 'garden', 'gardens', 'gate',
-    'hall', 'hallway', 'harbor', 'harbour', 'haven', 'hill', 'hospital', 'house', 'inn',
-    'island', 'keep', 'kingdom', 'lab', 'laboratory', 'lake', 'lane', 'library', 'mansion',
-    'manor', 'market', 'meadow', 'monastery', 'mountain', 'mountains', 'ocean', 'office',
-    'palace', 'park', 'path', 'plaza', 'port', 'prison', 'pub', 'realm', 'river', 'road',
-    'room', 'sanctuary', 'school', 'sea', 'shop', 'shore', 'shrine', 'square', 'station',
-    'store', 'street', 'tavern', 'temple', 'tower', 'town', 'university', 'valley', 'village',
-    'woods',
+    'academy', 'alley', 'arena', 'auditorium', 'avenue', 'bakery', 'bar', 'bay', 'bistro',
+    'boutique', 'brewery', 'bridge', 'building', 'cafe', 'café', 'camp', 'castle',
+    'cathedral', 'cave', 'center', 'centre', 'chamber', 'chapel', 'church', 'cinema', 'city',
+    'cliff', 'cliffs', 'clinic', 'coast', 'college', 'court', 'depot', 'desert', 'diner',
+    'district', 'drive', 'dungeon', 'estate', 'field', 'fields', 'forest', 'fort', 'fortress',
+    'garage', 'garden', 'gardens', 'gate', 'grill', 'grind', 'gym', 'gymnasium', 'hall',
+    'hallway', 'hangout', 'harbor', 'harbour', 'haven', 'hill', 'hospital', 'house', 'hub',
+    'inn', 'island', 'joint', 'keep', 'kingdom', 'lab', 'laboratory', 'lake', 'lane',
+    'library', 'lounge', 'mall', 'manor', 'mansion', 'market', 'meadow', 'monastery',
+    'mountain', 'mountains', 'ocean', 'office', 'outlet', 'palace', 'park', 'parlor',
+    'parlour', 'path', 'pharmacy', 'plaza', 'port', 'prison', 'pub', 'realm', 'river',
+    'road', 'room', 'salon', 'sanctuary', 'school', 'sea', 'shop', 'shore', 'shrine',
+    'square', 'stadium', 'station', 'store', 'street', 'studio', 'tavern', 'temple',
+    'theater', 'theatre', 'tower', 'town', 'university', 'valley', 'village', 'woods',
+    'workshop',
+  ]),
+  eventWords: new Set([
+    'war', 'wars', 'battle', 'battles', 'revolution', 'revolutions',
+    'rebellion', 'rebellions', 'uprising', 'uprisings', 'crusade', 'crusades',
+    'invasion', 'invasions', 'conflict', 'conflicts', 'campaign', 'campaigns',
+    'treaty', 'treaties', 'pact', 'pacts', 'accord', 'accords', 'alliance',
+    'depression', 'plague', 'pandemic', 'era', 'epoch', 'age', 'ages',
+    'dynasty', 'dynasties', 'century', 'centuries', 'movement', 'movements',
+    'crisis', 'crises', 'riot', 'riots', 'affair', 'affairs', 'scandal', 'scandals',
+    'conspiracy', 'conspiracies', 'republic', 'federation', 'empire', 'empires',
+  ]),
+  topicWords: new Set([
+    'civilization', 'civilizations', 'language', 'languages', 'mythology', 'mythologies',
+    'history', 'histories', 'science', 'sciences', 'studies', 'literature',
+    'philosophy', 'archaeology', 'anthropology', 'astronomy', 'geography',
+    'culture', 'cultures', 'religion', 'religions', 'artifact', 'artifacts',
+    'antiquity', 'antiquities', 'symbol', 'symbols', 'alphabet', 'alphabets',
+    'society', 'societies', 'mystery', 'mysteries', 'legend', 'legends',
+    'folklore', 'curse', 'curses', 'prophecy', 'prophecies', 'magic', 'magics',
+  ]),
+  temporalAdjectives: new Set([
+    'daily', 'weekly', 'monthly', 'yearly', 'annual', 'ancient', 'modern',
+    'medieval', 'classical', 'contemporary', 'prehistoric', 'lost', 'forgotten',
+    'fallen', 'second', 'first', 'third', 'fourth', 'last', 'next', 'past', 'future',
+    'old', 'new',
   ]),
   excludedSingleWords: new Set([
     'a', 'an', 'and', 'all', 'am', 'any', 'are', 'as', 'at', 'be', 'because', 'been',
@@ -127,16 +156,23 @@ export const CHARACTER_RECOGNITION_CONFIG = Object.freeze({
     'today', 'tonight', 'tomorrow', 'yesterday', 'morning', 'afternoon', 'evening',
     'night', 'midnight', 'noon', 'dawn', 'dusk', 'moment', 'minute', 'hour', 'day',
     'week', 'month', 'year', 'time', 'faint', 'house',
+    'daily', 'weekly', 'monthly', 'yearly', 'annual', 'ancient', 'modern',
+    'medieval', 'classical', 'contemporary', 'prehistoric', 'lost', 'forgotten',
+    'fallen', 'frustrated', 'cleaned', 'looked', 'stared', 'listening',
+    'unmistakable', 'insistent', 'particular', 'multiple', 'various', 'numerous', 'several',
   ]),
 });
 
 const WORD_PATTERN = /[\p{L}\p{M}]+(?:['’][\p{L}\p{M}]+)*/gu;
 const QUOTE_PATTERN = /["“”«»„‟]/g;
+const QUOTE_CHAR_REGEX = /["“”«»„‟]/;
 const SENTENCE_BOUNDARY_PATTERN = /[.!?…\n\r]/;
 const CONTRACTION_PATTERN = /^[\p{L}\p{M}]+['’](?:m|re|ve|ll|d|t|s)$/iu;
 
 function normalizeToken(value) {
   return value
+    .replace(/^[-–—]+/u, '')
+    .replace(/[-–—]+$/u, '')
     .replace(/['’]s$/iu, '')
     .replace(/['’]$/u, '')
     .replace(/^['’]/u, '');
@@ -145,7 +181,12 @@ function normalizeToken(value) {
 export function isExcludedToken(lower, config = CHARACTER_RECOGNITION_CONFIG) {
   if (!lower) return true;
   if (config.excludedSingleWords?.has(lower)) return true;
+  if (config.titleWords?.has(lower)) return true;
+  if (config.eventWords?.has(lower)) return true;
+  if (config.topicWords?.has(lower)) return true;
+  if (config.placeSuffixes?.has(lower)) return true;
   if (CONTRACTION_PATTERN.test(lower)) return true;
+  if (lower.length > 3 && lower.endsWith('ly')) return true;
   return false;
 }
 
@@ -172,6 +213,7 @@ function tokenize(text) {
 
 function isJoined(text, previous, current, config) {
   const gap = text.slice(previous.end, current.start);
+  if (SENTENCE_BOUNDARY_PATTERN.test(gap) || QUOTE_CHAR_REGEX.test(gap)) return false;
   if (/^[\s\u2010-\u2015\-]+$/u.test(gap)) return !current.sentenceInitial;
   if (/^\.\s+$/u.test(gap)) {
     return config.titleWords.has(previous.lower) || (previous.capitalized && previous.value.length === 1);
@@ -208,18 +250,39 @@ function createCandidate(tokens) {
   };
 }
 
-function isValidCandidate(tokens, config) {
+function isValidCandidate(tokens, config = CHARACTER_RECOGNITION_CONFIG) {
   if (!tokens || !tokens.length) return false;
   if (tokens.length === 1) {
     const w = tokens[0].lower;
     if (tokens[0].value && tokens[0].value.length < 2) return false;
-    return !config.titleWords.has(w) && !isExcludedToken(w, config);
+    if (config.titleWords?.has(w)) return false;
+    if (isExcludedToken(w, config)) return false;
+    if (w.length > 3 && (w.endsWith('ed') || w.endsWith('ing') || w.endsWith('ly'))) return false;
+    return true;
   }
   const first = tokens[0].lower;
   const last = tokens[tokens.length - 1].lower;
   if (isExcludedToken(first, config) && !config.titleWords.has(first)) return false;
   if (isExcludedToken(last, config)) return false;
+
+  // Events (e.g. World War, Cold War, Battle of Hastings)
+  if (tokens.some(t => config.eventWords?.has(t.lower))) return false;
+  // Academic topics / subjects (e.g. Lost Civilizations, Ancient Languages)
+  if (tokens.some(t => config.topicWords?.has(t.lower))) return false;
+  // Place types / establishments (e.g. Daily Grind)
+  if (tokens.some(t => config.temporalAdjectives?.has(t.lower)) && tokens.some(t => config.placeSuffixes?.has(t.lower))) return false;
+  if (config.placeSuffixes?.has(last)) return false;
+
   return tokens.some(t => !config.titleWords.has(t.lower) && !isExcludedToken(t.lower, config));
+}
+
+function isInsideLocalQuotes(text, start, end) {
+  const lineStart = Math.max(0, text.lastIndexOf('\n', start));
+  const lineEnd = text.indexOf('\n', end) === -1 ? text.length : text.indexOf('\n', end);
+  const beforeInLine = text.slice(lineStart, start);
+  const afterInLine = text.slice(end, lineEnd);
+  return (beforeInLine.includes('“') || beforeInLine.includes('"') || beforeInLine.includes('«')) &&
+         (afterInLine.includes('”') || afterInLine.includes('"') || afterInLine.includes('»'));
 }
 
 function hasNearbyQuote(quoteOffsets, start, end, maxDistance = 48) {
@@ -306,12 +369,14 @@ export function extractCharacterCandidates(chapters, config = CHARACTER_RECOGNIT
 
         const before = [];
         for (let j = start - 1; j >= Math.max(0, start - 3); j--) {
-          if (SENTENCE_BOUNDARY_PATTERN.test(text.slice(tokens[j].end, tokens[j + 1].start))) break;
+          const gap = text.slice(tokens[j].end, tokens[j + 1].start);
+          if (SENTENCE_BOUNDARY_PATTERN.test(gap) || QUOTE_CHAR_REGEX.test(gap)) break;
           before.unshift(tokens[j]);
         }
         const after = [];
         for (let j = start + length; j < Math.min(tokens.length, start + length + 6); j++) {
-          if (SENTENCE_BOUNDARY_PATTERN.test(text.slice(tokens[j - 1].end, tokens[j].start))) break;
+          const gap = text.slice(tokens[j - 1].end, tokens[j].start);
+          if (SENTENCE_BOUNDARY_PATTERN.test(gap) || QUOTE_CHAR_REGEX.test(gap)) break;
           after.push(tokens[j]);
         }
         const nearby = [...before, ...after.slice(0, 3)];
@@ -321,7 +386,8 @@ export function extractCharacterCandidates(chapters, config = CHARACTER_RECOGNIT
         if (after.slice(0, 3).some(token => config.pronouns.has(token.lower))) candidate.contextHits.pronounFollowRate++;
 
         const spanEnd = span[span.length - 1]?.end ?? span[0].end;
-        if (hasNearbyQuote(quoteOffsets, span[0].start, spanEnd, 48)) {
+        // Only grant dialogue adjacency if the candidate occurrence is narrative outside quotes
+        if (!isInsideLocalQuotes(text, span[0].start, spanEnd) && hasNearbyQuote(quoteOffsets, span[0].start, spanEnd, 48)) {
           candidate.contextHits.dialogueAdjacency++;
         }
       }
@@ -335,10 +401,18 @@ export function scoreCharacterCandidate(candidate, config = CHARACTER_RECOGNITIO
   const allOccurrences = candidate.capitalizedMidSentence + candidate.capitalizedSentenceInitial + candidate.lowercaseOccurrences;
   const mentions = Math.max(1, candidate.count);
 
+  const hasAgenticFeature = candidate.contextHits.speechVerbRate > 0 ||
+    candidate.contextHits.subjectOfActionVerbRate > 0 ||
+    candidate.contextHits.pronounFollowRate > 0;
+
   if (candidate.parts.length === 1 && candidate.capitalizedMidSentence === 0) {
-    if (candidate.lowercaseOccurrences > 0) {
-      return { ...candidate, features: {}, capRatio: 0, score: 0, confidence: 'low', reasons: ['disqualified: never mid-sentence and seen lowercase'] };
+    if (candidate.lowercaseOccurrences > 0 || !hasAgenticFeature) {
+      return { ...candidate, features: {}, capRatio: 0, score: 0, confidence: 'low', reasons: ['disqualified: never mid-sentence and no agentic signals'] };
     }
+  }
+
+  if (!hasAgenticFeature && (candidate.count <= 1 || candidate.capitalizedMidSentence === 0)) {
+    return { ...candidate, features: {}, capRatio: 0, score: 0, confidence: 'low', reasons: ['disqualified: unconfirmed candidate with no agentic signals'] };
   }
 
   const nonLowerRatio = allOccurrences ? (candidate.capitalizedMidSentence + candidate.capitalizedSentenceInitial) / allOccurrences : 0;
@@ -384,7 +458,7 @@ export function scoreCharacterCandidate(candidate, config = CHARACTER_RECOGNITIO
     capRatio,
     speechVerbRate: candidate.contextHits.speechVerbRate / mentions,
     subjectOfActionVerbRate: candidate.contextHits.subjectOfActionVerbRate / mentions,
-    dialogueAdjacency: candidate.contextHits.dialogueAdjacency / mentions,
+    dialogueAdjacency: hasAgenticFeature ? (candidate.contextHits.dialogueAdjacency / mentions) : 0,
     pronounFollowRate: candidate.contextHits.pronounFollowRate / mentions,
     precededByTheRate: determinerRate,
     locationPrepositionRate: candidate.contextHits.locationPrepositionRate / mentions,
@@ -413,43 +487,65 @@ export function scoreCharacterCandidate(candidate, config = CHARACTER_RECOGNITIO
   return { ...candidate, features, capRatio, score, confidence, reasons };
 }
 
-export function consolidateCharacters(candidates) {
+export function consolidateCharacters(candidates, config = CHARACTER_RECOGNITION_CONFIG) {
   if (!candidates || candidates.length <= 1) return candidates || [];
-  const sorted = [...candidates].sort((a, b) => b.parts.length - a.parts.length || b.score - a.score || b.count - a.count);
-  const multiToken = sorted.filter(c => c.parts.length > 1);
-  const singleToken = sorted.filter(c => c.parts.length === 1);
+  
+  const list = candidates.map(c => ({
+    ...c,
+    aliases: new Set(Array.isArray(c.aliases) ? c.aliases : (c.aliases instanceof Set ? [...c.aliases] : [])),
+  }));
 
   const absorbedKeys = new Set();
-  const multiByPart = new Map();
 
-  for (const m of multiToken) {
+  // 1. Absorb titled forms (e.g. "Mr Thorne", "Lady Cheryl") into matching full names or base names
+  const titled = list.filter(c => c.parts.length > 1 && config.titleWords.has(c.parts[0]));
+  const nonTitled = list.filter(c => !(c.parts.length > 1 && config.titleWords.has(c.parts[0])));
+
+  for (const t of titled) {
+    const baseKey = t.parts.slice(1).join(' ');
+    const lastPart = t.parts[t.parts.length - 1];
+    // Find candidate matching the full base or ending with lastPart
+    const match = nonTitled.find(c => c.key === baseKey || (c.parts.length > 1 && c.parts[c.parts.length - 1] === lastPart));
+    if (match) {
+      match.count += t.count;
+      match.score = Math.max(match.score, t.score);
+      for (const title of t.sectionTitles) match.sectionTitles.add(title);
+      match.aliases.add(t.name);
+      absorbedKeys.add(t.key);
+    }
+  }
+
+  // 2. Absorb single tokens into unambiguous multi-token names
+  // e.g., "Elias Thorne" exists. "Elias" and "Thorne" are absorbed into "Elias Thorne".
+  const remainingMulti = nonTitled.filter(c => c.parts.length > 1 && !absorbedKeys.has(c.key));
+  const remainingSingle = list.filter(c => c.parts.length === 1 && !absorbedKeys.has(c.key));
+
+  const multiByPart = new Map();
+  for (const m of remainingMulti) {
     for (const part of m.parts) {
       if (!multiByPart.has(part)) multiByPart.set(part, []);
       multiByPart.get(part).push(m);
     }
   }
 
-  for (const s of singleToken) {
+  for (const s of remainingSingle) {
     const matchingMulti = multiByPart.get(s.key);
     if (matchingMulti && matchingMulti.length === 1) {
       const parent = matchingMulti[0];
-      parent.count = Math.max(parent.count, parent.count + s.count, s.count);
+      parent.count += s.count;
       parent.score = Math.max(parent.score, s.score);
-      for (const title of s.sectionTitles) {
-        parent.sectionTitles.add(title);
-      }
-      parent.aliases = parent.aliases || new Set();
+      for (const title of s.sectionTitles) parent.sectionTitles.add(title);
       parent.aliases.add(s.name);
       absorbedKeys.add(s.key);
     }
   }
 
-  return sorted.filter(c => !absorbedKeys.has(c.key)).map(c => {
-    if (c.aliases instanceof Set) {
-      c.aliases = [...c.aliases];
-    }
-    return c;
-  });
+  return list
+    .filter(c => !absorbedKeys.has(c.key))
+    .map(c => ({
+      ...c,
+      aliases: [...c.aliases].filter(a => a.toLowerCase() !== c.name.toLowerCase()),
+    }));
 }
 
 export function getCharacterRecognitionConfig(sensitivity = 'balanced') {
@@ -469,7 +565,7 @@ export function recognizeCharacters(chapters, config = CHARACTER_RECOGNITION_CON
   const scored = extractCharacterCandidates(chapters, activeConfig)
     .map(candidate => scoreCharacterCandidate(candidate, activeConfig));
 
-  const consolidated = consolidateCharacters(scored);
+  const consolidated = consolidateCharacters(scored, activeConfig);
   return consolidated
     .filter(candidate => candidate.score >= minScore)
     .sort((first, second) => second.score - first.score || second.count - first.count || first.name.localeCompare(second.name));
