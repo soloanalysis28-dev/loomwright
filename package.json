@@ -1,6 +1,6 @@
 {
   "name": "loomwright",
-  "version": "1.5.0.15",
+  "version": "1.5.0.16",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,6 @@
     "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
-    "@google/genai": "^2.27.0",
     "express": "^5.2.1"
   }
 }

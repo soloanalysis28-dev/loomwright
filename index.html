@@ -267,46 +267,10 @@ body.writer-focus #view-write .write-workspace{max-width:none}
 .empty{color:var(--sub);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.85rem;padding:22px;text-align:center}
 #webcanvas{width:100%;height:min(60vh,560px);min-height:340px;border:1px solid var(--line);border-radius:12px;background:var(--panel);touch-action:none;display:block}
 .web-hint{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.78rem;color:var(--sub);margin-top:8px}
-.ai-box,.settings-panel,.finalise-panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-.ai-box select,.ai-box textarea{width:100%;font-family:inherit;font-size:.85rem;border:1px solid var(--line);border-radius:7px;padding:9px;background:var(--bg);color:var(--ink);margin-top:6px}
-.ai-box textarea{min-height:100px;line-height:1.5}.ai-box label{font-size:.78rem;color:var(--sub);font-weight:650;display:block;margin-top:14px}
 .btnrow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 button.primary{background:var(--accent);color:var(--primary-text);border:0;padding:9px 15px;border-radius:7px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.82rem;cursor:pointer}
 button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink);padding:9px 15px;border-radius:7px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.82rem;cursor:pointer}
-/* AI Features Styling */
-.ai-action-btn{display:inline-flex;align-items:center;gap:6px;font-weight:600;transition:transform .15s,filter .15s;cursor:pointer}
-.ai-action-btn:hover{filter:brightness(1.05);transform:translateY(-1px)}
-.ai-spark-icon{width:15px;height:15px;color:var(--accent);flex:none}
 .character-toolbar{display:flex;align-items:center;flex-wrap:nowrap;gap:7px;margin:0 0 14px;padding:8px;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:10px}.character-search{position:relative;flex:1 1 auto;min-width:0}.character-search svg{position:absolute;left:10px;top:50%;z-index:1;width:15px;height:15px;transform:translateY(-50%);color:var(--sub);pointer-events:none}.character-search input{width:100%;box-sizing:border-box;padding:10px 12px 10px 30px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font: .76rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}.character-tool-button{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;padding:0;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--sub);cursor:pointer}.character-tool-button:hover{border-color:color-mix(in srgb,var(--accent) 48%,var(--line));background:var(--card-strong);color:var(--ink)}.character-tool-button:disabled{cursor:wait;opacity:.65}.character-tool-button svg{width:17px;height:17px}.character-tool-button.ai-action-btn{color:var(--accent2)}.character-toolbar select{flex:0 0 auto;width:auto;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font: .76rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}.character-toolbar select.character-sort{min-width:142px}.character-toolbar select.character-layout{min-width:78px}.char-scan-status{flex:0 0 100%;padding:1px 3px 0;font: .7rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub)}.char-scan-progress{flex:0 0 100%;height:3px;border-radius:999px;overflow:hidden;background:var(--line)}.char-scan-progress span{display:block;width:0;height:100%;border-radius:inherit;background:var(--accent);transition:width .24s ease}.scan-spinner{display:inline-block;width:13px;height:13px;border:2px solid color-mix(in srgb,currentColor 28%,transparent);border-top-color:currentColor;border-radius:50%;animation:scanSpin .7s linear infinite;vertical-align:-2px}@keyframes scanSpin{to{transform:rotate(360deg)}}
-.ai-entities-panel{background:var(--panel);border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line));border-radius:12px;padding:18px;margin-bottom:20px;box-shadow:0 6px 20px #18201912}
-.ai-entities-panel[hidden]{display:none}
-.ai-entities-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.ai-entities-tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:14px;overflow-x:auto}
-.ai-tab-btn{background:transparent;border:0;border-bottom:2px solid transparent;padding:8px 12px;font:600 .78rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer;color:var(--sub)}
-.ai-tab-btn.active{color:var(--ink);border-color:var(--accent)}
-.ai-entities-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
-.ai-entity-card{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:6px}
-.ai-entity-card h4{margin:0;font-size:.88rem;display:flex;align-items:center;justify-content:space-between}
-.ai-entity-badge{font-size:.65rem;text-transform:uppercase;padding:2px 6px;border-radius:4px;background:color-mix(in srgb,var(--accent) 25%,var(--panel));color:var(--ink);font-weight:600}
-.ai-entity-desc{font-size:.74rem/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--sub)}
-.ai-craft-drawer{background:var(--panel);border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line));border-radius:10px;padding:16px;margin:10px 0 16px;box-shadow:0 6px 20px #18201912}
-.ai-craft-drawer[hidden]{display:none}
-.ai-craft-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.ai-craft-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.ai-craft-preset-btn{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 11px;font:500 .75rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer;color:var(--ink)}
-.ai-craft-preset-btn:hover{background:var(--card-strong);border-color:var(--accent)}
-.ai-craft-input-row{display:flex;gap:8px;align-items:center;margin-bottom:12px}
-.ai-craft-input-row input{flex:1;padding:8px 10px;font-size:.82rem;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
-.ai-craft-result{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:14px;font:.88rem/1.6 Georgia,serif;color:var(--ink);white-space:pre-wrap;max-height:260px;overflow-y:auto;margin-top:10px}
-.ai-critique-shell{background:var(--panel);border:1px solid color-mix(in srgb,var(--accent2) 38%,var(--line));border-radius:12px;padding:18px;margin-bottom:18px}
-.ai-critique-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:14px}
-.ai-critique-box{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:14px}
-.ai-critique-box h4{margin:0 0 6px;font:650 .82rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--accent2)}
-.ai-critique-box p{margin:0;font:.76rem/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--ink)}
-.ai-recs-list{margin:6px 0 0;padding-left:18px;font:.76rem/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--ink)}
-.ai-web-panel{background:var(--panel);border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line));border-radius:10px;padding:14px;margin-bottom:12px}
-.ai-web-panel[hidden]{display:none}
-.ai-loading-spinner{display:inline-block;width:14px;height:14px;border:2px solid color-mix(in srgb,var(--accent) 30%,transparent);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
 /* Finalise */
 .finalise-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(250px,.8fr);gap:15px;align-items:start}
@@ -627,7 +591,6 @@ body.writer-focus.focus-hide-footer .writer-statusbar,body.writer-focus.focus-hi
     <button class="tab" data-view="metrics" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V5m0 14h16M7 15l3-4 3 2 5-7"/></svg>Metrics</button>
     <button class="tab" data-view="characters" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5.5a3 3 0 0 1 0 5.8M18 14c2 .8 3 2.5 3 5"/></svg>Characters</button>
     <button class="tab" data-view="web" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="5" cy="5" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="19" r="2"/><path d="m7 6 10-1M6 7l5 10m7-9-5 10"/></svg>Story Web</button>
-    <button class="tab" data-view="ai" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg>AI Assist</button>
     <button class="tab" data-view="finalise" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m5 12 4 4L19 6"/><path d="M20 12a8 8 0 1 1-4-6.9"/></svg>Finalise</button>
     <button class="tab" data-view="settings" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 3.1-.2-.1a1.7 1.7 0 0 0-1.8-.2 1.7 1.7 0 0 0-1 1.5v.2h-3.6v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.2l-.2.1-1.8-3.1.1-.1A1.7 1.7 0 0 0 7 15a1.7 1.7 0 0 0-1.5-1H5.3v-3.6h.2A1.7 1.7 0 0 0 7 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-3.1.2.1a1.7 1.7 0 0 0 1.8.2 1.7 1.7 0 0 0 1-1.5v-.2H15v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.2l.2-.1 1.8 3.1-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.2v3.6h-.2a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</button>
     <div class="nav-meta" aria-label="App status"><div class="stats status-pill" id="sync-status" title="Where your work is saved">○ Offline · this device</div><div class="stats" id="totalstats">0 words</div></div>
@@ -665,7 +628,7 @@ body.writer-focus.focus-hide-footer .writer-statusbar,body.writer-focus.focus-hi
           <span class="tile-title">Finalise</span><span class="tile-desc">A calm last pass before you share your manuscript.</span><div class="bento-progress-ring"><span id="home-finalise-ring-value">0%</span></div><div class="progress-track"><div class="progress-fill" id="home-finalise-progress"></div></div><button class="secondary-button" type="button" data-open-view="finalise">Open Finalise →</button>
         </div>
       </div>
-      <div class="home-secondary-grid"><section class="home-recent-card"><div class="home-secondary-heading"><div><h3>Recent sections</h3><p>Return to the latest pages in this project.</p></div><button class="secondary-button" type="button" data-open-view="write">All writing →</button></div><div class="home-recent-list" id="home-recent-sections"></div></section><button class="home-ai-row" type="button" data-open-view="ai"><span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg></span><span><span class="tile-title">Need a second pair of eyes?</span><span class="tile-desc">Prepare a prompt for Claude or ChatGPT, then bring the response back into your draft.</span></span><span class="tile-arrow" aria-hidden="true">↗</span></button></div>
+      <div class="home-secondary-grid"><section class="home-recent-card"><div class="home-secondary-heading"><div><h3>Recent sections</h3><p>Return to the latest pages in this project.</p></div><button class="secondary-button" type="button" data-open-view="write">All writing →</button></div><div class="home-recent-list" id="home-recent-sections"></div></section></div>
     </section>
 
     <section class="view" id="view-projects" aria-labelledby="projects-title">
@@ -694,37 +657,6 @@ body.writer-focus.focus-hide-footer .writer-statusbar,body.writer-focus.focus-hi
               <select id="section-select" aria-label="Choose a chapter"></select>
               <button class="secondary-button" id="writer-sort-chapters-btn" type="button" style="padding:6px 10px;font-size:.75rem" title="Order chapters in natural sequence by title">↕ Sort</button>
               <button class="addbtn" id="add-section" type="button">＋ Chapter</button>
-              <button class="secondary-button ai-action-btn" id="btn-write-ai-toggle" type="button">
-                <svg class="ai-spark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.7 5.3a2 2 0 0 0 1.3 1.3L20.3 11l-5.3 1.7a2 2 0 0 0-1.3 1.3L12 18l-1.7-4a2 2 0 0 0-1.3-1.3L4.7 11 9 9.6a2 2 0 0 0 1.3-1.3L12 3Z"/><path d="M19 17v4M17 19h4" stroke-linecap="round"/></svg>
-                AI Craft
-              </button>
-            </div>
-          </div>
-          <div id="write-ai-drawer" class="ai-craft-drawer" hidden>
-            <div class="ai-craft-header">
-              <strong style="font-size:.86rem;display:flex;align-items:center;gap:6px">
-                <svg class="ai-spark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.7 5.3a2 2 0 0 0 1.3 1.3L20.3 11l-5.3 1.7a2 2 0 0 0-1.3 1.3L12 18l-1.7-4a2 2 0 0 0-1.3-1.3L4.7 11 9 9.6a2 2 0 0 0 1.3-1.3L12 3Z"/><path d="M19 17v4M17 19h4" stroke-linecap="round"/></svg>
-                AI Craft Assistant
-              </strong>
-              <button class="secondary-button" type="button" id="write-ai-close" style="padding:3px 8px;font-size:.72rem">Close</button>
-            </div>
-            <div class="ai-craft-presets">
-              <button type="button" class="ai-craft-preset-btn" data-action="continue">Continue scene</button>
-              <button type="button" class="ai-craft-preset-btn" data-action="sensory">Deepen sensory detail</button>
-              <button type="button" class="ai-craft-preset-btn" data-action="polish">Tighten &amp; polish</button>
-              <button type="button" class="ai-craft-preset-btn" data-action="dialogue">Spark dialogue</button>
-            </div>
-            <div class="ai-craft-input-row">
-              <input type="text" id="write-ai-custom-input" placeholder="Or custom request (e.g. heighten subtle tension, add dialogue beat)...">
-              <button type="button" class="primary-button ai-action-btn" id="write-ai-custom-submit">Send</button>
-            </div>
-            <div id="write-ai-output-wrap" hidden>
-              <div id="write-ai-output" class="ai-craft-result"></div>
-              <div class="btnrow" style="margin-top:8px">
-                <button type="button" class="primary" id="write-ai-insert">Insert into text</button>
-                <button type="button" class="ghost" id="write-ai-replace">Replace selection</button>
-                <button type="button" class="ghost" id="write-ai-copy">Copy</button>
-              </div>
             </div>
           </div>
           <div class="editor" id="editor-wrap"></div>
@@ -734,26 +666,12 @@ body.writer-focus.focus-hide-footer .writer-statusbar,body.writer-focus.focus-hi
 
     <section class="view" id="view-metrics" aria-labelledby="metrics-title">
       <div class="page-intro"><h2 id="metrics-title">Metrics</h2><p>Track your momentum, chapter pacing, and character presence as the draft evolves.</p></div>
-      <div class="ai-critique-shell" id="ai-critique-shell">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-          <div>
-            <h3 style="margin:0;font-size:1.05rem;font-weight:400;display:flex;align-items:center;gap:6px">
-              <svg class="ai-spark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z"/></svg>
-              AI Editorial Manuscript Critique
-            </h3>
-            <p style="margin:4px 0 0;font-size:.76rem;color:var(--sub)">Comprehensive analysis of chapter pacing, character balance, tone trajectory, and revision steps.</p>
-          </div>
-          <button class="primary-button ai-action-btn" id="btn-generate-critique" type="button">Generate Critique</button>
-        </div>
-        <div id="ai-critique-content" style="margin-top:14px" hidden></div>
-      </div>
       <div class="metrics-shell" id="metrics-shell"></div>
     </section>
 
     <section class="view" id="view-characters" aria-labelledby="characters-title">
       <div class="page-intro"><h2 id="characters-title">Characters</h2><p>Review recurring people, chapter appearances, and the relationships shaping your manuscript.</p></div>
-      <div class="character-toolbar"><label class="character-search"><span class="sr-only">Search characters</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5" stroke-linecap="round"/></svg><input id="character-search" type="search" placeholder="Search characters or aliases…" autocomplete="off"></label><button class="character-tool-button" type="button" id="btn-scan-characters" title="Scan manuscript offline" aria-label="Scan manuscript offline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M20 11a8 8 0 1 0 1 4"/><path d="M20 4v7h-7"/></svg></button><button class="character-tool-button ai-action-btn" type="button" id="btn-ai-scan-entities" title="Enhance with AI" aria-label="Enhance with AI"><svg class="ai-spark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8 1.9a2 2 0 0 0-1.3 1.3z"/></svg></button><label class="sr-only" for="character-sort">Sort characters</label><select class="character-sort" id="character-sort"><option value="mentions">Most mentioned</option><option value="az">A to Z</option><option value="first">First appearance</option></select><label class="sr-only" for="character-layout">Character layout</label><select class="character-layout" id="character-layout" aria-label="Character layout"><option value="grid">Grid</option><option value="list">List</option></select><span class="char-scan-status" id="character-scan-status" role="status" aria-live="polite">Not scanned this session.</span><div class="char-scan-progress" id="character-scan-progress" hidden><span id="character-scan-progress-fill"></span></div></div>
-      <div id="ai-entities-panel" class="ai-entities-panel" hidden></div>
+      <div class="character-toolbar"><label class="character-search"><span class="sr-only">Search characters</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5" stroke-linecap="round"/></svg><input id="character-search" type="search" placeholder="Search characters or aliases…" autocomplete="off"></label><button class="character-tool-button" type="button" id="btn-scan-characters" title="Scan manuscript offline" aria-label="Scan manuscript offline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M20 11a8 8 0 1 0 1 4"/><path d="M20 4v7h-7"/></svg></button><label class="sr-only" for="character-sort">Sort characters</label><select class="character-sort" id="character-sort"><option value="mentions">Most mentioned</option><option value="az">A to Z</option><option value="first">First appearance</option></select><label class="sr-only" for="character-layout">Character layout</label><select class="character-layout" id="character-layout" aria-label="Character layout"><option value="grid">Grid</option><option value="list">List</option></select><span class="char-scan-status" id="character-scan-status" role="status" aria-live="polite">Not scanned this session.</span><div class="char-scan-progress" id="character-scan-progress" hidden><span id="character-scan-progress-fill"></span></div></div>
       <section id="character-review-tray" class="character-review-tray" hidden></section>
       <div id="char-grid" class="char-grid"></div>
     </section>
@@ -773,50 +691,12 @@ body.writer-focus.focus-hide-footer .writer-statusbar,body.writer-focus.focus-hi
       <div class="web-map-toolbar">
         <div class="web-map-tools"><button id="web-zoom-out" type="button" aria-label="Zoom out" title="Zoom out">−</button><span class="web-map-scale" id="web-zoom-level">100%</span><button id="web-zoom-in" type="button" aria-label="Zoom in" title="Zoom in">+</button><button id="web-fit" type="button" aria-label="Fit map" title="Fit map to view">Fit</button></div>
         <span id="web-map-count">0 nodes · 0 links</span>
-        <button id="btn-ai-enhance-web" class="secondary-button ai-action-btn" type="button" style="margin-left:auto;padding:5px 11px;font-size:.74rem">
-          <svg class="ai-spark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z"/></svg>
-          Enhance Web with AI
-        </button>
       </div>
-      <div id="ai-web-panel" class="ai-web-panel" hidden></div>
       <div class="node-graph-wrap"><svg id="webcanvas" role="img" aria-label="Scrollable story map with draggable nodes and connection ports"></svg></div>
       <div class="web-legend" aria-label="Node types"><span><i class="legend-story"></i>Story</span><span><i class="legend-chapter"></i>Chapter</span><span><i class="legend-character"></i>Character</span><span><i></i>Story detail</span></div>
       <div id="web-selection" class="web-selection" role="status" aria-live="polite"></div>
       <div id="web-empty" class="empty" hidden>Add recurring characters to your sections to see the story web.</div>
       <div class="web-hint">Select an output port, then an input port, to connect story details.</div>
-    </section>
-
-    <section class="view" id="view-ai" aria-labelledby="ai-title">
-      <div class="page-intro"><h2 id="ai-title">AI Assist Studio</h2><p>Direct manuscript analysis, line polishing, and creative collaboration powered by Gemini.</p></div>
-      <div class="ai-box">
-        <label for="ai-section">Section to send</label><select id="ai-section"></select>
-        <label for="ai-mode-select">Craft goal</label>
-        <select id="ai-mode-select">
-          <option value="polish">Tighten &amp; Elevate Prose (Line Editing)</option>
-          <option value="sensory">Deepen Sensory Atmosphere &amp; Setting</option>
-          <option value="dialogue">Sharpen Dialogue &amp; Character Subtext</option>
-          <option value="continue">Propose Next Scene Continuation</option>
-          <option value="custom">Custom Craft Instruction</option>
-        </select>
-        <div id="ai-custom-prompt-wrap" hidden>
-          <label for="ai-custom-prompt">Your instruction</label>
-          <input type="text" id="ai-custom-prompt" placeholder="e.g. Focus on Elena’s internal dilemma..." style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)">
-        </div>
-        <div class="btnrow">
-          <button class="primary ai-action-btn" type="button" id="btn-run-ai-direct">
-            <svg class="ai-spark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z"/></svg>
-            Run AI Craft Analysis
-          </button>
-        </div>
-        <div id="ai-direct-output-wrap" hidden style="margin-top:16px">
-          <label id="ai-direct-output-label">AI Craft Response</label>
-          <div id="ai-direct-output" class="ai-craft-result"></div>
-          <div class="btnrow">
-            <button class="primary" type="button" id="ai-insert-direct">Insert into section</button>
-            <button class="ghost" type="button" id="ai-copy-direct">Copy to clipboard</button>
-          </div>
-        </div>
-      </div>
     </section>
 
     <section class="view" id="view-finalise" aria-labelledby="finalise-title">
