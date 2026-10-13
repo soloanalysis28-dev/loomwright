@@ -10,9 +10,9 @@ window.pdfjsLib=pdfjsLib;
 pdfjsLib.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdfjs/build/pdf.worker.min.mjs',import.meta.url).href;
 const PDF_CMAP_URL=new URL('./vendor/pdfjs/cmaps/',import.meta.url).href;
 const PDF_STANDARD_FONT_URL=new URL('./vendor/pdfjs/standard_fonts/',import.meta.url).href;
-const APP_VERSION='1.5.0.12';
+const APP_VERSION='1.5.0.13';
 const PROJECT_RECORD_VERSION=3;
-const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,charNotes:{},charStatus:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webPositions:{},webNodes:[],webLinks:[],templates:[]};
+const DEFAULT_STATE={sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],activeId:1,charNotes:{},charProfiles:{},charConfirmed:{},charStatus:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webPositions:{},webNodes:[],webLinks:[],templates:[]};
 const PROJECTS_STORAGE_KEY='loomwright_projects_v1',ACTIVE_PROJECT_KEY='loomwright_active_project_v1',APP_SETTINGS_KEY='loomwright_app_settings_v1',DELETED_PROJECTS_STORAGE_KEY='loomwright_deleted_projects_v1';
 const ONLINE_SYNC_ENABLED=false; // Reserved for a later, explicit online-save feature; offline mode is the only active storage.
 const DEFAULT_BOOK={title:'',subtitle:'',author:'',coverStyle:'botanical',trim:'trade',font:'serif',dedication:'',includeToc:true,includeCopyright:true};
@@ -68,9 +68,9 @@ async function screenImportFile(file){
   return {ext,bytes,notes};
 }
 function newProjectId(){return 'project-'+(window.crypto?.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2,9))}
-function newProjectState(){return {...DEFAULT_STATE,sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],charNotes:{},charStatus:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webNodes:[],webLinks:[],templates:[],book:{...DEFAULT_BOOK}}}
+function newProjectState(){return {...DEFAULT_STATE,sections:[{id:1,title:'Chapter 1',html:'<p></p>'}],charNotes:{},charProfiles:{},charConfirmed:{},charStatus:{},finaliseChecklist:{},charIgnore:{},charMerge:{},webNodes:[],webLinks:[],templates:[],book:{...DEFAULT_BOOK}}}
 function normalizeSettings(settings){const next={palette:'sage',theme:'light',bgEffect:'none',navPosition:'top',zenIdleMinutes:2,...(settings||{})};if(!['sage','parchment','slate','forest','ink'].includes(next.palette))next.palette='sage';if(!['auto','light','dark'].includes(next.theme))next.theme='light';if(!['none','rain','clouds','snow','dragon'].includes(next.bgEffect))next.bgEffect='none';if(!['top','side'].includes(next.navPosition))next.navPosition='top';const timerNum=Number(next.zenIdleMinutes);next.zenIdleMinutes=[0,0.5,1,2,5,10,15].includes(timerNum)?timerNum:2;if(next.palette==='parchment'&&next.theme==='auto'){next.palette='sage';next.theme='light'}next.writing=normalizeWritingSettings(next.writing);return next}
-function normalizeProjectState(value){const next=value&&typeof value==='object'?value:newProjectState();if(!Array.isArray(next.sections)||!next.sections.length)next.sections=newProjectState().sections;next.sections=next.sections.filter(s=>s&&typeof s==='object').map(s=>({...s,html:sanitizeRichHtml(s.html||'')}));if(!next.sections.length)next.sections=newProjectState().sections;delete next.settings;next.charNotes=next.charNotes||{};next.charStatus=next.charStatus||{};next.finaliseChecklist=next.finaliseChecklist||{};next.charIgnore=next.charIgnore||{};next.charMerge=next.charMerge||{};next.webPositions=next.webPositions||{};next.webNodes=Array.isArray(next.webNodes)?next.webNodes.filter(node=>node&&['place','event','object','thread'].includes(node.type)&&String(node.label||'').trim()).map(node=>({id:String(node.id||newProjectId()),type:node.type,label:String(node.label).trim().slice(0,80)})):[];next.webLinks=Array.isArray(next.webLinks)?next.webLinks.filter(link=>link&&typeof link.from==='string'&&typeof link.to==='string'):[];next.templates=Array.isArray(next.templates)?next.templates.filter(template=>template&&String(template.title||'').trim()&&typeof template.html==='string'&&template.html.length<=MAX_TEMPLATE_HTML_CHARS).slice(0,MAX_PROJECT_TEMPLATES).map(template=>({id:String(template.id||newProjectId()),title:String(template.title).trim().slice(0,120),html:sanitizeRichHtml(template.html),createdAt:template.createdAt||new Date().toISOString()})):[];next.book={...DEFAULT_BOOK,...(next.book||{})};return next}
+function normalizeProjectState(value){const next=value&&typeof value==='object'?value:newProjectState();if(!Array.isArray(next.sections)||!next.sections.length)next.sections=newProjectState().sections;next.sections=next.sections.filter(s=>s&&typeof s==='object').map(s=>({...s,html:sanitizeRichHtml(s.html||'')}));if(!next.sections.length)next.sections=newProjectState().sections;delete next.settings;next.charNotes=next.charNotes||{};next.charProfiles=next.charProfiles&&typeof next.charProfiles==='object'?next.charProfiles:{};next.charConfirmed=next.charConfirmed&&typeof next.charConfirmed==='object'?next.charConfirmed:{};next.charStatus=next.charStatus||{};next.finaliseChecklist=next.finaliseChecklist||{};next.charIgnore=next.charIgnore||{};next.charMerge=next.charMerge||{};next.webPositions=next.webPositions||{};next.webNodes=Array.isArray(next.webNodes)?next.webNodes.filter(node=>node&&['place','event','object','thread'].includes(node.type)&&String(node.label||'').trim()).map(node=>({id:String(node.id||newProjectId()),type:node.type,label:String(node.label).trim().slice(0,80)})):[];next.webLinks=Array.isArray(next.webLinks)?next.webLinks.filter(link=>link&&typeof link.from==='string'&&typeof link.to==='string'):[];next.templates=Array.isArray(next.templates)?next.templates.filter(template=>template&&String(template.title||'').trim()&&typeof template.html==='string'&&template.html.length<=MAX_TEMPLATE_HTML_CHARS).slice(0,MAX_PROJECT_TEMPLATES).map(template=>({id:String(template.id||newProjectId()),title:String(template.title).trim().slice(0,120),html:sanitizeRichHtml(template.html),createdAt:template.createdAt||new Date().toISOString()})):[];next.book={...DEFAULT_BOOK,...(next.book||{})};return next}
 let legacyState=null,projectStore=null;
 try{legacyState=JSON.parse(localStorage.getItem('loomwright_state')||'null')}catch(e){}
 try{projectStore=JSON.parse(localStorage.getItem(PROJECTS_STORAGE_KEY)||'null')}catch(e){}
@@ -151,7 +151,7 @@ function setupOfflineApp(){
   window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;updateInstallButton();setOfflineAppStatus('Loomwright is installed. Use “Prepare offline” once while connected to save all app files.')});
   if(isLocalPreview()){setOfflineAppStatus('Local preview · refresh this tab after app files change.');clearOfflinePreviewCache();return}
   if(!('serviceWorker'in navigator)||!window.isSecureContext){setOfflineAppStatus('Offline installation needs a secure website address. Open Loomwright once while connected, then prepare the offline copy.');return}
-  if('caches'in window){caches.keys().then(names=>names.filter(n=>n.startsWith('loomwright-offline-')&&n!=='loomwright-offline-v34').forEach(n=>caches.delete(n))).catch(()=>{});}
+  if('caches'in window){caches.keys().then(names=>names.filter(n=>n.startsWith('loomwright-offline-')&&n!=='loomwright-offline-v35').forEach(n=>caches.delete(n))).catch(()=>{});}
   navigator.serviceWorker.register(new URL('./sw.js',import.meta.url),{scope:new URL('./',import.meta.url).pathname}).then(async registration=>{
     try{await registration.update()}catch(_){}
     await navigator.serviceWorker.ready;
@@ -1284,7 +1284,7 @@ function detectCharacters(){
       title: s.title || 'Untitled',
       text: textOf(s.html || ''),
     }));
-    const recognized = recognizeCharacters(chapters, recognitionConfig).filter(candidate => candidate.count >= 2 && candidate.score >= recognitionConfig.threshold);
+    const recognized = recognizeCharacters(chapters, recognitionConfig).filter(candidate => candidate.count >= 2 && (candidate.score >= recognitionConfig.threshold || state.charConfirmed?.[candidate.name]));
     if (recognized.length > 0) {
       const candidateEntries = recognized.map(c => {
         const aliasList = Array.isArray(c.aliases) && c.aliases.length > 0
@@ -1295,6 +1295,7 @@ function detectCharacters(){
           {
             count: c.count,
             sections: c.sectionTitles instanceof Set ? c.sectionTitles : new Set(Array.isArray(c.sectionTitles) ? c.sectionTitles : []),
+            sectionCounts: c.sectionCounts instanceof Map ? c.sectionCounts : new Map(),
             aliases: aliasList,
           }
         ];
@@ -1325,6 +1326,15 @@ function detectCharacters(){
   const merged=applyCharMerges(results.filter(([n])=>!state.charIgnore?.[n]));
   return merged.sort((a,b)=>b[1].count-a[1].count);
 }
+function detectCharacterReview(){
+  try{
+    const sensitivity=appSettings?.writing?.recogniserSensitivity||'balanced',config=getCharacterRecognitionConfig(sensitivity);
+    const chapters=(state?.sections||[]).map(s=>({id:s.id,title:s.title||'Untitled',text:textOf(s.html||'')}));
+    return recognizeCharacters(chapters,config,{minScore:Math.max(2.4,config.threshold*.48)})
+      .filter(candidate=>candidate.count>=2&&candidate.score<config.threshold)
+      .map(candidate=>({name:candidate.name,count:candidate.count,score:candidate.score,confidence:candidate.confidence,reasons:candidate.reasons||[],sections:candidate.sectionTitles instanceof Set?candidate.sectionTitles:new Set(),sectionCounts:candidate.sectionCounts instanceof Map?candidate.sectionCounts:new Map(),aliases:candidate.aliases||[]}));
+  }catch(error){console.warn('Character review scan failed:',error);return []}
+}
 function resolveMergeTarget(name,map,seen){seen=seen||new Set();if(seen.has(name))return name;seen.add(name);return map[name]?resolveMergeTarget(map[name],map,seen):name}
 function applyCharMerges(results){
   const map=state.charMerge||{};
@@ -1337,97 +1347,38 @@ function applyCharMerges(results){
     if (d.sections instanceof Set || Array.isArray(d.sections)) {
       d.sections.forEach(x=>grouped[canonical].sections.add(x));
     }
+    if(d.sectionCounts instanceof Map){if(!grouped[canonical].sectionCounts)grouped[canonical].sectionCounts=new Map();d.sectionCounts.forEach((count,id)=>grouped[canonical].sectionCounts.set(id,(grouped[canonical].sectionCounts.get(id)||0)+count))}
     if(name!==canonical)grouped[canonical].aliasSet.add(name);
     (d.aliases||[]).forEach(a=>grouped[canonical].aliasSet.add(a));
   });
-  return Object.entries(grouped).map(([name,d])=>[name,{count:d.count,sections:d.sections,aliases:d.aliasSet.size?[...d.aliasSet]:undefined}]);
+  return Object.entries(grouped).map(([name,d])=>[name,{count:d.count,sections:d.sections,sectionCounts:d.sectionCounts||new Map(),aliases:d.aliasSet.size?[...d.aliasSet]:undefined}]);
 }
   function ignoreCharacter(name){state.charIgnore=state.charIgnore||{};state.charIgnore[name]=true;save();renderCharacters();renderWeb();renderMetrics()}
   function restoreIgnoredCharacters(){state.charIgnore={};save();renderCharacters();renderWeb();renderMetrics()}
   function mergeCharacter(name,target){if(!target||target===name)return;state.charMerge=state.charMerge||{};state.charMerge[name]=target;save();renderCharacters();renderWeb();renderMetrics()}
+function characterProfile(name){state.charProfiles=state.charProfiles||{};const profile=state.charProfiles[name]||{};return {...profile,aliases:Array.isArray(profile.aliases)?profile.aliases:[],role:profile.role||'Unassigned',notes:profile.notes||state.charNotes?.[name]||''}}
+function characterTone(name){let hash=0;for(const char of name)hash=(hash*31+char.charCodeAt(0))>>>0;return hash%6}
+function chapterMentionCount(data,chapter){const map=data.sectionCounts;if(map instanceof Map){const direct=map.get(chapter.id)??map.get(String(chapter.id));if(Number.isFinite(direct))return direct}const sections=data.sections instanceof Set?[...data.sections]:Array.isArray(data.sections)?data.sections:[];return sections.includes(chapter.title||'Untitled')?1:0}
+function characterRows(){
+  const chars=detectCharacters()||[];const max=Math.max(1,...chars.map(([,d])=>d.count||0));
+  return chars.map(([name,data])=>{const profile=characterProfile(name),chapters=state.sections.map((chapter,index)=>({chapter,index,count:chapterMentionCount(data,chapter)})),first=chapters.find(item=>item.count>0),sections=new Set(chapters.filter(item=>item.count>0).map(item=>item.chapter.title||'Untitled'));const aliases=[...new Set([...(Array.isArray(data.aliases)?data.aliases:[]),...profile.aliases].filter(alias=>alias&&alias.toLowerCase()!==name.toLowerCase()))];const oftenWith=chars.filter(([other,otherData])=>other!==name&&state.sections.reduce((sum,chapter)=>sum+(chapterMentionCount(data,chapter)>0&&chapterMentionCount(otherData,chapter)>0?1:0),0)>0).map(([other])=>other).slice(0,3);return {name,data,profile,chapters,first,sections,aliases,oftenWith,tier:(data.count||0)>=max*.45?'main':(data.count||0)>=max*.12?'supporting':'minor',late:first&&first.index>=Math.max(2,state.sections.length-3)}})
+}
+function saveCharacterProfile(name,profile){state.charProfiles=state.charProfiles||{};state.charProfiles[name]={role:profile.role||'Unassigned',description:profile.description||'',aliases:Array.isArray(profile.aliases)?profile.aliases:[],relationships:profile.relationships||'',notes:profile.notes||''};state.charNotes[name]=profile.notes||'';save();renderCharacters();renderHome();renderWeb()}
+function jumpToCharacterChapter(name,chapterId){const chapter=state.sections.find(item=>String(item.id)===String(chapterId));if(!chapter)return;switchView('write');openSection(chapter.id);toast(`Opened ${chapter.title||'chapter'} for ${name}.`)}
+function openCharacterSheet(name,focus=''){
+  const modal=document.getElementById('character-sheet'),row=characterRows().find(item=>item.name===name);if(!modal||!row)return;const profile=row.profile;modal.dataset.character=name;modal.querySelector('#character-sheet-title').textContent=name;modal.querySelector('#char-sheet-name').value=name;modal.querySelector('#char-sheet-role').value=profile.role;modal.querySelector('#char-sheet-description').value=profile.description||'';modal.querySelector('#char-sheet-aliases').value=row.aliases.join(', ');modal.querySelector('#char-sheet-first').textContent=row.first?`${row.first.chapter.title||'Untitled'} · ${row.first.count} mention${row.first.count===1?'':'s'}`:'Not found';modal.querySelector('#char-sheet-relationships').value=profile.relationships||row.oftenWith.join(', ');modal.querySelector('#char-sheet-notes').value=profile.notes||'';const mergeSelect=modal.querySelector('#char-sheet-merge');mergeSelect.innerHTML='<option value="">Choose a character…</option>'+characterRows().filter(item=>item.name!==name).map(item=>`<option value="${escapeHtml(item.name)}">${escapeHtml(item.name)}</option>`).join('');modal.hidden=false;requestAnimationFrame(()=>modal.querySelector(focus?`#char-sheet-${focus}`:'#char-sheet-name')?.focus())
+}
+function closeCharacterSheet(){const modal=document.getElementById('character-sheet');if(modal)modal.hidden=true}
+function saveCharacterSheet(){const modal=document.getElementById('character-sheet');if(!modal)return;const oldName=modal.dataset.character,newName=modal.querySelector('#char-sheet-name').value.trim().slice(0,120);if(!newName){toast('Give this character a name first.');return}const profile={role:modal.querySelector('#char-sheet-role').value,description:modal.querySelector('#char-sheet-description').value.trim(),aliases:modal.querySelector('#char-sheet-aliases').value.split(',').map(value=>value.trim()).filter(Boolean).slice(0,20),relationships:modal.querySelector('#char-sheet-relationships').value.trim(),notes:modal.querySelector('#char-sheet-notes').value.trim()};if(newName!==oldName){state.charMerge=state.charMerge||{};state.charMerge[oldName]=newName;state.charProfiles[newName]=profile;delete state.charProfiles[oldName];if(state.charNotes?.[oldName]){state.charNotes[newName]=state.charNotes[oldName];delete state.charNotes[oldName]}}else saveCharacterProfile(oldName,profile);if(newName!==oldName){save();renderCharacters();renderHome();renderWeb()}closeCharacterSheet()}
+function confirmReviewCandidate(name){state.charConfirmed=state.charConfirmed||{};state.charConfirmed[name]=true;save();renderCharacters();renderHome();renderWeb();renderMetrics();toast(`${name} added to the character roster.`)}
 function renderCharacters(){
-  try {
-    state.charNotes = state.charNotes || {};
-    state.charIgnore = state.charIgnore || {};
-    state.charMerge = state.charMerge || {};
-    const grid = document.getElementById('char-grid');
-    if (!grid) return;
-    const chars = detectCharacters() || [];
-    const hiddenCount = Object.keys(state.charIgnore).length;
-    if (!chars.length) {
-      grid.innerHTML = '<div class="empty">No recurring characters detected yet. Names mentioned two or more times, including away from sentence starts, will appear here.</div>' +
-        (hiddenCount ? `<div class="empty"><a href="#" id="restore-hidden-link">Restore ${hiddenCount} hidden entr${hiddenCount === 1 ? 'y' : 'ies'}</a></div>` : '');
-      if (hiddenCount) {
-        const link = document.getElementById('restore-hidden-link');
-        if (link) link.onclick = e => { e.preventDefault(); restoreIgnoredCharacters(); };
-      }
-      return;
-    }
-    grid.innerHTML = '';
-    chars.forEach(([name, d]) => {
-      if (!name || !d) return;
-      const others = chars.filter(([n]) => n !== name).map(([n]) => n).slice(0, 50);
-      const card = document.createElement('div');
-      card.className = 'char-card';
-      const aliasList = Array.isArray(d.aliases) ? d.aliases : (d.aliases instanceof Set ? [...d.aliases] : []);
-      const aliasNote = aliasList.length ? `<div class="count">Also referred to as: ${aliasList.map(escapeHtml).join(', ')}</div>` : '';
-      const mergeOptions = others.map(n => `<option value="merge:${encodeURIComponent(n)}">${escapeHtml(n)}</option>`).join('');
-      const sectionsList = (d.sections instanceof Set || Array.isArray(d.sections)) ? [...d.sections] : [];
-      card.innerHTML = `<h3>${escapeHtml(name)}</h3><div class="count">Mentioned ${d.count || 0} times</div>${aliasNote}<textarea aria-label="Notes for ${escapeHtml(name)}" placeholder="Role, notes...">${escapeHtml(state.charNotes[name] || '')}</textarea><div class="chapters">Appears in: ${sectionsList.map(escapeHtml).join(', ')}</div><select class="char-action-select" aria-label="Actions for ${escapeHtml(name)}"><option value="">Actions ▾</option><option value="__delete">Delete — not a character</option>${others.length ? `<optgroup label="Merge into">${mergeOptions}</optgroup>` : ''}</select>`;
-      const textarea = card.querySelector('textarea');
-      if (textarea) {
-        textarea.oninput = e => {
-          state.charNotes = state.charNotes || {};
-          state.charNotes[name] = e.target.value;
-          save();
-        };
-      }
-      const select = card.querySelector('.char-action-select');
-      if (select) {
-        select.onchange = e => {
-          const val = e.target.value;
-          if (val === '__delete') {
-            ignoreCharacter(name);
-          } else if (val.startsWith('merge:')) {
-            let target = val.slice(6);
-            try { target = decodeURIComponent(target); } catch (_) {}
-            mergeCharacter(name, target);
-          }
-        };
-      }
-      grid.appendChild(card);
-    });
-    if (hiddenCount) {
-      const note = document.createElement('div');
-      note.className = 'empty';
-      note.innerHTML = `<a href="#" class="restore-hidden-link">Restore ${hiddenCount} hidden entr${hiddenCount === 1 ? 'y' : 'ies'}</a>`;
-      grid.appendChild(note);
-      const link = note.querySelector('.restore-hidden-link');
-      if (link) link.onclick = e => { e.preventDefault(); restoreIgnoredCharacters(); };
-    }
-  } catch (err) {
-    console.error('Characters tab rendering error:', err);
-    const grid = document.getElementById('char-grid');
-    if (grid) {
-      grid.innerHTML = `<div class="empty">Unable to display characters: ${escapeHtml(err?.message || 'Unexpected error')}. <br><button class="secondary-button" style="margin-top:10px" onclick="renderCharacters()">Retry</button></div>`;
-    }
-  }
-}
-async function scanCharacters(){
-  const button=document.getElementById('btn-scan-characters'),status=document.getElementById('character-scan-status');
-  if(!button||button.disabled)return;
-  flushWriterSave();button.disabled=true;button.classList.add('is-scanning');const original=button.innerHTML;button.innerHTML='<span class="scan-spinner" aria-hidden="true"></span> Scanning chapters…';if(status)status.textContent=`Checking ${state.sections.length} ${state.sections.length===1?'chapter':'chapters'} for new and returning characters…`;
-  await new Promise(resolve=>setTimeout(resolve,180));
   try{
-    const characters=detectCharacters();renderCharacters();renderHome();renderWeb();renderMetrics();
-    if(status)status.textContent=`Scanned ${state.sections.length} ${state.sections.length===1?'chapter':'chapters'} · ${characters.length} recurring ${characters.length===1?'character':'characters'} found · updated just now.`;
-    toast(`Character scan complete: ${characters.length} recurring characters found.`);
-  }catch(err){
-    console.error('Character scan failed:', err);
-    if(status)status.textContent='Scan encountered an error.';
-    toast('Character scan failed: ' + err.message);
-  }finally{button.disabled=false;button.classList.remove('is-scanning');button.innerHTML=original}
+    state.charNotes=state.charNotes||{};state.charProfiles=state.charProfiles||{};state.charIgnore=state.charIgnore||{};state.charMerge=state.charMerge||{};const grid=document.getElementById('char-grid'),reviewTray=document.getElementById('character-review-tray');if(!grid)return;let rows=characterRows(),review=detectCharacterReview();const search=(document.getElementById('character-search')?.value||'').trim().toLowerCase(),sort=document.getElementById('character-sort')?.value||'mentions',layout=document.getElementById('character-layout')?.value||'grid';if(search)rows=rows.filter(row=>[row.name,...row.aliases].join(' ').toLowerCase().includes(search));rows.sort((a,b)=>sort==='az'?a.name.localeCompare(b.name):sort==='first'?(a.first?.index??9999)-(b.first?.index??9999):b.data.count-a.data.count);if(reviewTray){reviewTray.hidden=!review.length;reviewTray.innerHTML=review.length?`<div class="review-tray-heading"><div><strong>To review</strong><span>${review.length} uncertain candidate${review.length===1?'':'s'}</span></div><small>Confirm, dismiss, or merge these before they enter the roster.</small></div><div class="review-tray-list">${review.slice(0,12).map(candidate=>`<article class="review-candidate"><div><strong>${escapeHtml(candidate.name)}</strong><small>${candidate.count} mentions · ${escapeHtml(candidate.reasons.slice(0,2).join(' · ')||'Low-confidence candidate')}</small></div><div class="review-candidate-actions"><button type="button" class="secondary-button" data-review-confirm="${escapeHtml(candidate.name)}">Confirm</button><button type="button" class="secondary-button" data-review-ignore="${escapeHtml(candidate.name)}">Not a character</button><select data-review-merge="${escapeHtml(candidate.name)}" aria-label="Merge ${escapeHtml(candidate.name)}"><option value="">Merge with…</option>${rows.map(row=>`<option value="${escapeHtml(row.name)}">${escapeHtml(row.name)}</option>`).join('')}</select></div></article>`).join('')}</div>`:''}
+    grid.classList.toggle('char-list-layout',layout==='list');if(!rows.length){grid.innerHTML='<div class="empty">No recurring characters match this view. Run Scan manuscript or adjust the filter.</div>';return}const groups=['main','supporting','minor'];grid.innerHTML=groups.map(tier=>{const group=rows.filter(row=>row.tier===tier);if(!group.length)return '';return `<section class="character-tier character-tier-${tier}"><header><h3>${tier==='main'?'Main':tier==='supporting'?'Supporting':'Minor'}</h3><span>${group.length}</span></header><div class="character-card-grid">${group.map(row=>{const monogram=row.name.split(/\s+/).map(part=>part[0]).join('').slice(0,2).toUpperCase(),maxMention=Math.max(1,...row.chapters.map(item=>item.count)),aliases=row.aliases.slice(0,3),notes=row.profile.notes.replace(/\s+/g,' ').trim(),firstLabel=row.first?`New in ${row.first.chapter.title||'chapter'}`:'',chapters=row.chapters.map(item=>`<button type="button" class="appearance-cell ${item.count?'has-mentions':''}" style="--appearance:${Math.max(.18,item.count/maxMention)}" title="${escapeHtml(`${item.chapter.title||'Chapter '+(item.index+1)}: ${item.count} mention${item.count===1?'':'s'}`)}" aria-label="${escapeHtml(`${item.chapter.title||'Chapter '+(item.index+1)}: ${item.count} mentions`)}" data-character-chapter="${escapeHtml(row.name)}" data-chapter-id="${escapeHtml(String(item.chapter.id))}"></button>`).join('');return `<article class="char-card char-card-${row.tier}" data-character-card="${escapeHtml(row.name)}"><div class="char-card-main" role="button" tabindex="0" data-character-open="${escapeHtml(row.name)}"><div class="char-card-top"><span class="char-monogram tone-${characterTone(row.name)}">${escapeHtml(monogram)}</span><span class="char-card-heading"><strong>${escapeHtml(row.name)}</strong><span class="char-role-chip">${escapeHtml(row.profile.role)}</span></span>${row.late?`<span class="char-late-badge">${escapeHtml(firstLabel)}</span>`:''}</div><div class="char-count"><b>${(row.data.count||0).toLocaleString()}</b><span>mentions</span></div><div class="appearance-strip" aria-label="Chapter appearances">${chapters}</div><div class="char-alias-slot">${aliases.length?aliases.map(alias=>`<span class="char-chip">${escapeHtml(alias)}</span>`).join(''):'<span class="char-muted">No aliases yet</span>'}</div><p class="char-note-preview">${escapeHtml(notes||'Add a description or note in the character sheet.')}</p><p class="char-often-with">${row.oftenWith.length?`Often with: ${row.oftenWith.map(escapeHtml).join(', ')}`:'No frequent co-appearances yet'}</p></div><div class="char-card-footer"><button type="button" class="char-menu-button" aria-label="More actions for ${escapeHtml(row.name)}" aria-expanded="false" data-character-menu="${escapeHtml(row.name)}">⋯</button><div class="char-menu" hidden>${[['Rename','rename'],['Add alias','alias']].map(([label,action])=>`<button type="button" data-character-action="${action}" data-character-name="${escapeHtml(row.name)}">${label}</button>`).join('')}<button type="button" data-character-action="merge" data-character-name="${escapeHtml(row.name)}">Merge with…</button><button type="button" data-character-action="ignore" data-character-name="${escapeHtml(row.name)}">Not a character</button><button type="button" data-character-action="story-web" data-character-name="${escapeHtml(row.name)}">Open in Story Web</button><button type="button" data-character-action="first" data-character-name="${escapeHtml(row.name)}">Jump to first mention</button></div></div></article>`}).join('')}</div></section>`}).join('');
+    grid.querySelectorAll('[data-character-open]').forEach(button=>{button.addEventListener('click',()=>openCharacterSheet(button.dataset.characterOpen));button.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openCharacterSheet(button.dataset.characterOpen)}})});grid.querySelectorAll('[data-character-chapter]').forEach(button=>button.addEventListener('click',event=>{event.stopPropagation();jumpToCharacterChapter(button.dataset.characterChapter,button.dataset.chapterId)}));grid.querySelectorAll('[data-character-menu]').forEach(button=>button.addEventListener('click',event=>{event.stopPropagation();const menu=button.parentElement.querySelector('.char-menu');const open=!menu.hidden;grid.querySelectorAll('.char-menu').forEach(item=>item.hidden=true);grid.querySelectorAll('[data-character-menu]').forEach(item=>item.setAttribute('aria-expanded','false'));menu.hidden=open;button.setAttribute('aria-expanded',String(!open))}));grid.querySelectorAll('[data-character-action]').forEach(button=>button.addEventListener('click',()=>{const name=button.dataset.characterName,action=button.dataset.characterAction;if(action==='rename')openCharacterSheet(name);if(action==='alias')openCharacterSheet(name,'aliases');if(action==='ignore')ignoreCharacter(name);if(action==='merge')openCharacterSheet(name,'merge');if(action==='story-web')switchView('web');if(action==='first'){const row=rows.find(item=>item.name===name);if(row?.first)jumpToCharacterChapter(name,row.first.chapter.id)}}));reviewTray?.querySelectorAll('[data-review-confirm]').forEach(button=>button.addEventListener('click',()=>confirmReviewCandidate(button.dataset.reviewConfirm)));reviewTray?.querySelectorAll('[data-review-ignore]').forEach(button=>button.addEventListener('click',()=>ignoreCharacter(button.dataset.reviewIgnore)));reviewTray?.querySelectorAll('[data-review-merge]').forEach(select=>select.addEventListener('change',event=>{if(event.target.value)mergeCharacter(select.dataset.reviewMerge,event.target.value)}));
+  }catch(error){console.error('Characters tab rendering error:',error);const grid=document.getElementById('char-grid');if(grid)grid.innerHTML=`<div class="empty">Unable to display characters: ${escapeHtml(error?.message||'Unexpected error')}.</div>`}
 }
+async function scanCharacters(){const button=document.getElementById('btn-scan-characters'),status=document.getElementById('character-scan-status'),progress=document.getElementById('character-scan-progress'),fill=document.getElementById('character-scan-progress-fill');if(!button||button.disabled)return;flushWriterSave();button.disabled=true;button.classList.add('is-scanning');if(progress)progress.hidden=false;if(fill)fill.style.width='8%';if(status)status.textContent=`Scanning ${state.sections.length} ${state.sections.length===1?'chapter':'chapters'} offline…`;await new Promise(resolve=>setTimeout(resolve,120));try{if(fill)fill.style.width='48%';await new Promise(resolve=>setTimeout(resolve,180));const characters=detectCharacters();if(fill)fill.style.width='82%';renderCharacters();renderHome();renderWeb();renderMetrics();if(fill)fill.style.width='100%';if(status)status.textContent=`Scanned just now · ${characters.length} character${characters.length===1?'':'s'} found`;toast(`Manuscript scan complete: ${characters.length} characters found.`)}catch(error){console.error('Character scan failed:',error);if(status)status.textContent='Scan could not be completed.';toast('Character scan failed: '+error.message)}finally{button.disabled=false;button.classList.remove('is-scanning');setTimeout(()=>{if(progress)progress.hidden=true;if(fill)fill.style.width='0%'},500)}}
 let webViewport={x:0,y:0,scale:1,initialized:false},webSelectedNode='',webPendingOutput='';
 window.addEventListener('resize',()=>{if(document.getElementById('view-web').classList.contains('active')){webViewport.initialized=false;renderWeb()}});
 function renderWeb(){
@@ -2295,6 +2246,8 @@ function setupWritingSettingsControls() {
     }
   });
   document.getElementById('btn-scan-characters')?.addEventListener('click', scanCharacters);
+  ['character-search','character-sort','character-layout'].forEach(id=>document.getElementById(id)?.addEventListener(id==='character-search'?'input':'change',()=>renderCharacters()));
+  document.getElementById('character-sheet-save')?.addEventListener('click',saveCharacterSheet);document.getElementById('char-sheet-merge-button')?.addEventListener('click',()=>{const modal=document.getElementById('character-sheet'),target=modal?.querySelector('#char-sheet-merge')?.value;if(target){mergeCharacter(modal.dataset.character,target);closeCharacterSheet()}});document.getElementById('character-sheet-close')?.addEventListener('click',closeCharacterSheet);document.getElementById('character-sheet-cancel')?.addEventListener('click',closeCharacterSheet);document.getElementById('character-sheet')?.addEventListener('click',event=>{if(event.target.id==='character-sheet')closeCharacterSheet()});document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!document.getElementById('character-sheet')?.hidden)closeCharacterSheet()});
 
   document.getElementById('writing-reset-settings')?.addEventListener('click', async () => {
     const confirmed = await showConfirmDialog(

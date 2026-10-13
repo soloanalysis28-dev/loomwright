@@ -238,6 +238,7 @@ function createCandidate(tokens) {
     name: getCandidateLabel(tokens),
     parts: tokens.map(token => token.lower),
     count: 0,
+    sectionCounts: new Map(),
     capitalizedMidSentence: 0,
     capitalizedSentenceInitial: 0,
     lowercaseOccurrences: 0,
@@ -360,6 +361,7 @@ export function extractCharacterCandidates(chapters, config = CHARACTER_RECOGNIT
 
         candidate.count++;
         candidate.sectionTitles.add(chapter.title);
+        candidate.sectionCounts.set(chapter.id, (candidate.sectionCounts.get(chapter.id) || 0) + 1);
         if (span[0].sentenceInitial) candidate.capitalizedSentenceInitial++;
         else candidate.capitalizedMidSentence++;
 
@@ -513,6 +515,7 @@ export function consolidateCharacters(candidates, config = CHARACTER_RECOGNITION
       match.count += t.count;
       match.score = Math.max(match.score, t.score);
       for (const title of t.sectionTitles) match.sectionTitles.add(title);
+      for (const [id, count] of t.sectionCounts || []) match.sectionCounts.set(id, (match.sectionCounts.get(id) || 0) + count);
       match.aliases.add(t.name);
       absorbedKeys.add(t.key);
     }
@@ -538,6 +541,7 @@ export function consolidateCharacters(candidates, config = CHARACTER_RECOGNITION
       parent.count += s.count;
       parent.score = Math.max(parent.score, s.score);
       for (const title of s.sectionTitles) parent.sectionTitles.add(title);
+      for (const [id, count] of s.sectionCounts || []) parent.sectionCounts.set(id, (parent.sectionCounts.get(id) || 0) + count);
       parent.aliases.add(s.name);
       absorbedKeys.add(s.key);
     }
