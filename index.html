@@ -367,7 +367,8 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink
 #editor-wrap.page-style-paper #content-editable{background:var(--panel);border:1px solid var(--line);box-shadow:0 2px 16px #00000012;border-radius:2px;padding:84px 82px}
 #editor-wrap.page-style-flat #content-editable{background:transparent;border:1px solid transparent;box-shadow:none;border-radius:0;padding:44px 28px}
 #editor-wrap.has-first-line-indent #content-editable p + p{text-indent:1.6em;margin-top:0;margin-bottom:0}
-#editor-wrap.toolbar-pinned .toolbar{position:sticky;top:6px;z-index:10;box-shadow:0 2px 8px #00000014}
+/* toolbar-pinned / toolbar-auto: title+toolbar block is always sticky via .writer-sticky-header */
+#editor-wrap.toolbar-pinned .toolbar{position:static;box-shadow:none}
 #editor-wrap.toolbar-auto .toolbar{position:static;box-shadow:none}
 body.writer-focus.focus-hide-nav .app-header,body.writer-focus.focus-hide-nav .app-nav{display:none!important}
 body.writer-focus.focus-hide-toolbar .toolbar,body.writer-focus.focus-hide-toolbar .writer-command-bar{display:none!important}
@@ -454,16 +455,38 @@ body.writer-focus.focus-hide-footer .writer-statusbar,body.writer-focus.focus-hi
 .template-empty span{display:block;margin-top:4px;color:var(--sub);font:.73rem/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 .write-workspace[hidden],.write-library[hidden]{display:none}
 .write-workspace{max-width:1200px;margin:0 auto}
-.writer-command-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px;padding:8px 0;border-bottom:1px solid var(--line)}
-.writer-command-actions{display:flex;align-items:center;gap:8px;min-width:0}
-.writer-back{flex:none;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink);font:600 .78rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer}
+/* Writer command bar – default (top nav) layout */
+.writer-command-bar{display:flex;align-items:center;gap:10px;margin-bottom:13px;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--panel)}
+/* Inline logo: hidden by default, shown only when nav is docked */
+.writer-brand-inline{display:none;align-items:center;gap:9px;flex:none;border:0;background:transparent;padding:0 6px 0 0;cursor:pointer;color:var(--ink);font-size:1.18rem;letter-spacing:.015em;white-space:nowrap}
+.writer-brand-inline .brand-mark{width:24px;height:24px;color:var(--accent);flex:none}
+.writer-brand-inline span span{color:var(--accent)}
+/* Left group: Sort + Add chapter */
+.writer-command-left{display:flex;align-items:center;gap:6px;flex:none}
+/* Center group: chapter select – grows to fill space */
+.writer-command-center{display:flex;align-items:center;flex:1 1 auto;min-width:0}
+.writer-command-center select{width:100%;min-width:140px;max-width:min(42vw,360px);padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink);font: .82rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+/* Back button: always at the far right */
+.writer-back{flex:none;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink);font:600 .78rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer;margin-left:auto}
+/* Keep old selector working for any legacy refs */
 .writer-command-bar select{min-width:160px;max-width:min(38vw,340px);padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink);font: .82rem -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-.write-workspace .toolbar{position:sticky;top:6px;z-index:5;background:var(--panel)}
-.write-workspace [contenteditable]{display:block;box-sizing:border-box;width:min(100%,816px);min-height:1056px;margin:18px auto 0;border:1px solid var(--line);border-radius:2px;padding:84px 82px;background:var(--panel);box-shadow:0 2px 16px #00000012;overflow:visible;contain:layout style;text-rendering:optimizeSpeed;outline:none;caret-color:var(--accent);transition:none}
+/* Sticky title + toolbar header inside the editor */
+.writer-sticky-header{position:sticky;top:0;z-index:12;background:var(--panel);padding-bottom:4px;margin-bottom:0}
+.write-workspace .toolbar{position:static;z-index:5;background:var(--panel)}
+.write-workspace [contenteditable]{display:block;box-sizing:border-box;width:min(100%,816px);min-height:1056px;margin:8px auto 0;border:1px solid var(--line);border-radius:2px;padding:84px 82px;background:var(--panel);box-shadow:0 2px 16px #00000012;overflow:visible;contain:layout style;text-rendering:optimizeSpeed;outline:none;caret-color:var(--accent);transition:none}
 .write-drag-over{outline:2px dashed var(--accent)!important;outline-offset:-6px;background:color-mix(in srgb,var(--card) 88%,var(--accent))!important}
 .write-workspace .editor input[type=text]{margin:8px 0 12px;font-size:1.3rem}
 #view-write{width:100%;max-width:100%;margin:0;padding:20px 0 44px}
-#view-write:has(.write-workspace:not([hidden])){padding-top:8px;background:var(--card)}
+#view-write:has(.write-workspace:not([hidden])){padding-top:0;background:var(--card)}
+/* ---- When nav is SIDE-MOUNTED (docked) ---- */
+/* Show inline logo in command bar */
+body.nav-side-mounted .writer-brand-inline{display:inline-flex}
+/* Sticky command bar (stays at top of viewport while scrolling) */
+body.nav-side-mounted .write-workspace .writer-command-bar{position:sticky;top:0;z-index:20;box-shadow:0 2px 10px #00000018;border-radius:0}
+/* Sticky title+toolbar: sits just below the sticky command bar */
+body.nav-side-mounted .write-workspace .writer-sticky-header{top:var(--writer-bar-h, 54px);box-shadow:0 2px 8px #00000010}
+/* When nav is TOP (default), command bar is not sticky – title+toolbar still stick */
+body:not(.nav-side-mounted) .write-workspace .writer-sticky-header{top:0}
 .writer-context-popover{position:fixed;z-index:1200;width:min(310px,calc(100vw - 16px));max-height:calc(100vh - 16px);overflow:auto;padding:5px;background:var(--panel);border:1px solid var(--line);border-radius:5px;box-shadow:0 8px 25px #18201935;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.8rem}
 .writer-context-popover[hidden]{display:none}
 .writer-context-mini{display:flex;align-items:center;gap:3px;flex-wrap:wrap;padding:2px 2px 6px;margin-bottom:4px;border-bottom:1px solid var(--line)}
@@ -652,12 +675,18 @@ body.writer-focus.focus-hide-footer .writer-statusbar,body.writer-focus.focus-hi
         </section>
         <section class="write-workspace" id="write-workspace" aria-label="Writing workspace" hidden>
           <div class="writer-command-bar">
-            <button class="writer-back" id="write-back" type="button">← Chapters</button>
-            <div class="writer-command-actions">
-              <select id="section-select" aria-label="Choose a chapter"></select>
+            <button class="writer-brand-inline" type="button" data-open-view="home" aria-label="Loomwright home">
+              <svg class="brand-mark" viewBox="0 0 80 80" aria-hidden="true"><path d="M15 39c9-23 31-29 45-18 10 8 5 19-8 22L28 49c-13 4-14 17-2 21 12 5 28-3 39-16M20 18c14 23 31 28 43 22M17 58c12-17 31-23 46-22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+              <span>Loom<span>wright</span></span>
+            </button>
+            <div class="writer-command-left">
               <button class="secondary-button" id="writer-sort-chapters-btn" type="button" style="padding:6px 10px;font-size:.75rem" title="Order chapters in natural sequence by title">↕ Sort</button>
               <button class="addbtn" id="add-section" type="button">＋ Chapter</button>
             </div>
+            <div class="writer-command-center">
+              <select id="section-select" aria-label="Choose a chapter"></select>
+            </div>
+            <button class="writer-back" id="write-back" type="button">← Chapters</button>
           </div>
           <div class="editor" id="editor-wrap"></div>
         </section>

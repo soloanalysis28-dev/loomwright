@@ -486,6 +486,11 @@ function applyTheme(){
       btn.setAttribute('aria-checked', String(active));
     });
   }
+  /* Recalculate sticky command-bar height whenever nav mode changes */
+  requestAnimationFrame(() => {
+    const cmdBar = document.querySelector('.write-workspace .writer-command-bar');
+    if (cmdBar) document.documentElement.style.setProperty('--writer-bar-h', cmdBar.offsetHeight + 'px');
+  });
   const palette=document.getElementById('palette-select'),theme=document.getElementById('theme-select'),bgfx=document.getElementById('bg-effect-select');
   if(palette)palette.value=appSettings.palette;if(theme)theme.value=appSettings.theme;
   if(bgfx){
@@ -1022,7 +1027,7 @@ function renderEditor(){
   const s=state.sections.find(x=>String(x.id)===String(state.activeId)),wrap=document.getElementById('editor-wrap');
   if(!s){wrap.innerHTML='<div class="empty">No chapter selected.</div>';return}
   const fontOptions=BOOK_FONTS.map(g=>`<optgroup label="${g.group}">${g.fonts.map(f=>`<option value="${f}" style="font-family:'${f}'">${f}</option>`).join('')}</optgroup>`).join('');
-  wrap.innerHTML=`<input type="text" id="title-input" aria-label="Chapter title" placeholder="Chapter title" value="${escapeHtml(s.title||'Untitled')}">
+  wrap.innerHTML=`<div class="writer-sticky-header"><input type="text" id="title-input" aria-label="Chapter title" placeholder="Chapter title" value="${escapeHtml(s.title||'Untitled')}">
     <div class="toolbar" aria-label="Formatting tools">
       <div class="tb-group" role="group" aria-label="Clipboard">
         <button type="button" id="writer-save" aria-label="Save" title="Save (Ctrl/Cmd+S)">${ribbonIcon('save')}</button><button type="button" id="writer-copy" aria-label="Copy" title="Copy selected text">${ribbonIcon('copy')}</button><button type="button" id="writer-paste" aria-label="Paste" title="Paste plain text at the cursor">${ribbonIcon('paste')}</button><span class="tb-group-label">Clipboard</span>
@@ -1060,7 +1065,15 @@ function renderEditor(){
         <button type="button" id="delete-section" class="tb-del-btn" aria-label="Delete chapter" title="Delete current chapter">${ribbonIcon('trash')}<span>Delete</span></button><span class="tb-group-label">Tools</span>
       </div>
     </div>
+  </div>
     <div contenteditable="true" id="content-editable" role="textbox" aria-multiline="true" aria-label="Manuscript chapter" style="line-height:${safeLineHeight(s.lineHeight)}">${sanitizeRichHtml(s.html||'<p></p>')}</div>`;
+  /* Measure the sticky command bar and set --writer-bar-h so the title/toolbar offset is exact */
+  requestAnimationFrame(() => {
+    const cmdBar = document.querySelector('.write-workspace .writer-command-bar');
+    if (cmdBar) {
+      document.documentElement.style.setProperty('--writer-bar-h', cmdBar.offsetHeight + 'px');
+    }
+  });
   const titleInput = document.getElementById('title-input');
   let titleTimer = null;
   if(titleInput){
